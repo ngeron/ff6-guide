@@ -102,6 +102,8 @@ function isWrapped(a, b, W) {
   const len = a.length;
   const bt = b.trim();
   if (!bt) return false;
+  // A line starting with a label ("Weakness:", "Locke:", "!Wing:") begins a new row, not a wrap.
+  if (/^[A-Z!(][A-Za-z'\/ ()!.-]{0,30}:(\s|$)/.test(bt)) return false;
   if (len + 1 + firstWord(b).length > W - 3) return true;
   if (len >= W * 0.55 && /^[a-z(]/.test(bt)) return true;
   if (len >= W * 0.78 && !/[.!?:]["')\]]?$/.test(a)) return true;

@@ -297,7 +297,7 @@ function viewSection(s, opts = {}) {
   if (state.pendingQuery) {
     const q = state.pendingQuery;
     state.pendingQuery = "";
-    const first = highlight($("view").querySelector(".body"), q);
+    const first = highlight($("view").querySelector("article"), q);
     if (first) { first.scrollIntoView({ block: "center" }); return; }
   }
   if (opts.resume) {

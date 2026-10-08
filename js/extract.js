@@ -33,7 +33,14 @@ export function linesFromItems(pages) {
   if (!combo.size) return [];
   const [rs, ss] = mode(combo).split("|");
   const R = parseFloat(rs), S = parseFloat(ss);
-  const cw = R * S;
+  // Character width: median advance per character over long runs in the dominant style.
+  const perChar = [];
+  for (const items of pages) {
+    for (const it of items) {
+      if (it.ratio && it.str.length >= 10 && Math.abs(it.ratio - R) < 0.008 && Math.abs(it.size - S) < S * 0.04) perChar.push(it.w / it.str.length);
+    }
+  }
+  const cw = median(perChar) || R * S;
 
   const fonts = new Set();
   for (const items of pages) {
@@ -84,16 +91,32 @@ export function linesFromItems(pages) {
   for (const lines of pageLines) for (let i = 1; i < lines.length; i++) gaps.push(lines[i - 1].y - lines[i].y);
   const LH = median(gaps.filter((g) => g > S * 0.6)) || S * 1.2;
 
+  // Blank lines that fell on a page break show up as a short page bottom or a low page top.
+  const full = pageLines.filter((l) => l.length > 3);
+  const tops = new Map(), bottoms = new Map();
+  for (const l of full.slice(1)) { const k = Math.round(l[0].y); tops.set(k, (tops.get(k) || 0) + 1); }
+  for (const l of full.slice(0, -1)) { const k = Math.round(l[l.length - 1].y); bottoms.set(k, (bottoms.get(k) || 0) + 1); }
+  const topY = tops.size ? Math.max(...[...tops.keys()].filter((k) => tops.get(k) >= 2)) : null;
+  const bottomY = bottoms.size ? Math.min(...[...bottoms.keys()].filter((k) => bottoms.get(k) >= 2)) : null;
+
   const out = [];
-  for (const lines of pageLines) {
+  pageLines.forEach((lines, p) => {
+    if (!lines.length) return;
+    if (p > 0 && out.length && out[out.length - 1] !== "") {
+      const prev = pageLines.slice(0, p).reverse().find((l) => l.length);
+      const shortBottom = bottomY !== null && isFinite(bottomY) && prev && prev[prev.length - 1].y - bottomY > LH * 0.8;
+      const lowTop = topY !== null && isFinite(topY) && topY - lines[0].y > LH * 0.8;
+      if (shortBottom || lowTop) out.push("");
+    }
     lines.forEach((ln, i) => {
       if (i > 0 && lines[i - 1].y - ln.y > LH * 1.5) out.push("");
       const chars = [];
       for (const it of ln.items.sort((a, b) => a.x - b.x)) {
         let str = it.str;
         // Text extraction sometimes collapses runs of spaces; restore them from the item width.
-        const extra = Math.round(it.w / cw) - str.length;
-        if (extra > 0 && str.indexOf(" ") > 0) {
+        const missing = it.w / cw - str.length;
+        const extra = Math.round(missing);
+        if (missing > 0.75 && extra > 0 && str.indexOf(" ") > 0) {
           const p = str.lastIndexOf(" ");
           str = str.slice(0, p) + " ".repeat(extra + 1) + str.slice(p + 1);
         }
@@ -106,7 +129,7 @@ export function linesFromItems(pages) {
       }
       out.push(chars.join("").replace(/\s+$/, ""));
     });
-  }
+  });
   return out;
 }
 

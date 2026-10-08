@@ -1,0 +1,2255 @@
+The Ember Crown Walkthrough and Field Notes
+Version 1.3
+Testwright, March 2011
+
+"A map is just a promise somebody made about the ground."
+     "And the ground never signed it."
+
+- an innkeeper in Saltmere
+
+Contents
+
+No number: Contents
+
+ 1.0     Version History
+ 2.0     Introduction and conventions
+ 3.0     The Walkthrough
+ 4.0     Shops and Equipment
+ 5.0     Bestiary
+ 6.0     Frequently Asked Questions
+ 7.0     Credits and legal
+
+ 1.0     Version History
+**********************************
+
+- Version 1.3  (03/02/2011)
+      Added the Clockwork Vault puzzle solution and fixed two shop prices that
+      were swapped. Rewrote the final boss strategy after some very helpful
+      mail.
+
+- Version 1.2  (11/20/2010)
+      Bestiary now lists steal tables. Corrected a north/south mix-up in the
+      Bramble Labyrinth.
+
+- Version 1.0  (08/14/2010)
+      First complete release.
+
+ 2.0     Introduction and conventions
+**********************************
+
+This is a complete walkthrough for The Ember Crown, an invented role-playing
+game that exists only so this document can test a guide reader. Every town,
+monster and item below is made up. Any resemblance to a real game is a sign
+that role-playing games have used the same ideas for forty years.
+
+The walkthrough follows the main story in order. Each section lists the
+monsters you meet, the treasure you can find, and the shops in the area,
+followed by a description of the route and strategies for anything dangerous.
+General questions are answered in the FAQ at the end.
+
+Slang:
+
+ST:
+
+Single-target. It hits one thing.
+
+MT:
+
+Multi-target. It hits everything on one side.
+
+!Special:
+
+Monster attacks marked with an exclamation point are physical specials, usually
+stronger than a normal Attack and often carrying a status effect.
+
+For more on the conventions used by old text guides, see
+http://www.example.com/text-guides (an example address that goes nowhere).
+
+ 3.0     The Walkthrough
+**********************************
+
+Table of Contents:
+
+ 3.1.1    Harrowgate
+ 3.1.2    Traveling to the Old Quarry
+ 3.1.3    The Old Quarry
+ 3.2.1    Saltmere
+ 3.2.2    Traveling to the Weeping Aqueduct
+ 3.2.3    The Weeping Aqueduct
+ 3.2.4    The battle with the Gloomlurker Queen
+ 3.3.1    Vell's Crossing
+ 3.3.2    Traveling to the Bramble Labyrinth
+ 3.3.3    The Bramble Labyrinth
+ 3.4.1    Brindlehook
+ 3.4.2    Traveling to the Sunken Abbey
+ 3.4.3    The Sunken Abbey
+ 3.4.4    The battle with the Hollowdrake Queen
+ 3.5.1    Orrin Keep
+ 3.5.2    Traveling to the Copper Mine
+ 3.5.3    The Copper Mine
+ 3.6.1    Duskwater
+ 3.6.2    Traveling to the Lighthouse Ruins
+ 3.6.3    The Lighthouse Ruins
+ 3.6.4    The battle with the Wispsnapper Queen
+ 3.7.1    Kettle Hollow
+ 3.7.2    Traveling to the Frostbite Pass
+ 3.7.3    The Frostbite Pass
+ 3.7.4    The Clockwork Vault puzzle, explained slowly and with considerable
+          patience for everyone involved
+ 3.8.1    Tamsin Bay
+ 3.8.2    Traveling to the Hollow Oak
+ 3.8.3    The Hollow Oak
+ 3.8.4    The battle with the Wispwight Queen
+ 3.9.1    Greywold
+ 3.9.2    Traveling to the Clockwork Vault
+ 3.9.3    The Clockwork Vault
+ 3.10.1   Lantern Rest
+ 3.10.2   Traveling to the Ashen Spire
+ 3.10.3   The Ashen Spire
+ 3.10.4   The battle with the Rustsnapper Queen
+
+-------------------------------------------------------------------------------
+ 3.1.1   Harrowgate
+**********************************
+
+  Opponents:
+  Hollowlurker (#1), Wispgolem (#2), Hollowsnapper (#3)
+
+  Container contents:
+  Swift Boots, Camp Kit, Smoke Bomb, Antivenom, 2700 Gil
+
+Harrowgate is where the story picks up speed. You arrive with Isolde, Corvin
+and Maro, and almost immediately somebody asks you to do something
+unreasonable. Save before you open that door. Trust me on this one.
+
+Preparation: Put Maro in the Back Row. Physical attacks from the back do half
+damage, but Maro will be casting anyway, and you'll take half damage in return.
+
+Monster formations:
+
+(Outside)
+Hollowlurker, Hollowlurker (10/16)
+Wispgolem, Hollowlurker (6/16)
+
+(Inside)
+Hollowsnapper, Hollowsnapper, Wispgolem (11/16)
+Wispgolem, Hollowsnapper (5/16)
+
+Hollowlurker enemies are the ones to watch. They have a habit of using !Lunge
+on whoever is lowest on HP, and around level 4 that can finish off a weakened
+mage. Wispgolem absorbs Holy, so check your MT spells before you fire them off.
+As for Hollowsnapper, it is a self-destructive little thing with a 33 % chance
+to hurt itself whenever you hit it without killing it.
+
+Item Shop:
+Smelling Salts          90
+Eye Balm                60
+Phoenix Quill          600
+Tonic                   40
+Camp Kit               900
+Ether Drop            1200
+ Stock up on Tonics. Nothing else here is urgent, and you'll want the money for
+the weapon shop.
+
+Weapon Shop:
+Storm Spear           1850
+Hunting Bow           1150
+Moonsilver Blade      1400
+Quartz Rod            1250
+ Buy the Quartz Rod for Isolde if you can afford it. It's a large upgrade.
+
+Innkeeper: Rooms are 20 Gil. Breakfast is extra, and it's mostly porridge.
+Isolde: We'll take two.
+
+Hidden Items: There's a Antivenom in the barrel behind the well, and a Lucky
+Coin in the clock of the mayor's house. Leave the chest in the cellar alone for
+now; its contents change into something much better later in the game, and
+you'll come back this way anyway.
+
+When you're ready, head west out of Harrowgate. The _Ember_Crown_ itself is
+mentioned for the first time here, in a conversation that is easy to miss. It's
+worth reading *all* of it.
+
+-------------------------------------------------------------------------------
+ 3.1.2   Traveling to the Old Quarry
+**********************************
+
+  Opponents:
+  Wispbeak (#4), Rustmoth (#5), Gravegolem (#6)
+
+  Container contents:
+  Ether Drop, Smoke Bomb, Owl Pendant, Stillwater Bead, 2600 Gil
+
+Traveling to the Old Quarry is where the story picks up speed. You arrive with
+Maro, Pell and Tamsin, and almost immediately somebody asks you to do something
+unreasonable. Somebody on the message boards swears there's a secret here.
+There isn't.
+
+Preparation: Put Tamsin in the Back Row. Physical attacks from the back do half
+damage, but Tamsin will be casting anyway, and you'll take half damage in
+return.
+
+Monster formations:
+
+(Outside)
+Wispbeak, Wispbeak (10/16)
+Rustmoth, Wispbeak (6/16)
+
+(Inside)
+Gravegolem, Gravegolem, Rustmoth (11/16)
+Rustmoth, Gravegolem (5/16)
+
+Wispbeak enemies are the ones to watch. They have a habit of using !Lunge on
+whoever is lowest on HP, and around level 5 that can finish off a weakened
+mage. Rustmoth absorbs Water, so check your MT spells before you fire them off.
+As for Gravegolem, it is a self-destructive little thing with a 33 % chance to
+hurt itself whenever you hit it without killing it.
+
+At the crossroads you'll get two options:
+         Take the cliff path.
+         Take the river path.
+The cliff path is shorter but has twice as many encounters. The river path has
+a hidden chest behind the waterfall with a Ward Charm, which is worth the
+detour.
+
+Hidden Items: There's a Camp Kit in the barrel behind the well, and a
+Stillwater Bead in the clock of the mayor's house. Leave the chest in the
+cellar alone for now; its contents change into something much better later in
+the game, and you'll come back this way anyway.
+
+When you're ready, head north out of Harrowgate. The _Ember_Crown_ itself is
+mentioned for the first time here, in a conversation that is easy to miss. It's
+worth reading *all* of it.
+
+-------------------------------------------------------------------------------
+ 3.1.3   The Old Quarry
+**********************************
+
+  Opponents:
+  Brinemoth (#7), Wispmaw (#8), Gloommoth (#9)
+
+  Container contents:
+  Smelling Salts, Owl Pendant, Ether Drop, Eye Balm, 1800 Gil
+
+The Old Quarry is where the story picks up speed. You arrive with Pell, Wren
+and Isolde, and almost immediately somebody asks you to do something
+unreasonable. Save before you open that door. Trust me on this one.
+
+Preparation: Put Isolde in the Back Row. Physical attacks from the back do half
+damage, but Isolde will be casting anyway, and you'll take half damage in
+return.
+
+Monster formations:
+
+(Outside)
+Brinemoth, Brinemoth (10/16)
+Wispmaw, Brinemoth (6/16)
+
+(Inside)
+Gloommoth, Gloommoth, Wispmaw (11/16)
+Wispmaw, Gloommoth (5/16)
+
+Brinemoth enemies are the ones to watch. They have a habit of using !Lunge on
+whoever is lowest on HP, and around level 6 that can finish off a weakened
+mage. Wispmaw absorbs Holy, so check your MT spells before you fire them off.
+As for Gloommoth, it is a self-destructive little thing with a 33 % chance to
+hurt itself whenever you hit it without killing it.
+
+Hidden Items: There's a Smelling Salts in the barrel behind the well, and a
+Swift Boots in the clock of the mayor's house. Leave the chest in the cellar
+alone for now; its contents change into something much better later in the
+game, and you'll come back this way anyway.
+
+When you're ready, head west out of Harrowgate. The _Ember_Crown_ itself is
+mentioned for the first time here, in a conversation that is easy to miss. It's
+worth reading *all* of it.
+
+-------------------------------------------------------------------------------
+ 3.2.1   Saltmere
+**********************************
+
+  Opponents:
+  Gravemoth (#10), Gloomlurker (#11), Wisptoad (#12)
+
+  Container contents:
+  Eye Balm, Ether Drop, Tonic, Stillwater Bead, 2700 Gil
+
+Saltmere is where the story picks up speed. You arrive with Corvin, Pell and
+Wren, and almost immediately somebody asks you to do something unreasonable.
+Somebody on the message boards swears there's a secret here. There isn't.
+
+Preparation: Put Wren in the Back Row. Physical attacks from the back do half
+damage, but Wren will be casting anyway, and you'll take half damage in return.
+
+Monster formations:
+
+(Outside)
+Gravemoth, Gravemoth (10/16)
+Gloomlurker, Gravemoth (6/16)
+
+(Inside)
+Wisptoad, Wisptoad, Gloomlurker (11/16)
+Gloomlurker, Wisptoad (5/16)
+
+Gravemoth enemies are the ones to watch. They have a habit of using !Lunge on
+whoever is lowest on HP, and around level 7 that can finish off a weakened
+mage. Gloomlurker absorbs Water, so check your MT spells before you fire them
+off. As for Wisptoad, it is a self-destructive little thing with a 33 % chance
+to hurt itself whenever you hit it without killing it.
+
+Item Shop:
+Phoenix Quill          600
+Warp Shard             700
+Smoke Bomb             150
+Smelling Salts          90
+Ether Drop            1200
+Tonic                   40
+ Stock up on Tonics. Nothing else here is urgent, and you'll want the money for
+the weapon shop.
+
+Weapon Shop:
+Duskfang              4000
+Crown Edge             500
+Iron Rapier           3800
+Ember Lance           3400
+ Buy the Ember Lance for Corvin if you can afford it. It's a large upgrade.
+
+Innkeeper: Rooms are 40 Gil. Breakfast is extra, and it's mostly porridge.
+Corvin: We'll take two.
+
+Hidden Items: There's a Ether Drop in the barrel behind the well, and a Swift
+Boots in the clock of the mayor's house. Leave the chest in the cellar alone
+for now; its contents change into something much better later in the game, and
+you'll come back this way anyway.
+
+When you're ready, head east out of Saltmere. The _Ember_Crown_ itself is
+mentioned for the first time here, in a conversation that is easy to miss. It's
+worth reading *all* of it.
+
+-------------------------------------------------------------------------------
+ 3.2.2   Traveling to the Weeping Aqueduct
+**********************************
+
+  Opponents:
+  Mossknight (#13), Brinetoad (#14), Mudgolem (#15)
+
+  Container contents:
+  Stillwater Bead, Iron Will Ring, Eye Balm, Ward Charm, 2500 Gil
+
+Traveling to the Weeping Aqueduct is where the story picks up speed. You arrive
+with Corvin, Pell and Wren, and almost immediately somebody asks you to do
+something unreasonable. Bring a snack; this part takes a while.
+
+Preparation: Put Wren in the Back Row. Physical attacks from the back do half
+damage, but Wren will be casting anyway, and you'll take half damage in return.
+
+Monster formations:
+
+(Outside)
+Mossknight, Mossknight (10/16)
+Brinetoad, Mossknight (6/16)
+
+(Inside)
+Mudgolem, Mudgolem, Brinetoad (11/16)
+Brinetoad, Mudgolem (5/16)
+
+Mossknight enemies are the ones to watch. They have a habit of using !Lunge on
+whoever is lowest on HP, and around level 8 that can finish off a weakened
+mage. Brinetoad absorbs Bolt, so check your MT spells before you fire them off.
+As for Mudgolem, it is a self-destructive little thing with a 33 % chance to
+hurt itself whenever you hit it without killing it.
+
+At the crossroads you'll get two options:
+         Take the cliff path.
+         Take the river path.
+The cliff path is shorter but has twice as many encounters. The river path has
+a hidden chest behind the waterfall with a Ward Charm, which is worth the
+detour.
+
+Hidden Items: There's a Antivenom in the barrel behind the well, and a Ward
+Charm in the clock of the mayor's house. Leave the chest in the cellar alone
+for now; its contents change into something much better later in the game, and
+you'll come back this way anyway.
+
+When you're ready, head east out of Saltmere. The _Ember_Crown_ itself is
+mentioned for the first time here, in a conversation that is easy to miss. It's
+worth reading *all* of it.
+
+-------------------------------------------------------------------------------
+ 3.2.3   The Weeping Aqueduct
+**********************************
+
+  Opponents:
+  Hollowhound (#16), Frostmaw (#17), Thorngolem (#18)
+
+  Container contents:
+  Iron Will Ring, Ward Charm, Lucky Coin, Camp Kit, 2300 Gil
+
+The Weeping Aqueduct is where the story picks up speed. You arrive with Corvin,
+Wren and Pell, and almost immediately somebody asks you to do something
+unreasonable. If you skipped the side room earlier, now is a good time to
+regret it.
+
+Preparation: Put Pell in the Back Row. Physical attacks from the back do half
+damage, but Pell will be casting anyway, and you'll take half damage in return.
+
+Monster formations:
+
+(Outside)
+Hollowhound, Hollowhound (10/16)
+Frostmaw, Hollowhound (6/16)
+
+(Inside)
+Thorngolem, Thorngolem, Frostmaw (11/16)
+Frostmaw, Thorngolem (5/16)
+
+Hollowhound enemies are the ones to watch. They have a habit of using !Lunge on
+whoever is lowest on HP, and around level 9 that can finish off a weakened
+mage. Frostmaw absorbs Earth, so check your MT spells before you fire them off.
+As for Thorngolem, it is a self-destructive little thing with a 33 % chance to
+hurt itself whenever you hit it without killing it.
+
+Hidden Items: There's a Tonic in the barrel behind the well, and a Stillwater
+Bead in the clock of the mayor's house. Leave the chest in the cellar alone for
+now; its contents change into something much better later in the game, and
+you'll come back this way anyway.
+
+When you're ready, head west out of Saltmere. The _Ember_Crown_ itself is
+mentioned for the first time here, in a conversation that is easy to miss. It's
+worth reading *all* of it.
+
+-------------------------------------------------------------------------------
+ 3.2.4   The battle with the Gloomlurker Queen
+**********************************
+
+Gloomlurker Queen waits at the bottom of the stairs, and the game is not subtle
+about it: the floor is covered in the bones of adventurers who did not read
+this section first.
+
+Gloomlurker Queen
+Level: 14, HP: 17010, MP: 168
+Steal: Hi-Tonic (rare), Hi-Tonic (common), Win: Smelling Salts (always)
+Weakness: Fire
+Special: !Spit: sets Confuse, Attack x 1.5
+Vulnerable to: Blind, Silence, Stop
+Attacks: Attack, Chill Touch, Tidal Rush
+
+Open with Isolde casting a Fire spell; it does nearly double damage. Keep Wren
+on healing duty, because the second phase starts with an MT attack that will
+flatten anyone below about 300 HP. When Gloomlurker Queen says "You cannot burn
+what is already ash!", it is about to switch to its counter-attack pattern, so
+stop using physical attacks for one turn.
+
+Note: if you are beyond the shame of any adventurer, you can steal a rare item
+here with enough patience. It costs about twenty minutes and most of your
+dignity.
+
+-------------------------------------------------------------------------------
+ 3.3.1   Vell's Crossing
+**********************************
+
+  Opponents:
+  Cinderlurker (#22), Gloomtoad (#23), Embersnapper (#24)
+
+  Container contents:
+  Eye Balm, Swift Boots, Lucky Coin, Camp Kit, 1200 Gil
+
+Vell's Crossing is where the story picks up speed. You arrive with Corvin, Wren
+and Pell, and almost immediately somebody asks you to do something
+unreasonable. Save before you open that door. Trust me on this one.
+
+Preparation: Put Pell in the Back Row. Physical attacks from the back do half
+damage, but Pell will be casting anyway, and you'll take half damage in return.
+
+Monster formations:
+
+(Outside)
+Cinderlurker, Cinderlurker (10/16)
+Gloomtoad, Cinderlurker (6/16)
+
+(Inside)
+Embersnapper, Embersnapper, Gloomtoad (11/16)
+Gloomtoad, Embersnapper (5/16)
+
+Cinderlurker enemies are the ones to watch. They have a habit of using !Lunge
+on whoever is lowest on HP, and around level 10 that can finish off a weakened
+mage. Gloomtoad absorbs Poison, so check your MT spells before you fire them
+off. As for Embersnapper, it is a self-destructive little thing with a 33 %
+chance to hurt itself whenever you hit it without killing it.
+
+Item Shop:
+Eye Balm                60
+Antivenom               45
+Hi-Tonic               250
+Tonic                   40
+Camp Kit               900
+Smoke Bomb             150
+ Stock up on Tonics. Nothing else here is urgent, and you'll want the money for
+the weapon shop.
+
+Weapon Shop:
+Steel Glaive           600
+Quartz Rod             450
+Storm Spear           2700
+Moonsilver Blade       900
+ Buy the Moonsilver Blade for Corvin if you can afford it. It's a large
+upgrade.
+
+Innkeeper: Rooms are 60 Gil. Breakfast is extra, and it's mostly porridge.
+Corvin: We'll take two.
+
+Hidden Items: There's a Warp Shard in the barrel behind the well, and a Iron
+Will Ring in the clock of the mayor's house. Leave the chest in the cellar
+alone for now; its contents change into something much better later in the
+game, and you'll come back this way anyway.
+
+When you're ready, head north out of Vell's Crossing. The _Ember_Crown_ itself
+is mentioned for the first time here, in a conversation that is easy to miss.
+It's worth reading *all* of it.
+
+-------------------------------------------------------------------------------
+ 3.3.2   Traveling to the Bramble Labyrinth
+**********************************
+
+  Opponents:
+  Hollowcrawler (#25), Gravesnapper (#26), Mudtoad (#27)
+
+  Container contents:
+  Smoke Bomb, Smelling Salts, Ward Charm, Tonic, 2900 Gil
+
+Traveling to the Bramble Labyrinth is where the story picks up speed. You
+arrive with Tamsin, Pell and Isolde, and almost immediately somebody asks you
+to do something unreasonable. The developers clearly had a deadline when they
+built this floor.
+
+Preparation: Put Isolde in the Back Row. Physical attacks from the back do half
+damage, but Isolde will be casting anyway, and you'll take half damage in
+return.
+
+Monster formations:
+
+(Outside)
+Hollowcrawler, Hollowcrawler (10/16)
+Gravesnapper, Hollowcrawler (6/16)
+
+(Inside)
+Mudtoad, Mudtoad, Gravesnapper (11/16)
+Gravesnapper, Mudtoad (5/16)
+
+Hollowcrawler enemies are the ones to watch. They have a habit of using !Lunge
+on whoever is lowest on HP, and around level 11 that can finish off a weakened
+mage. Gravesnapper absorbs Wind, so check your MT spells before you fire them
+off. As for Mudtoad, it is a self-destructive little thing with a 33 % chance
+to hurt itself whenever you hit it without killing it.
+
+At the crossroads you'll get two options:
+         Take the cliff path.
+         Take the river path.
+The cliff path is shorter but has twice as many encounters. The river path has
+a hidden chest behind the waterfall with a Ward Charm, which is worth the
+detour.
+
+Hidden Items: There's a Eye Balm in the barrel behind the well, and a Lucky
+Coin in the clock of the mayor's house. Leave the chest in the cellar alone for
+now; its contents change into something much better later in the game, and
+you'll come back this way anyway.
+
+When you're ready, head north out of Vell's Crossing. The _Ember_Crown_ itself
+is mentioned for the first time here, in a conversation that is easy to miss.
+It's worth reading *all* of it.
+
+-------------------------------------------------------------------------------
+ 3.3.3   The Bramble Labyrinth
+**********************************
+
+  Opponents:
+  Cindermaw (#28), Gloomdrake (#29), Cinderwight (#30)
+
+  Container contents:
+  Hi-Tonic, Stillwater Bead, Lucky Coin, Owl Pendant, 300 Gil
+
+The Bramble Labyrinth is where the story picks up speed. You arrive with
+Tamsin, Isolde and Wren, and almost immediately somebody asks you to do
+something unreasonable. If you skipped the side room earlier, now is a good
+time to regret it.
+
+Preparation: Put Wren in the Back Row. Physical attacks from the back do half
+damage, but Wren will be casting anyway, and you'll take half damage in return.
+
+Monster formations:
+
+(Outside)
+Cindermaw, Cindermaw (10/16)
+Gloomdrake, Cindermaw (6/16)
+
+(Inside)
+Cinderwight, Cinderwight, Gloomdrake (11/16)
+Gloomdrake, Cinderwight (5/16)
+
+Cindermaw enemies are the ones to watch. They have a habit of using !Lunge on
+whoever is lowest on HP, and around level 12 that can finish off a weakened
+mage. Gloomdrake absorbs Holy, so check your MT spells before you fire them
+off. As for Cinderwight, it is a self-destructive little thing with a 33 %
+chance to hurt itself whenever you hit it without killing it.
+
+Hidden Items: There's a Smoke Bomb in the barrel behind the well, and a Owl
+Pendant in the clock of the mayor's house. Leave the chest in the cellar alone
+for now; its contents change into something much better later in the game, and
+you'll come back this way anyway.
+
+When you're ready, head west out of Vell's Crossing. The _Ember_Crown_ itself
+is mentioned for the first time here, in a conversation that is easy to miss.
+It's worth reading *all* of it.
+
+-------------------------------------------------------------------------------
+ 3.4.1   Brindlehook
+**********************************
+
+  Opponents:
+  Wispsnapper (#31), Rustcrawler (#32), Hollowgolem (#33)
+
+  Container contents:
+  Stillwater Bead, Swift Boots, Owl Pendant, Smelling Salts, 800 Gil
+
+Brindlehook is where the story picks up speed. You arrive with Pell, Corvin and
+Wren, and almost immediately somebody asks you to do something unreasonable.
+Bring a snack; this part takes a while.
+
+Preparation: Put Wren in the Back Row. Physical attacks from the back do half
+damage, but Wren will be casting anyway, and you'll take half damage in return.
+
+Monster formations:
+
+(Outside)
+Wispsnapper, Wispsnapper (10/16)
+Rustcrawler, Wispsnapper (6/16)
+
+(Inside)
+Hollowgolem, Hollowgolem, Rustcrawler (11/16)
+Rustcrawler, Hollowgolem (5/16)
+
+Wispsnapper enemies are the ones to watch. They have a habit of using !Lunge on
+whoever is lowest on HP, and around level 13 that can finish off a weakened
+mage. Rustcrawler absorbs Holy, so check your MT spells before you fire them
+off. As for Hollowgolem, it is a self-destructive little thing with a 33 %
+chance to hurt itself whenever you hit it without killing it.
+
+Item Shop:
+Antivenom               45
+Hi-Tonic               250
+Smelling Salts          90
+Smoke Bomb             150
+Warp Shard             700
+Ether Drop            1200
+ Stock up on Tonics. Nothing else here is urgent, and you'll want the money for
+the weapon shop.
+
+Weapon Shop:
+Oak Staff             6000
+Hunting Bow            800
+Ember Lance           6000
+Iron Rapier           7200
+ Buy the Iron Rapier for Pell if you can afford it. It's a large upgrade.
+
+Innkeeper: Rooms are 80 Gil. Breakfast is extra, and it's mostly porridge.
+Pell: We'll take two.
+
+Hidden Items: There's a Warp Shard in the barrel behind the well, and a Lucky
+Coin in the clock of the mayor's house. Leave the chest in the cellar alone for
+now; its contents change into something much better later in the game, and
+you'll come back this way anyway.
+
+When you're ready, head north out of Brindlehook. The _Ember_Crown_ itself is
+mentioned for the first time here, in a conversation that is easy to miss. It's
+worth reading *all* of it.
+
+-------------------------------------------------------------------------------
+ 3.4.2   Traveling to the Sunken Abbey
+**********************************
+
+  Opponents:
+  Mosssnapper (#34), Mudlurker (#35), Brinemaw (#36)
+
+  Container contents:
+  Hi-Tonic, Ward Charm, Eye Balm, Phoenix Quill, 2800 Gil
+
+Traveling to the Sunken Abbey is where the story picks up speed. You arrive
+with Tamsin, Isolde and Maro, and almost immediately somebody asks you to do
+something unreasonable. If you skipped the side room earlier, now is a good
+time to regret it.
+
+Preparation: Put Maro in the Back Row. Physical attacks from the back do half
+damage, but Maro will be casting anyway, and you'll take half damage in return.
+
+Monster formations:
+
+(Outside)
+Mosssnapper, Mosssnapper (10/16)
+Mudlurker, Mosssnapper (6/16)
+
+(Inside)
+Brinemaw, Brinemaw, Mudlurker (11/16)
+Mudlurker, Brinemaw (5/16)
+
+Mosssnapper enemies are the ones to watch. They have a habit of using !Lunge on
+whoever is lowest on HP, and around level 14 that can finish off a weakened
+mage. Mudlurker absorbs Fire, so check your MT spells before you fire them off.
+As for Brinemaw, it is a self-destructive little thing with a 33 % chance to
+hurt itself whenever you hit it without killing it.
+
+At the crossroads you'll get two options:
+         Take the cliff path.
+         Take the river path.
+The cliff path is shorter but has twice as many encounters. The river path has
+a hidden chest behind the waterfall with a Ward Charm, which is worth the
+detour.
+
+Hidden Items: There's a Phoenix Quill in the barrel behind the well, and a Iron
+Will Ring in the clock of the mayor's house. Leave the chest in the cellar
+alone for now; its contents change into something much better later in the
+game, and you'll come back this way anyway.
+
+When you're ready, head south out of Brindlehook. The _Ember_Crown_ itself is
+mentioned for the first time here, in a conversation that is easy to miss. It's
+worth reading *all* of it.
+
+-------------------------------------------------------------------------------
+ 3.4.3   The Sunken Abbey
+**********************************
+
+  Opponents:
+  Hollowbeak (#37), Emberlurker (#38), Emberbeak (#39)
+
+  Container contents:
+  Tonic, Ward Charm, Stillwater Bead, Camp Kit, 2400 Gil
+
+The Sunken Abbey is where the story picks up speed. You arrive with Tamsin,
+Corvin and Wren, and almost immediately somebody asks you to do something
+unreasonable. Save before you open that door. Trust me on this one.
+
+Preparation: Put Wren in the Back Row. Physical attacks from the back do half
+damage, but Wren will be casting anyway, and you'll take half damage in return.
+
+Monster formations:
+
+(Outside)
+Hollowbeak, Hollowbeak (10/16)
+Emberlurker, Hollowbeak (6/16)
+
+(Inside)
+Emberbeak, Emberbeak, Emberlurker (11/16)
+Emberlurker, Emberbeak (5/16)
+
+Hollowbeak enemies are the ones to watch. They have a habit of using !Lunge on
+whoever is lowest on HP, and around level 15 that can finish off a weakened
+mage. Emberlurker absorbs Holy, so check your MT spells before you fire them
+off. As for Emberbeak, it is a self-destructive little thing with a 33 % chance
+to hurt itself whenever you hit it without killing it.
+
+Hidden Items: There's a Tonic in the barrel behind the well, and a Owl Pendant
+in the clock of the mayor's house. Leave the chest in the cellar alone for now;
+its contents change into something much better later in the game, and you'll
+come back this way anyway.
+
+When you're ready, head north out of Brindlehook. The _Ember_Crown_ itself is
+mentioned for the first time here, in a conversation that is easy to miss. It's
+worth reading *all* of it.
+
+-------------------------------------------------------------------------------
+ 3.4.4   The battle with the Hollowdrake Queen
+**********************************
+
+Hollowdrake Queen waits at the bottom of the stairs, and the game is not subtle
+about it: the floor is covered in the bones of adventurers who did not read
+this section first.
+
+Hollowdrake Queen
+Level: 20, HP: 81900, MP: 640
+Steal: Antivenom (rare), Hi-Tonic (common), Win: Eye Balm (always)
+Weakness: Ice
+Special: !Spit: sets Stop, Attack x 1.5
+Vulnerable to: Doom, Petrify, Slow
+Attacks: Attack, Tidal Rush, Rockfall
+
+Open with Tamsin casting a Ice spell; it does nearly double damage. Keep Wren
+on healing duty, because the second phase starts with an MT attack that will
+flatten anyone below about 480 HP. When Hollowdrake Queen says "You cannot burn
+what is already ash!", it is about to switch to its counter-attack pattern, so
+stop using physical attacks for one turn.
+
+Note: if you are beyond the shame of any adventurer, you can steal a rare item
+here with enough patience. It costs about twenty minutes and most of your
+dignity.
+
+-------------------------------------------------------------------------------
+ 3.5.1   Orrin Keep
+**********************************
+
+  Opponents:
+  Frostlurker (#43), Rustknight (#44), Gravedrake (#45)
+
+  Container contents:
+  Antivenom, Stillwater Bead, Lucky Coin, Smoke Bomb, 1500 Gil
+
+Orrin Keep is where the story picks up speed. You arrive with Wren, Corvin and
+Maro, and almost immediately somebody asks you to do something unreasonable.
+Yes, the music here is the best in the game. No, I will not be taking
+questions.
+
+Preparation: Put Maro in the Back Row. Physical attacks from the back do half
+damage, but Maro will be casting anyway, and you'll take half damage in return.
+
+Monster formations:
+
+(Outside)
+Frostlurker, Frostlurker (10/16)
+Rustknight, Frostlurker (6/16)
+
+(Inside)
+Gravedrake, Gravedrake, Rustknight (11/16)
+Rustknight, Gravedrake (5/16)
+
+Frostlurker enemies are the ones to watch. They have a habit of using !Lunge on
+whoever is lowest on HP, and around level 16 that can finish off a weakened
+mage. Rustknight absorbs Bolt, so check your MT spells before you fire them
+off. As for Gravedrake, it is a self-destructive little thing with a 33 %
+chance to hurt itself whenever you hit it without killing it.
+
+Item Shop:
+Antivenom               45
+Ether Drop            1200
+Camp Kit               900
+Smoke Bomb             150
+Smelling Salts          90
+Tonic                   40
+ Stock up on Tonics. Nothing else here is urgent, and you'll want the money for
+the weapon shop.
+
+Weapon Shop:
+Steel Glaive          8250
+Storm Spear           5000
+Hunting Bow           9250
+Iron Rapier           2000
+ Buy the Iron Rapier for Wren if you can afford it. It's a large upgrade.
+
+Innkeeper: Rooms are 100 Gil. Breakfast is extra, and it's mostly porridge.
+Wren: We'll take two.
+
+Hidden Items: There's a Ether Drop in the barrel behind the well, and a Owl
+Pendant in the clock of the mayor's house. Leave the chest in the cellar alone
+for now; its contents change into something much better later in the game, and
+you'll come back this way anyway.
+
+When you're ready, head south out of Orrin Keep. The _Ember_Crown_ itself is
+mentioned for the first time here, in a conversation that is easy to miss. It's
+worth reading *all* of it.
+
+-------------------------------------------------------------------------------
+ 3.5.2   Traveling to the Copper Mine
+**********************************
+
+  Opponents:
+  Brinehound (#46), Mudbeak (#47), Rusthound (#48)
+
+  Container contents:
+  Ether Drop, Ward Charm, Iron Will Ring, Smelling Salts, 600 Gil
+
+Traveling to the Copper Mine is where the story picks up speed. You arrive with
+Corvin, Wren and Tamsin, and almost immediately somebody asks you to do
+something unreasonable. Bring a snack; this part takes a while.
+
+Preparation: Put Tamsin in the Back Row. Physical attacks from the back do half
+damage, but Tamsin will be casting anyway, and you'll take half damage in
+return.
+
+Monster formations:
+
+(Outside)
+Brinehound, Brinehound (10/16)
+Mudbeak, Brinehound (6/16)
+
+(Inside)
+Rusthound, Rusthound, Mudbeak (11/16)
+Mudbeak, Rusthound (5/16)
+
+Brinehound enemies are the ones to watch. They have a habit of using !Lunge on
+whoever is lowest on HP, and around level 17 that can finish off a weakened
+mage. Mudbeak absorbs Fire, so check your MT spells before you fire them off.
+As for Rusthound, it is a self-destructive little thing with a 33 % chance to
+hurt itself whenever you hit it without killing it.
+
+At the crossroads you'll get two options:
+         Take the cliff path.
+         Take the river path.
+The cliff path is shorter but has twice as many encounters. The river path has
+a hidden chest behind the waterfall with a Ward Charm, which is worth the
+detour.
+
+Hidden Items: There's a Tonic in the barrel behind the well, and a Ward Charm
+in the clock of the mayor's house. Leave the chest in the cellar alone for now;
+its contents change into something much better later in the game, and you'll
+come back this way anyway.
+
+When you're ready, head south out of Orrin Keep. The _Ember_Crown_ itself is
+mentioned for the first time here, in a conversation that is easy to miss. It's
+worth reading *all* of it.
+
+-------------------------------------------------------------------------------
+ 3.5.3   The Copper Mine
+**********************************
+
+  Opponents:
+  Emberdrake (#49), Thornmoth (#50), Rustsnapper (#51)
+
+  Container contents:
+  Smelling Salts, Ward Charm, Warp Shard, Camp Kit, 2100 Gil
+
+The Copper Mine is where the story picks up speed. You arrive with Wren, Isolde
+and Corvin, and almost immediately somebody asks you to do something
+unreasonable. Save before you open that door. Trust me on this one.
+
+Preparation: Put Corvin in the Back Row. Physical attacks from the back do half
+damage, but Corvin will be casting anyway, and you'll take half damage in
+return.
+
+Monster formations:
+
+(Outside)
+Emberdrake, Emberdrake (10/16)
+Thornmoth, Emberdrake (6/16)
+
+(Inside)
+Rustsnapper, Rustsnapper, Thornmoth (11/16)
+Thornmoth, Rustsnapper (5/16)
+
+Emberdrake enemies are the ones to watch. They have a habit of using !Lunge on
+whoever is lowest on HP, and around level 18 that can finish off a weakened
+mage. Thornmoth absorbs Holy, so check your MT spells before you fire them off.
+As for Rustsnapper, it is a self-destructive little thing with a 33 % chance to
+hurt itself whenever you hit it without killing it.
+
+Hidden Items: There's a Camp Kit in the barrel behind the well, and a Swift
+Boots in the clock of the mayor's house. Leave the chest in the cellar alone
+for now; its contents change into something much better later in the game, and
+you'll come back this way anyway.
+
+When you're ready, head east out of Orrin Keep. The _Ember_Crown_ itself is
+mentioned for the first time here, in a conversation that is easy to miss. It's
+worth reading *all* of it.
+
+-------------------------------------------------------------------------------
+ 3.6.1   Duskwater
+**********************************
+
+  Opponents:
+  Wispcrawler (#52), Mossdrake (#53), Frostgolem (#54)
+
+  Container contents:
+  Hi-Tonic, Ward Charm, Antivenom, Stillwater Bead, 1100 Gil
+
+Duskwater is where the story picks up speed. You arrive with Corvin, Isolde and
+Tamsin, and almost immediately somebody asks you to do something unreasonable.
+Save before you open that door. Trust me on this one.
+
+Preparation: Put Tamsin in the Back Row. Physical attacks from the back do half
+damage, but Tamsin will be casting anyway, and you'll take half damage in
+return.
+
+Monster formations:
+
+(Outside)
+Wispcrawler, Wispcrawler (10/16)
+Mossdrake, Wispcrawler (6/16)
+
+(Inside)
+Frostgolem, Frostgolem, Mossdrake (11/16)
+Mossdrake, Frostgolem (5/16)
+
+Wispcrawler enemies are the ones to watch. They have a habit of using !Lunge on
+whoever is lowest on HP, and around level 19 that can finish off a weakened
+mage. Mossdrake absorbs Earth, so check your MT spells before you fire them
+off. As for Frostgolem, it is a self-destructive little thing with a 33 %
+chance to hurt itself whenever you hit it without killing it.
+
+Item Shop:
+Ether Drop            1200
+Phoenix Quill          600
+Smoke Bomb             150
+Tonic                   40
+Smelling Salts          90
+Antivenom               45
+ Stock up on Tonics. Nothing else here is urgent, and you'll want the money for
+the weapon shop.
+
+Weapon Shop:
+Steel Glaive         12000
+Crown Edge            6000
+Oak Staff            11100
+Ember Lance           6000
+ Buy the Ember Lance for Corvin if you can afford it. It's a large upgrade.
+
+Innkeeper: Rooms are 120 Gil. Breakfast is extra, and it's mostly porridge.
+Corvin: We'll take two.
+
+Hidden Items: There's a Tonic in the barrel behind the well, and a Lucky Coin
+in the clock of the mayor's house. Leave the chest in the cellar alone for now;
+its contents change into something much better later in the game, and you'll
+come back this way anyway.
+
+When you're ready, head north out of Duskwater. The _Ember_Crown_ itself is
+mentioned for the first time here, in a conversation that is easy to miss. It's
+worth reading *all* of it.
+
+-------------------------------------------------------------------------------
+ 3.6.2   Traveling to the Lighthouse Ruins
+**********************************
+
+  Opponents:
+  Mosshound (#55), Cindergolem (#56), Gravetoad (#57)
+
+  Container contents:
+  Stillwater Bead, Swift Boots, Lucky Coin, Smoke Bomb, 1200 Gil
+
+Traveling to the Lighthouse Ruins is where the story picks up speed. You arrive
+with Corvin, Pell and Maro, and almost immediately somebody asks you to do
+something unreasonable. Yes, the music here is the best in the game. No, I will
+not be taking questions.
+
+Preparation: Put Maro in the Back Row. Physical attacks from the back do half
+damage, but Maro will be casting anyway, and you'll take half damage in return.
+
+Monster formations:
+
+(Outside)
+Mosshound, Mosshound (10/16)
+Cindergolem, Mosshound (6/16)
+
+(Inside)
+Gravetoad, Gravetoad, Cindergolem (11/16)
+Cindergolem, Gravetoad (5/16)
+
+Mosshound enemies are the ones to watch. They have a habit of using !Lunge on
+whoever is lowest on HP, and around level 20 that can finish off a weakened
+mage. Cindergolem absorbs Holy, so check your MT spells before you fire them
+off. As for Gravetoad, it is a self-destructive little thing with a 33 % chance
+to hurt itself whenever you hit it without killing it.
+
+At the crossroads you'll get two options:
+         Take the cliff path.
+         Take the river path.
+The cliff path is shorter but has twice as many encounters. The river path has
+a hidden chest behind the waterfall with a Ward Charm, which is worth the
+detour.
+
+Hidden Items: There's a Warp Shard in the barrel behind the well, and a
+Stillwater Bead in the clock of the mayor's house. Leave the chest in the
+cellar alone for now; its contents change into something much better later in
+the game, and you'll come back this way anyway.
+
+When you're ready, head north out of Duskwater. The _Ember_Crown_ itself is
+mentioned for the first time here, in a conversation that is easy to miss. It's
+worth reading *all* of it.
+
+-------------------------------------------------------------------------------
+ 3.6.3   The Lighthouse Ruins
+**********************************
+
+  Opponents:
+  Brineknight (#58), Thornwight (#59), Mosslurker (#60)
+
+  Container contents:
+  Lucky Coin, Ward Charm, Ether Drop, Antivenom, 2700 Gil
+
+The Lighthouse Ruins is where the story picks up speed. You arrive with Pell,
+Wren and Corvin, and almost immediately somebody asks you to do something
+unreasonable. Save before you open that door. Trust me on this one.
+
+Preparation: Put Corvin in the Back Row. Physical attacks from the back do half
+damage, but Corvin will be casting anyway, and you'll take half damage in
+return.
+
+Monster formations:
+
+(Outside)
+Brineknight, Brineknight (10/16)
+Thornwight, Brineknight (6/16)
+
+(Inside)
+Mosslurker, Mosslurker, Thornwight (11/16)
+Thornwight, Mosslurker (5/16)
+
+Brineknight enemies are the ones to watch. They have a habit of using !Lunge on
+whoever is lowest on HP, and around level 21 that can finish off a weakened
+mage. Thornwight absorbs Poison, so check your MT spells before you fire them
+off. As for Mosslurker, it is a self-destructive little thing with a 33 %
+chance to hurt itself whenever you hit it without killing it.
+
+Hidden Items: There's a Smoke Bomb in the barrel behind the well, and a Iron
+Will Ring in the clock of the mayor's house. Leave the chest in the cellar
+alone for now; its contents change into something much better later in the
+game, and you'll come back this way anyway.
+
+When you're ready, head west out of Duskwater. The _Ember_Crown_ itself is
+mentioned for the first time here, in a conversation that is easy to miss. It's
+worth reading *all* of it.
+
+-------------------------------------------------------------------------------
+ 3.6.4   The battle with the Wispsnapper Queen
+**********************************
+
+Wispsnapper Queen waits at the bottom of the stairs, and the game is not subtle
+about it: the floor is covered in the bones of adventurers who did not read
+this section first.
+
+Wispsnapper Queen
+Level: 26, HP: 93600, MP: 208
+Steal: Ether Drop (rare), Smoke Bomb (common), Win: Ether Drop (always)
+Weakness: Holy
+Special: !Spit: sets Slow, Attack x 1.5
+Vulnerable to: Silence, Sleep, Doom, Confuse
+Attacks: Attack, Gale Slash, Tidal Rush
+
+Open with Maro casting a Holy spell; it does nearly double damage. Keep Pell on
+healing duty, because the second phase starts with an MT attack that will
+flatten anyone below about 660 HP. When Wispsnapper Queen says "You cannot burn
+what is already ash!", it is about to switch to its counter-attack pattern, so
+stop using physical attacks for one turn.
+
+Note: if you are beyond the shame of any adventurer, you can steal a rare item
+here with enough patience. It costs about twenty minutes and most of your
+dignity.
+
+-------------------------------------------------------------------------------
+ 3.7.1   Kettle Hollow
+**********************************
+
+  Opponents:
+  Wispbeak (#4), Rustmoth (#5), Gravegolem (#6)
+
+  Container contents:
+  Ward Charm, Swift Boots, Camp Kit, Smelling Salts, 1800 Gil
+
+Kettle Hollow is where the story picks up speed. You arrive with Maro, Corvin
+and Tamsin, and almost immediately somebody asks you to do something
+unreasonable. Bring a snack; this part takes a while.
+
+Preparation: Put Tamsin in the Back Row. Physical attacks from the back do half
+damage, but Tamsin will be casting anyway, and you'll take half damage in
+return.
+
+Monster formations:
+
+(Outside)
+Wispbeak, Wispbeak (10/16)
+Rustmoth, Wispbeak (6/16)
+
+(Inside)
+Gravegolem, Gravegolem, Rustmoth (11/16)
+Rustmoth, Gravegolem (5/16)
+
+Wispbeak enemies are the ones to watch. They have a habit of using !Lunge on
+whoever is lowest on HP, and around level 22 that can finish off a weakened
+mage. Rustmoth absorbs Bolt, so check your MT spells before you fire them off.
+As for Gravegolem, it is a self-destructive little thing with a 33 % chance to
+hurt itself whenever you hit it without killing it.
+
+Item Shop:
+Warp Shard             700
+Camp Kit               900
+Phoenix Quill          600
+Eye Balm                60
+Antivenom               45
+Ether Drop            1200
+ Stock up on Tonics. Nothing else here is urgent, and you'll want the money for
+the weapon shop.
+
+Weapon Shop:
+Tin Sabre             9450
+Quartz Rod           12250
+Oak Staff            11200
+Moonsilver Blade      1400
+ Buy the Moonsilver Blade for Maro if you can afford it. It's a large upgrade.
+
+Innkeeper: Rooms are 140 Gil. Breakfast is extra, and it's mostly porridge.
+Maro: We'll take two.
+
+Hidden Items: There's a Hi-Tonic in the barrel behind the well, and a Swift
+Boots in the clock of the mayor's house. Leave the chest in the cellar alone
+for now; its contents change into something much better later in the game, and
+you'll come back this way anyway.
+
+When you're ready, head east out of Kettle Hollow. The _Ember_Crown_ itself is
+mentioned for the first time here, in a conversation that is easy to miss. It's
+worth reading *all* of it.
+
+-------------------------------------------------------------------------------
+ 3.7.2   Traveling to the Frostbite Pass
+**********************************
+
+  Opponents:
+  Brinemoth (#7), Wispmaw (#8), Gloommoth (#9)
+
+  Container contents:
+  Tonic, Ward Charm, Stillwater Bead, Smoke Bomb, 300 Gil
+
+Traveling to the Frostbite Pass is where the story picks up speed. You arrive
+with Corvin, Tamsin and Wren, and almost immediately somebody asks you to do
+something unreasonable. Save before you open that door. Trust me on this one.
+
+Preparation: Put Wren in the Back Row. Physical attacks from the back do half
+damage, but Wren will be casting anyway, and you'll take half damage in return.
+
+Monster formations:
+
+(Outside)
+Brinemoth, Brinemoth (10/16)
+Wispmaw, Brinemoth (6/16)
+
+(Inside)
+Gloommoth, Gloommoth, Wispmaw (11/16)
+Wispmaw, Gloommoth (5/16)
+
+Brinemoth enemies are the ones to watch. They have a habit of using !Lunge on
+whoever is lowest on HP, and around level 23 that can finish off a weakened
+mage. Wispmaw absorbs Fire, so check your MT spells before you fire them off.
+As for Gloommoth, it is a self-destructive little thing with a 33 % chance to
+hurt itself whenever you hit it without killing it.
+
+At the crossroads you'll get two options:
+         Take the cliff path.
+         Take the river path.
+The cliff path is shorter but has twice as many encounters. The river path has
+a hidden chest behind the waterfall with a Ward Charm, which is worth the
+detour.
+
+Hidden Items: There's a Smoke Bomb in the barrel behind the well, and a
+Stillwater Bead in the clock of the mayor's house. Leave the chest in the
+cellar alone for now; its contents change into something much better later in
+the game, and you'll come back this way anyway.
+
+When you're ready, head south out of Kettle Hollow. The _Ember_Crown_ itself is
+mentioned for the first time here, in a conversation that is easy to miss. It's
+worth reading *all* of it.
+
+-------------------------------------------------------------------------------
+ 3.7.3   The Frostbite Pass
+**********************************
+
+  Opponents:
+  Gravemoth (#10), Gloomlurker (#11), Wisptoad (#12)
+
+  Container contents:
+  Eye Balm, Ether Drop, Smoke Bomb, Ward Charm, 1100 Gil
+
+The Frostbite Pass is where the story picks up speed. You arrive with Corvin,
+Maro and Isolde, and almost immediately somebody asks you to do something
+unreasonable. If you skipped the side room earlier, now is a good time to
+regret it.
+
+Preparation: Put Isolde in the Back Row. Physical attacks from the back do half
+damage, but Isolde will be casting anyway, and you'll take half damage in
+return.
+
+Monster formations:
+
+(Outside)
+Gravemoth, Gravemoth (10/16)
+Gloomlurker, Gravemoth (6/16)
+
+(Inside)
+Wisptoad, Wisptoad, Gloomlurker (11/16)
+Gloomlurker, Wisptoad (5/16)
+
+Gravemoth enemies are the ones to watch. They have a habit of using !Lunge on
+whoever is lowest on HP, and around level 24 that can finish off a weakened
+mage. Gloomlurker absorbs Wind, so check your MT spells before you fire them
+off. As for Wisptoad, it is a self-destructive little thing with a 33 % chance
+to hurt itself whenever you hit it without killing it.
+
+Hidden Items: There's a Smoke Bomb in the barrel behind the well, and a Owl
+Pendant in the clock of the mayor's house. Leave the chest in the cellar alone
+for now; its contents change into something much better later in the game, and
+you'll come back this way anyway.
+
+When you're ready, head south out of Kettle Hollow. The _Ember_Crown_ itself is
+mentioned for the first time here, in a conversation that is easy to miss. It's
+worth reading *all* of it.
+
+-------------------------------------------------------------------------------
+ 3.7.4   The Clockwork Vault puzzle, explained slowly and with considerable patience for everyone involved
+**********************************
+
+The vault has four dials, and each one rotates the two next to it. The game
+never explains this. Set them in this order:
+
+Dial         Turns   Facing
+North        2       Sun
+East         1       Moon
+South        3       Star
+West         0       Sun
+
+If you get it wrong, a Rustgolem drops from the ceiling. It is not hard, just
+embarrassing.
+
+-------------------------------------------------------------------------------
+ 3.8.1   Tamsin Bay
+**********************************
+
+  Opponents:
+  Hollowhound (#16), Frostmaw (#17), Thorngolem (#18)
+
+  Container contents:
+  Antivenom, Camp Kit, Iron Will Ring, Owl Pendant, 900 Gil
+
+Tamsin Bay is where the story picks up speed. You arrive with Maro, Tamsin and
+Pell, and almost immediately somebody asks you to do something unreasonable.
+The developers clearly had a deadline when they built this floor.
+
+Preparation: Put Pell in the Back Row. Physical attacks from the back do half
+damage, but Pell will be casting anyway, and you'll take half damage in return.
+
+Monster formations:
+
+(Outside)
+Hollowhound, Hollowhound (10/16)
+Frostmaw, Hollowhound (6/16)
+
+(Inside)
+Thorngolem, Thorngolem, Frostmaw (11/16)
+Frostmaw, Thorngolem (5/16)
+
+Hollowhound enemies are the ones to watch. They have a habit of using !Lunge on
+whoever is lowest on HP, and around level 25 that can finish off a weakened
+mage. Frostmaw absorbs Ice, so check your MT spells before you fire them off.
+As for Thorngolem, it is a self-destructive little thing with a 33 % chance to
+hurt itself whenever you hit it without killing it.
+
+Item Shop:
+Antivenom               45
+Tonic                   40
+Smelling Salts          90
+Smoke Bomb             150
+Eye Balm                60
+Ether Drop            1200
+ Stock up on Tonics. Nothing else here is urgent, and you'll want the money for
+the weapon shop.
+
+Weapon Shop:
+Storm Spear           5600
+Steel Glaive          2800
+Quartz Rod            1200
+Thorn Whip           14800
+ Buy the Thorn Whip for Maro if you can afford it. It's a large upgrade.
+
+Innkeeper: Rooms are 160 Gil. Breakfast is extra, and it's mostly porridge.
+Maro: We'll take two.
+
+Hidden Items: There's a Ether Drop in the barrel behind the well, and a Lucky
+Coin in the clock of the mayor's house. Leave the chest in the cellar alone for
+now; its contents change into something much better later in the game, and
+you'll come back this way anyway.
+
+When you're ready, head west out of Tamsin Bay. The _Ember_Crown_ itself is
+mentioned for the first time here, in a conversation that is easy to miss. It's
+worth reading *all* of it.
+
+-------------------------------------------------------------------------------
+ 3.8.2   Traveling to the Hollow Oak
+**********************************
+
+  Opponents:
+  Graveknight (#19), Hollowwight (#20), Hollowdrake (#21)
+
+  Container contents:
+  Stillwater Bead, Camp Kit, Hi-Tonic, Phoenix Quill, 300 Gil
+
+Traveling to the Hollow Oak is where the story picks up speed. You arrive with
+Wren, Isolde and Corvin, and almost immediately somebody asks you to do
+something unreasonable. Bring a snack; this part takes a while.
+
+Preparation: Put Corvin in the Back Row. Physical attacks from the back do half
+damage, but Corvin will be casting anyway, and you'll take half damage in
+return.
+
+Monster formations:
+
+(Outside)
+Graveknight, Graveknight (10/16)
+Hollowwight, Graveknight (6/16)
+
+(Inside)
+Hollowdrake, Hollowdrake, Hollowwight (11/16)
+Hollowwight, Hollowdrake (5/16)
+
+Graveknight enemies are the ones to watch. They have a habit of using !Lunge on
+whoever is lowest on HP, and around level 26 that can finish off a weakened
+mage. Hollowwight absorbs Water, so check your MT spells before you fire them
+off. As for Hollowdrake, it is a self-destructive little thing with a 33 %
+chance to hurt itself whenever you hit it without killing it.
+
+At the crossroads you'll get two options:
+         Take the cliff path.
+         Take the river path.
+The cliff path is shorter but has twice as many encounters. The river path has
+a hidden chest behind the waterfall with a Ward Charm, which is worth the
+detour.
+
+Hidden Items: There's a Warp Shard in the barrel behind the well, and a Iron
+Will Ring in the clock of the mayor's house. Leave the chest in the cellar
+alone for now; its contents change into something much better later in the
+game, and you'll come back this way anyway.
+
+When you're ready, head south out of Tamsin Bay. The _Ember_Crown_ itself is
+mentioned for the first time here, in a conversation that is easy to miss. It's
+worth reading *all* of it.
+
+-------------------------------------------------------------------------------
+ 3.8.3   The Hollow Oak
+**********************************
+
+  Opponents:
+  Cinderlurker (#22), Gloomtoad (#23), Embersnapper (#24)
+
+  Container contents:
+  Iron Will Ring, Smelling Salts, Warp Shard, Swift Boots, 200 Gil
+
+The Hollow Oak is where the story picks up speed. You arrive with Maro, Pell
+and Isolde, and almost immediately somebody asks you to do something
+unreasonable. Somebody on the message boards swears there's a secret here.
+There isn't.
+
+Preparation: Put Isolde in the Back Row. Physical attacks from the back do half
+damage, but Isolde will be casting anyway, and you'll take half damage in
+return.
+
+Monster formations:
+
+(Outside)
+Cinderlurker, Cinderlurker (10/16)
+Gloomtoad, Cinderlurker (6/16)
+
+(Inside)
+Embersnapper, Embersnapper, Gloomtoad (11/16)
+Gloomtoad, Embersnapper (5/16)
+
+Cinderlurker enemies are the ones to watch. They have a habit of using !Lunge
+on whoever is lowest on HP, and around level 27 that can finish off a weakened
+mage. Gloomtoad absorbs Earth, so check your MT spells before you fire them
+off. As for Embersnapper, it is a self-destructive little thing with a 33 %
+chance to hurt itself whenever you hit it without killing it.
+
+Hidden Items: There's a Eye Balm in the barrel behind the well, and a Owl
+Pendant in the clock of the mayor's house. Leave the chest in the cellar alone
+for now; its contents change into something much better later in the game, and
+you'll come back this way anyway.
+
+When you're ready, head north out of Tamsin Bay. The _Ember_Crown_ itself is
+mentioned for the first time here, in a conversation that is easy to miss. It's
+worth reading *all* of it.
+
+-------------------------------------------------------------------------------
+ 3.8.4   The battle with the Wispwight Queen
+**********************************
+
+Wispwight Queen waits at the bottom of the stairs, and the game is not subtle
+about it: the floor is covered in the bones of adventurers who did not read
+this section first.
+
+Wispwight Queen
+Level: 32, HP: 136800, MP: 608
+Steal: Camp Kit (rare), Warp Shard (common), Win: Eye Balm (always)
+Weakness: Wind
+Special: !Spit: sets Doom, Attack x 1.5
+Vulnerable to: Silence, Petrify, Slow
+Attacks: Attack, Chill Touch, Hex
+
+Open with Corvin casting a Wind spell; it does nearly double damage. Keep Pell
+on healing duty, because the second phase starts with an MT attack that will
+flatten anyone below about 840 HP. When Wispwight Queen says "You cannot burn
+what is already ash!", it is about to switch to its counter-attack pattern, so
+stop using physical attacks for one turn.
+
+Note: if you are beyond the shame of any adventurer, you can steal a rare item
+here with enough patience. It costs about twenty minutes and most of your
+dignity.
+
+-------------------------------------------------------------------------------
+ 3.9.1   Greywold
+**********************************
+
+  Opponents:
+  Cindermaw (#28), Gloomdrake (#29), Cinderwight (#30)
+
+  Container contents:
+  Swift Boots, Stillwater Bead, Hi-Tonic, Smoke Bomb, 1400 Gil
+
+Greywold is where the story picks up speed. You arrive with Pell, Wren and
+Corvin, and almost immediately somebody asks you to do something unreasonable.
+If you skipped the side room earlier, now is a good time to regret it.
+
+Preparation: Put Corvin in the Back Row. Physical attacks from the back do half
+damage, but Corvin will be casting anyway, and you'll take half damage in
+return.
+
+Monster formations:
+
+(Outside)
+Cindermaw, Cindermaw (10/16)
+Gloomdrake, Cindermaw (6/16)
+
+(Inside)
+Cinderwight, Cinderwight, Gloomdrake (11/16)
+Gloomdrake, Cinderwight (5/16)
+
+Cindermaw enemies are the ones to watch. They have a habit of using !Lunge on
+whoever is lowest on HP, and around level 28 that can finish off a weakened
+mage. Gloomdrake absorbs Ice, so check your MT spells before you fire them off.
+As for Cinderwight, it is a self-destructive little thing with a 33 % chance to
+hurt itself whenever you hit it without killing it.
+
+Item Shop:
+Warp Shard             700
+Antivenom               45
+Smoke Bomb             150
+Smelling Salts          90
+Camp Kit               900
+Hi-Tonic               250
+ Stock up on Tonics. Nothing else here is urgent, and you'll want the money for
+the weapon shop.
+
+Weapon Shop:
+Duskfang              4050
+Thorn Whip           15300
+Hunting Bow           9900
+Steel Glaive          3150
+ Buy the Steel Glaive for Pell if you can afford it. It's a large upgrade.
+
+Innkeeper: Rooms are 180 Gil. Breakfast is extra, and it's mostly porridge.
+Pell: We'll take two.
+
+Hidden Items: There's a Tonic in the barrel behind the well, and a Iron Will
+Ring in the clock of the mayor's house. Leave the chest in the cellar alone for
+now; its contents change into something much better later in the game, and
+you'll come back this way anyway.
+
+When you're ready, head north out of Greywold. The _Ember_Crown_ itself is
+mentioned for the first time here, in a conversation that is easy to miss. It's
+worth reading *all* of it.
+
+-------------------------------------------------------------------------------
+ 3.9.2   Traveling to the Clockwork Vault
+**********************************
+
+  Opponents:
+  Wispsnapper (#31), Rustcrawler (#32), Hollowgolem (#33)
+
+  Container contents:
+  Owl Pendant, Smoke Bomb, Swift Boots, Camp Kit, 2300 Gil
+
+Traveling to the Clockwork Vault is where the story picks up speed. You arrive
+with Corvin, Tamsin and Maro, and almost immediately somebody asks you to do
+something unreasonable. Bring a snack; this part takes a while.
+
+Preparation: Put Maro in the Back Row. Physical attacks from the back do half
+damage, but Maro will be casting anyway, and you'll take half damage in return.
+
+Monster formations:
+
+(Outside)
+Wispsnapper, Wispsnapper (10/16)
+Rustcrawler, Wispsnapper (6/16)
+
+(Inside)
+Hollowgolem, Hollowgolem, Rustcrawler (11/16)
+Rustcrawler, Hollowgolem (5/16)
+
+Wispsnapper enemies are the ones to watch. They have a habit of using !Lunge on
+whoever is lowest on HP, and around level 29 that can finish off a weakened
+mage. Rustcrawler absorbs Fire, so check your MT spells before you fire them
+off. As for Hollowgolem, it is a self-destructive little thing with a 33 %
+chance to hurt itself whenever you hit it without killing it.
+
+At the crossroads you'll get two options:
+         Take the cliff path.
+         Take the river path.
+The cliff path is shorter but has twice as many encounters. The river path has
+a hidden chest behind the waterfall with a Ward Charm, which is worth the
+detour.
+
+Hidden Items: There's a Tonic in the barrel behind the well, and a Ward Charm
+in the clock of the mayor's house. Leave the chest in the cellar alone for now;
+its contents change into something much better later in the game, and you'll
+come back this way anyway.
+
+When you're ready, head east out of Greywold. The _Ember_Crown_ itself is
+mentioned for the first time here, in a conversation that is easy to miss. It's
+worth reading *all* of it.
+
+-------------------------------------------------------------------------------
+ 3.9.3   The Clockwork Vault
+**********************************
+
+  Opponents:
+  Mosssnapper (#34), Mudlurker (#35), Brinemaw (#36)
+
+  Container contents:
+  Stillwater Bead, Warp Shard, Smoke Bomb, Tonic, 800 Gil
+
+The Clockwork Vault is where the story picks up speed. You arrive with Maro,
+Wren and Isolde, and almost immediately somebody asks you to do something
+unreasonable. Bring a snack; this part takes a while.
+
+Preparation: Put Isolde in the Back Row. Physical attacks from the back do half
+damage, but Isolde will be casting anyway, and you'll take half damage in
+return.
+
+Monster formations:
+
+(Outside)
+Mosssnapper, Mosssnapper (10/16)
+Mudlurker, Mosssnapper (6/16)
+
+(Inside)
+Brinemaw, Brinemaw, Mudlurker (11/16)
+Mudlurker, Brinemaw (5/16)
+
+Mosssnapper enemies are the ones to watch. They have a habit of using !Lunge on
+whoever is lowest on HP, and around level 30 that can finish off a weakened
+mage. Mudlurker absorbs Earth, so check your MT spells before you fire them
+off. As for Brinemaw, it is a self-destructive little thing with a 33 % chance
+to hurt itself whenever you hit it without killing it.
+
+Hidden Items: There's a Warp Shard in the barrel behind the well, and a Ward
+Charm in the clock of the mayor's house. Leave the chest in the cellar alone
+for now; its contents change into something much better later in the game, and
+you'll come back this way anyway.
+
+When you're ready, head south out of Greywold. The _Ember_Crown_ itself is
+mentioned for the first time here, in a conversation that is easy to miss. It's
+worth reading *all* of it.
+
+-------------------------------------------------------------------------------
+ 3.10.1  Lantern Rest
+**********************************
+
+  Opponents:
+  Hollowbeak (#37), Emberlurker (#38), Emberbeak (#39)
+
+  Container contents:
+  Swift Boots, Warp Shard, Owl Pendant, Eye Balm, 1000 Gil
+
+Lantern Rest is where the story picks up speed. You arrive with Maro, Tamsin
+and Isolde, and almost immediately somebody asks you to do something
+unreasonable. Bring a snack; this part takes a while.
+
+Preparation: Put Isolde in the Back Row. Physical attacks from the back do half
+damage, but Isolde will be casting anyway, and you'll take half damage in
+return.
+
+Monster formations:
+
+(Outside)
+Hollowbeak, Hollowbeak (10/16)
+Emberlurker, Hollowbeak (6/16)
+
+(Inside)
+Emberbeak, Emberbeak, Emberlurker (11/16)
+Emberlurker, Emberbeak (5/16)
+
+Hollowbeak enemies are the ones to watch. They have a habit of using !Lunge on
+whoever is lowest on HP, and around level 31 that can finish off a weakened
+mage. Emberlurker absorbs Poison, so check your MT spells before you fire them
+off. As for Emberbeak, it is a self-destructive little thing with a 33 % chance
+to hurt itself whenever you hit it without killing it.
+
+Item Shop:
+Ether Drop            1200
+Hi-Tonic               250
+Tonic                   40
+Eye Balm                60
+Warp Shard             700
+Smelling Salts          90
+ Stock up on Tonics. Nothing else here is urgent, and you'll want the money for
+the weapon shop.
+
+Weapon Shop:
+Crown Edge            8500
+Quartz Rod            6000
+Oak Staff             6500
+Iron Rapier           4500
+ Buy the Iron Rapier for Maro if you can afford it. It's a large upgrade.
+
+Innkeeper: Rooms are 200 Gil. Breakfast is extra, and it's mostly porridge.
+Maro: We'll take two.
+
+Hidden Items: There's a Warp Shard in the barrel behind the well, and a Ward
+Charm in the clock of the mayor's house. Leave the chest in the cellar alone
+for now; its contents change into something much better later in the game, and
+you'll come back this way anyway.
+
+When you're ready, head south out of Lantern Rest. The _Ember_Crown_ itself is
+mentioned for the first time here, in a conversation that is easy to miss. It's
+worth reading *all* of it.
+
+-------------------------------------------------------------------------------
+ 3.10.2  Traveling to the Ashen Spire
+**********************************
+
+  Opponents:
+  Gravecrawler (#40), Wispwight (#41), Wispknight (#42)
+
+  Container contents:
+  Phoenix Quill, Swift Boots, Ether Drop, Warp Shard, 1500 Gil
+
+Traveling to the Ashen Spire is where the story picks up speed. You arrive with
+Tamsin, Isolde and Wren, and almost immediately somebody asks you to do
+something unreasonable. If you skipped the side room earlier, now is a good
+time to regret it.
+
+Preparation: Put Wren in the Back Row. Physical attacks from the back do half
+damage, but Wren will be casting anyway, and you'll take half damage in return.
+
+Monster formations:
+
+(Outside)
+Gravecrawler, Gravecrawler (10/16)
+Wispwight, Gravecrawler (6/16)
+
+(Inside)
+Wispknight, Wispknight, Wispwight (11/16)
+Wispwight, Wispknight (5/16)
+
+Gravecrawler enemies are the ones to watch. They have a habit of using !Lunge
+on whoever is lowest on HP, and around level 32 that can finish off a weakened
+mage. Wispwight absorbs Holy, so check your MT spells before you fire them off.
+As for Wispknight, it is a self-destructive little thing with a 33 % chance to
+hurt itself whenever you hit it without killing it.
+
+At the crossroads you'll get two options:
+         Take the cliff path.
+         Take the river path.
+The cliff path is shorter but has twice as many encounters. The river path has
+a hidden chest behind the waterfall with a Ward Charm, which is worth the
+detour.
+
+Hidden Items: There's a Tonic in the barrel behind the well, and a Owl Pendant
+in the clock of the mayor's house. Leave the chest in the cellar alone for now;
+its contents change into something much better later in the game, and you'll
+come back this way anyway.
+
+When you're ready, head east out of Lantern Rest. The _Ember_Crown_ itself is
+mentioned for the first time here, in a conversation that is easy to miss. It's
+worth reading *all* of it.
+
+-------------------------------------------------------------------------------
+ 3.10.3  The Ashen Spire
+**********************************
+
+  Opponents:
+  Frostlurker (#43), Rustknight (#44), Gravedrake (#45)
+
+  Container contents:
+  Warp Shard, Iron Will Ring, Ward Charm, Camp Kit, 500 Gil
+
+The Ashen Spire is where the story picks up speed. You arrive with Isolde, Pell
+and Tamsin, and almost immediately somebody asks you to do something
+unreasonable. Save before you open that door. Trust me on this one.
+
+Preparation: Put Tamsin in the Back Row. Physical attacks from the back do half
+damage, but Tamsin will be casting anyway, and you'll take half damage in
+return.
+
+Monster formations:
+
+(Outside)
+Frostlurker, Frostlurker (10/16)
+Rustknight, Frostlurker (6/16)
+
+(Inside)
+Gravedrake, Gravedrake, Rustknight (11/16)
+Rustknight, Gravedrake (5/16)
+
+Frostlurker enemies are the ones to watch. They have a habit of using !Lunge on
+whoever is lowest on HP, and around level 33 that can finish off a weakened
+mage. Rustknight absorbs Wind, so check your MT spells before you fire them
+off. As for Gravedrake, it is a self-destructive little thing with a 33 %
+chance to hurt itself whenever you hit it without killing it.
+
+Hidden Items: There's a Smelling Salts in the barrel behind the well, and a
+Lucky Coin in the clock of the mayor's house. Leave the chest in the cellar
+alone for now; its contents change into something much better later in the
+game, and you'll come back this way anyway.
+
+When you're ready, head south out of Lantern Rest. The _Ember_Crown_ itself is
+mentioned for the first time here, in a conversation that is easy to miss. It's
+worth reading *all* of it.
+
+-------------------------------------------------------------------------------
+ 3.10.4  The battle with the Rustsnapper Queen
+**********************************
+
+Rustsnapper Queen waits at the bottom of the stairs, and the game is not subtle
+about it: the floor is covered in the bones of adventurers who did not read
+this section first.
+
+Rustsnapper Queen
+Level: 38, HP: 148770, MP: 1520
+Steal: Smoke Bomb (rare), Smoke Bomb (common), Win: Phoenix Quill (always)
+Weakness: Wind
+Special: !Crush: sets Sleep, Attack x 1.5
+Vulnerable to: Silence, Slow, Doom, Poison
+Attacks: Attack, Rockfall, Chill Touch
+
+Open with Pell casting a Wind spell; it does nearly double damage. Keep Tamsin
+on healing duty, because the second phase starts with an MT attack that will
+flatten anyone below about 1020 HP. When Rustsnapper Queen says "You cannot
+burn what is already ash!", it is about to switch to its counter-attack
+pattern, so stop using physical attacks for one turn.
+
+Note: if you are beyond the shame of any adventurer, you can steal a rare item
+here with enough patience. It costs about twenty minutes and most of your
+dignity.
+
+-------------------------------------------------------------------------------
+ 4.0     Shops and Equipment
+**********************************
+
+A quick reference of every shop's stock, by town. Prices are in Gil.
+
+Harrowgate Armor Shop:
+Rune Helm             1300
+Chain Shirt           1350
+Scale Mail             350
+Warden Plate          1450
+Silk Cloak            1350
+ The best value in Harrowgate is usually the cheapest helmet; armor upgrades
+come thick and fast.
+
+Harrowgate Relic Shop:
+Lucky Coin            2600
+Owl Pendant           2000
+Ward Charm            2700
+ Relics never go out of date, so buy them when you can.
+
+Saltmere Armor Shop:
+Feathered Hat          800
+Silk Cloak            1450
+Quilted Vest           450
+Warden Plate          1450
+Chain Shirt           1300
+ The best value in Saltmere is usually the cheapest helmet; armor upgrades come
+thick and fast.
+
+Saltmere Relic Shop:
+Stillwater Bead       3500
+Iron Will Ring        3100
+Lucky Coin            1900
+ Relics never go out of date, so buy them when you can.
+
+Vell's Crossing Armor Shop:
+Chain Shirt            300
+Buckler               1150
+Feathered Hat          550
+Rune Helm             1150
+Leather Cap            950
+ The best value in Vell's Crossing is usually the cheapest helmet; armor
+upgrades come thick and fast.
+
+Vell's Crossing Relic Shop:
+Owl Pendant           2100
+Stillwater Bead       2300
+Swift Boots           2500
+ Relics never go out of date, so buy them when you can.
+
+Brindlehook Armor Shop:
+Quilted Vest          1500
+Chain Shirt            600
+Feathered Hat         1200
+Warden Plate           150
+Rune Helm             1100
+ The best value in Brindlehook is usually the cheapest helmet; armor upgrades
+come thick and fast.
+
+Brindlehook Relic Shop:
+Ward Charm            3600
+Swift Boots           1700
+Stillwater Bead       4000
+ Relics never go out of date, so buy them when you can.
+
+Orrin Keep Armor Shop:
+Feathered Hat          450
+Warden Plate           100
+Chain Shirt           1000
+Leather Cap            950
+Silk Cloak             650
+ The best value in Orrin Keep is usually the cheapest helmet; armor upgrades
+come thick and fast.
+
+Orrin Keep Relic Shop:
+Ward Charm            2600
+Iron Will Ring        1200
+Owl Pendant           2400
+ Relics never go out of date, so buy them when you can.
+
+Duskwater Armor Shop:
+Leather Cap            800
+Scale Mail             500
+Warden Plate           850
+Mirror Shield          750
+Quilted Vest           600
+ The best value in Duskwater is usually the cheapest helmet; armor upgrades
+come thick and fast.
+
+Duskwater Relic Shop:
+Lucky Coin            3500
+Ward Charm            2400
+Iron Will Ring        3200
+ Relics never go out of date, so buy them when you can.
+
+-------------------------------------------------------------------------------
+ 5.0     Bestiary
+**********************************
+
+Every regular monster, in the order the in-game bestiary lists them.
+
+Hollowlurker (#1)
+Level: 34, HP: 433, MP: 1020
+Steal: Hi-Tonic (rare), Eye Balm (common), Win: Ether Drop (always)
+Weakness: Poison
+Special: !Lunge: sets Petrify, Attack x 1.5
+Vulnerable to: Confuse, Doom, Silence
+Attacks: Attack, Rockfall, Chill Touch
+
+Wispgolem (#2)
+Level: 23, HP: 368, MP: 138
+Steal: Hi-Tonic (rare), Hi-Tonic (common), Win: Smoke Bomb (always)
+Weakness: Water
+Special: !Gnaw: sets Petrify, Attack x 1.5
+Vulnerable to: Confuse, Sleep, Doom, Slow
+Attacks: Attack, Hex, Tidal Rush
+
+Hollowsnapper (#3)
+Level: 21, HP: 866, MP: 630
+Steal: Antivenom (rare), Smoke Bomb (common), Win: Tonic (always)
+Weakness: Earth
+Special: !Lunge: sets Silence, Attack x 1.5
+Vulnerable to: Doom, Sleep, Silence
+Attacks: Attack, Gale Slash, Rockfall
+
+Wispbeak (#4)
+Level: 13, HP: 578, MP: 442
+Steal: Smelling Salts (rare), Warp Shard (common), Win: Smelling Salts (always)
+Weakness: Earth
+Special: !Shriek: sets Poison, Attack x 1.5
+Vulnerable to: Doom, Confuse, Petrify
+Attacks: Attack, Cinder Breath, Hex
+
+Rustmoth (#5)
+Level: 35, HP: 1741, MP: 945
+Steal: Antivenom (rare), Phoenix Quill (common), Win: Warp Shard (always)
+Weakness: Fire
+Special: !Spit: sets Confuse, Attack x 1.5
+Vulnerable to: Petrify
+Attacks: Attack, Tidal Rush, Rockfall
+
+Gravegolem (#6)
+Level: 15, HP: 765, MP: 210
+Steal: Phoenix Quill (rare), Warp Shard (common), Win: Hi-Tonic (always)
+Weakness: Water
+Special: !Spit: sets Sleep, Attack x 1.5
+Vulnerable to: Silence
+Attacks: Attack, Hex, Gale Slash
+
+Brinemoth (#7)
+Level: 9, HP: 270, MP: 135
+Steal: Camp Kit (rare), Antivenom (common), Win: Camp Kit (always)
+Weakness: Earth
+Special: !Lunge: sets Blind, Attack x 1.5
+Vulnerable to: Blind
+Attacks: Attack, Chill Touch, Cinder Breath
+
+Wispmaw (#8)
+Level: 15, HP: 753, MP: 75
+Steal: Tonic (rare), Hi-Tonic (common), Win: Camp Kit (always)
+Weakness: Earth
+Special: !Crush: sets Sleep, Attack x 1.5
+Vulnerable to: Blind, Petrify, Silence
+Attacks: Attack, Tidal Rush, Gale Slash
+
+Gloommoth (#9)
+Level: 33, HP: 800, MP: 858
+Steal: Ether Drop (rare), Tonic (common), Win: Tonic (always)
+Weakness: Earth
+Special: !Gnaw: sets Stop, Attack x 1.5
+Vulnerable to: Petrify, Doom
+Attacks: Attack, Cinder Breath, Rockfall
+
+Gravemoth (#10)
+Level: 39, HP: 536, MP: 195
+Steal: Smelling Salts (rare), Ether Drop (common), Win: Smelling Salts (always)
+Weakness: Poison
+Special: !Crush: sets Slow, Attack x 1.5
+Vulnerable to: Blind, Slow
+Attacks: Attack, Hex, Tidal Rush
+
+Gloomlurker (#11)
+Level: 23, HP: 310, MP: 345
+Steal: Camp Kit (rare), Tonic (common), Win: Antivenom (always)
+Weakness: Ice
+Special: !Gnaw: sets Slow, Attack x 1.5
+Vulnerable to: Blind, Poison
+Attacks: Attack, Chill Touch, Cinder Breath
+
+Wisptoad (#12)
+Level: 44, HP: 1804, MP: 880
+Steal: Eye Balm (rare), Eye Balm (common), Win: Tonic (always)
+Weakness: Wind
+Special: !Spit: sets Confuse, Attack x 1.5
+Vulnerable to: Blind, Poison, Confuse, Silence
+Attacks: Attack, Hex, Rockfall
+
+Mossknight (#13)
+Level: 7, HP: 301, MP: 126
+Steal: Eye Balm (rare), Ether Drop (common), Win: Ether Drop (always)
+Weakness: Wind
+Special: !Lunge: sets Confuse, Attack x 1.5
+Vulnerable to: Sleep
+Attacks: Attack, Cinder Breath, Chill Touch
+
+Brinetoad (#14)
+Level: 13, HP: 464, MP: 520
+Steal: Warp Shard (rare), Ether Drop (common), Win: Ether Drop (always)
+Weakness: Fire
+Special: !Shriek: sets Stop, Attack x 1.5
+Vulnerable to: Blind
+Attacks: Attack, Cinder Breath, Tidal Rush
+
+Mudgolem (#15)
+Level: 29, HP: 2109, MP: 174
+Steal: Hi-Tonic (rare), Camp Kit (common), Win: Eye Balm (always)
+Weakness: Bolt
+Special: !Lunge: sets Doom, Attack x 1.5
+Vulnerable to: Silence
+Attacks: Attack, Hex, Gale Slash
+
+Hollowhound (#16)
+Level: 24, HP: 1776, MP: 576
+Steal: Antivenom (rare), Camp Kit (common), Win: Phoenix Quill (always)
+Weakness: Fire
+Special: !Spit: sets Slow, Attack x 1.5
+Vulnerable to: Poison, Confuse, Slow, Doom
+Attacks: Attack, Chill Touch, Rockfall
+
+Frostmaw (#17)
+Level: 21, HP: 729, MP: 672
+Steal: Smoke Bomb (rare), Smelling Salts (common), Win: Phoenix Quill (always)
+Weakness: Poison
+Special: !Crush: sets Blind, Attack x 1.5
+Vulnerable to: Silence
+Attacks: Attack, Gale Slash, Tidal Rush
+
+Thorngolem (#18)
+Level: 35, HP: 875, MP: 735
+Steal: Warp Shard (rare), Phoenix Quill (common), Win: Warp Shard (always)
+Weakness: Fire
+Special: !Lunge: sets Blind, Attack x 1.5
+Vulnerable to: Silence, Confuse
+Attacks: Attack, Tidal Rush, Hex
+
+Graveknight (#19)
+Level: 28, HP: 1806, MP: 588
+Steal: Smoke Bomb (rare), Smelling Salts (common), Win: Phoenix Quill (always)
+Weakness: Wind
+Special: !Shriek: sets Blind, Attack x 1.5
+Vulnerable to: Silence, Blind, Confuse, Stop
+Attacks: Attack, Rockfall, Cinder Breath
+
+Hollowwight (#20)
+Level: 22, HP: 599, MP: 330
+Steal: Antivenom (rare), Warp Shard (common), Win: Ether Drop (always)
+Weakness: Earth
+Special: !Gnaw: sets Confuse, Attack x 1.5
+Vulnerable to: Petrify, Confuse, Doom, Poison, Slow
+Attacks: Attack, Rockfall, Cinder Breath
+
+Hollowdrake (#21)
+Level: 24, HP: 918, MP: 648
+Steal: Antivenom (rare), Eye Balm (common), Win: Smelling Salts (always)
+Weakness: Bolt
+Special: !Crush: sets Poison, Attack x 1.5
+Vulnerable to: Blind, Confuse, Petrify, Poison
+Attacks: Attack, Gale Slash, Tidal Rush
+
+Cinderlurker (#22)
+Level: 40, HP: 2640, MP: 1480
+Steal: Phoenix Quill (rare), Smelling Salts (common), Win: Warp Shard (always)
+Weakness: Wind
+Special: !Spit: sets Stop, Attack x 1.5
+Vulnerable to: Silence, Slow, Sleep, Confuse
+Attacks: Attack, Tidal Rush, Rockfall
+
+Gloomtoad (#23)
+Level: 43, HP: 1988, MP: 731
+Steal: Smoke Bomb (rare), Phoenix Quill (common), Win: Warp Shard (always)
+Weakness: Poison
+Special: !Shriek: sets Petrify, Attack x 1.5
+Vulnerable to: Stop, Doom, Silence, Poison, Slow
+Attacks: Attack, Chill Touch, Tidal Rush
+
+Embersnapper (#24)
+Level: 9, HP: 339, MP: 135
+Steal: Hi-Tonic (rare), Antivenom (common), Win: Phoenix Quill (always)
+Weakness: Holy
+Special: !Spit: sets Stop, Attack x 1.5
+Vulnerable to: Silence, Sleep
+Attacks: Attack, Hex, Chill Touch
+
+Hollowcrawler (#25)
+Level: 23, HP: 730, MP: 506
+Steal: Ether Drop (rare), Eye Balm (common), Win: Tonic (always)
+Weakness: Water
+Special: !Shriek: sets Blind, Attack x 1.5
+Vulnerable to: Poison, Slow, Stop
+Attacks: Attack, Gale Slash, Chill Touch
+
+Gravesnapper (#26)
+Level: 12, HP: 504, MP: 216
+Steal: Antivenom (rare), Hi-Tonic (common), Win: Smoke Bomb (always)
+Weakness: Wind
+Special: !Spit: sets Sleep, Attack x 1.5
+Vulnerable to: Blind, Slow
+Attacks: Attack, Rockfall, Gale Slash
+
+Mudtoad (#27)
+Level: 13, HP: 854, MP: 104
+Steal: Eye Balm (rare), Tonic (common), Win: Smelling Salts (always)
+Weakness: Ice
+Special: !Lunge: sets Blind, Attack x 1.5
+Vulnerable to: Confuse, Poison, Slow, Stop, Blind
+Attacks: Attack, Rockfall, Cinder Breath
+
+Cindermaw (#28)
+Level: 14, HP: 189, MP: 364
+Steal: Ether Drop (rare), Warp Shard (common), Win: Phoenix Quill (always)
+Weakness: Poison
+Special: !Lunge: sets Petrify, Attack x 1.5
+Vulnerable to: Silence, Doom, Stop
+Attacks: Attack, Cinder Breath, Hex
+
+Gloomdrake (#29)
+Level: 33, HP: 1080, MP: 132
+Steal: Ether Drop (rare), Camp Kit (common), Win: Hi-Tonic (always)
+Weakness: Bolt
+Special: !Lunge: sets Blind, Attack x 1.5
+Vulnerable to: Stop, Doom, Silence, Poison, Confuse
+Attacks: Attack, Gale Slash, Hex
+
+Cinderwight (#30)
+Level: 21, HP: 420, MP: 588
+Steal: Warp Shard (rare), Camp Kit (common), Win: Phoenix Quill (always)
+Weakness: Earth
+Special: !Gnaw: sets Confuse, Attack x 1.5
+Vulnerable to: Doom, Blind, Confuse, Petrify, Poison
+Attacks: Attack, Cinder Breath, Gale Slash
+
+Wispsnapper (#31)
+Level: 3, HP: 215, MP: 24
+Steal: Antivenom (rare), Tonic (common), Win: Tonic (always)
+Weakness: Fire
+Special: !Crush: sets Slow, Attack x 1.5
+Vulnerable to: Poison, Slow
+Attacks: Attack, Rockfall, Chill Touch
+
+Rustcrawler (#32)
+Level: 38, HP: 1320, MP: 228
+Steal: Antivenom (rare), Smelling Salts (common), Win: Hi-Tonic (always)
+Weakness: Bolt
+Special: !Spit: sets Petrify, Attack x 1.5
+Vulnerable to: Silence, Poison
+Attacks: Attack, Gale Slash, Cinder Breath
+
+Hollowgolem (#33)
+Level: 16, HP: 484, MP: 384
+Steal: Antivenom (rare), Antivenom (common), Win: Smelling Salts (always)
+Weakness: Holy
+Special: !Shriek: sets Poison, Attack x 1.5
+Vulnerable to: Confuse
+Attacks: Attack, Chill Touch, Cinder Breath
+
+Mosssnapper (#34)
+Level: 41, HP: 2306, MP: 1558
+Steal: Camp Kit (rare), Warp Shard (common), Win: Camp Kit (always)
+Weakness: Water
+Special: !Crush: sets Sleep, Attack x 1.5
+Vulnerable to: Confuse, Silence, Stop
+Attacks: Attack, Gale Slash, Rockfall
+
+Mudlurker (#35)
+Level: 19, HP: 422, MP: 114
+Steal: Tonic (rare), Hi-Tonic (common), Win: Camp Kit (always)
+Weakness: Bolt
+Special: !Gnaw: sets Sleep, Attack x 1.5
+Vulnerable to: Confuse, Slow, Silence, Sleep
+Attacks: Attack, Tidal Rush, Gale Slash
+
+Brinemaw (#36)
+Level: 4, HP: 190, MP: 4
+Steal: Antivenom (rare), Smelling Salts (common), Win: Phoenix Quill (always)
+Weakness: Water
+Special: !Lunge: sets Sleep, Attack x 1.5
+Vulnerable to: Petrify, Slow, Confuse, Sleep, Poison
+Attacks: Attack, Hex, Gale Slash
+
+Hollowbeak (#37)
+Level: 32, HP: 360, MP: 256
+Steal: Smelling Salts (rare), Smoke Bomb (common), Win: Camp Kit (always)
+Weakness: Earth
+Special: !Lunge: sets Sleep, Attack x 1.5
+Vulnerable to: Stop, Slow, Petrify
+Attacks: Attack, Hex, Cinder Breath
+
+Emberlurker (#38)
+Level: 17, HP: 824, MP: 544
+Steal: Hi-Tonic (rare), Ether Drop (common), Win: Smelling Salts (always)
+Weakness: Bolt
+Special: !Shriek: sets Doom, Attack x 1.5
+Vulnerable to: Sleep, Slow
+Attacks: Attack, Chill Touch, Tidal Rush
+
+Emberbeak (#39)
+Level: 15, HP: 866, MP: 195
+Steal: Phoenix Quill (rare), Hi-Tonic (common), Win: Ether Drop (always)
+Weakness: Poison
+Special: !Shriek: sets Poison, Attack x 1.5
+Vulnerable to: Poison, Blind, Silence, Slow
+Attacks: Attack, Chill Touch, Gale Slash
+
+Gravecrawler (#40)
+Level: 3, HP: 67, MP: 111
+Steal: Phoenix Quill (rare), Warp Shard (common), Win: Warp Shard (always)
+Weakness: Earth
+Special: !Shriek: sets Slow, Attack x 1.5
+Vulnerable to: Stop, Petrify, Blind
+Attacks: Attack, Rockfall, Cinder Breath
+
+-------------------------------------------------------------------------------
+ 6.0     Frequently Asked Questions
+**********************************
+
+Q: Can I go back to Harrowgate after the bridge collapses?
+A: Yes, once you have the airship. The bridge itself is gone for good.
+
+Q: Is the Crown Edge worth the trouble?
+A: It's the strongest sword in the game, so yes, but only if you enjoy fighting
+the same monster forty times in a row for a rare drop.
+
+Q: Why does my save file say 'Chapter 0'?
+A: That's a known bug if you save during the opening cutscene. It's harmless.
+
+-------------------------------------------------------------------------------
+ 7.0     Credits and legal
+**********************************
+
+This guide and the game it describes are fictional, written as test material
+for a guide reader app. You may copy, change and share it freely; it is
+dedicated to the public domain (CC0).

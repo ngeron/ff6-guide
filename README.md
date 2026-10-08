@@ -54,7 +54,8 @@ js/store.js           IndexedDB for the guide, localStorage for settings and pro
 sw.js                 offline cache
 vendor/pdfjs/         pdf.js legacy build (Apache-2.0, see its LICENSE)
 test/e2e.mjs          headless browser smoke test
-test/fixtures/        an invented sample guide for tests (not the real walkthrough)
+test/make_fixture.py  generates an invented guide (and optionally a PDF) for testing
+test/fixtures/        that invented guide, public domain (not the real walkthrough)
 ```
 
 To run it locally, serve the folder and open it in a browser:
@@ -67,8 +68,13 @@ To run the smoke test (needs Node 18+ and Playwright):
 
 ```
 npm i -D playwright && npx playwright install chromium
-node test/e2e.mjs path/to/a-test.pdf
+python3 test/make_fixture.py --pdf test/output/ember-crown.pdf   # needs reportlab
+node test/e2e.mjs test/output/ember-crown.pdf
 ```
+
+## Trying it without the real guide
+
+`test/fixtures/ember-crown-guide.txt` is a complete walkthrough for an invented game, written in the same format as the real one (stat blocks, shop tables, info boxes, a sub-contents list). Import it to try the app, or download it from GitHub on your iPad and save it to Files first.
 
 When you change the list of app files, update `APP` in `sw.js` and bump `CACHE`.
 

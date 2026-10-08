@@ -1,5 +1,6 @@
 // Headless smoke test: serves the app, imports a PDF and a text file, and checks the main views.
-// Usage: node test/e2e.mjs <path-to-pdf> [screenshot-dir]
+// Usage: node test/e2e.mjs [path-to-pdf] [screenshot-dir]
+// Make a test PDF with: python3 test/make_fixture.py --pdf test/output/ember-crown.pdf
 // Requires Playwright (npm i -D playwright) and a Chromium build.
 import { chromium } from "playwright";
 import http from "node:http";
@@ -37,7 +38,7 @@ for (const scheme of ["light", "dark"]) {
   check(true, `[${scheme}] import view shown with no guide`);
   if (scheme === "light") await page.screenshot({ path: path.join(SHOTS, "1-import.png") });
 
-  const file = scheme === "light" && PDF ? PDF : path.join(ROOT, "test/fixtures/sample-guide.txt");
+  const file = scheme === "light" && PDF ? PDF : path.join(ROOT, "test/fixtures/ember-crown-guide.txt");
   await page.setInputFiles("#file", file);
   await page.waitForSelector(".home", { timeout: 60000 });
   check(true, `[${scheme}] imported ${path.basename(file)}`);
@@ -45,30 +46,30 @@ for (const scheme of ["light", "dark"]) {
   check(secs >= 4, `[${scheme}] contents sidebar lists sections (${secs})`);
   await page.screenshot({ path: path.join(SHOTS, `2-home-${scheme}.png`) });
 
-  await page.click('.chapters a[href="#/s/2.0"]');
+  await page.click('.chapters a[href="#/s/3.0"]');
   await page.waitForSelector("article.sec .toc");
-  await page.click('.body .toc a[href="#/s/2.1.1"]');
-  await page.waitForFunction(() => /opening town/i.test(document.querySelector(".sec-h")?.textContent || ""));
+  await page.click('.body .toc a[href="#/s/3.1.1"]');
+  await page.waitForFunction(() => /Harrowgate/.test(document.querySelector(".sec-h")?.textContent || ""));
   const h = await page.textContent(".sec-h");
-  check(/opening town/i.test(h), `[${scheme}] section page renders heading (${h.trim()})`);
+  check(/Harrowgate/.test(h), `[${scheme}] section page renders heading (${h.trim()})`);
   check(await page.locator(".body .pre pre").count() >= 1, `[${scheme}] shop table kept as monospace`);
   check(await page.locator(".body .meta").count() >= 1, `[${scheme}] Opponents box rendered`);
   await page.screenshot({ path: path.join(SHOTS, `3-section-${scheme}.png`), fullPage: true });
 
   await page.click("#doneBtn");
-  check(await page.locator('.toc-list a.done[data-key="2.1.1"]').count() === 1, `[${scheme}] mark done updates contents`);
+  check(await page.locator('.toc-list a.done[data-key="3.1.1"]').count() === 1, `[${scheme}] mark done updates contents`);
 
   await page.click("#searchBtn");
-  await page.fill("#q", "megavolt");
+  await page.fill("#q", "clockwork vault puzzle");
   await page.waitForSelector(".results li");
   if (scheme === "light") await page.screenshot({ path: path.join(SHOTS, "4-search.png") });
   await page.click(".results li a");
   await page.waitForSelector("mark.hit");
-  check((await page.textContent(".sec-h")).includes("Golem"), `[${scheme}] search result opens section with highlight`);
+  check((await page.textContent(".sec-h")).includes("Clockwork Vault puzzle"), `[${scheme}] search result opens section with highlight`);
 
   await page.reload();
   await page.waitForSelector("article.sec");
-  check((await page.textContent(".sec-h")).includes("Golem"), `[${scheme}] reload resumes last section from storage`);
+  check((await page.textContent(".sec-h")).includes("Clockwork Vault puzzle"), `[${scheme}] reload resumes last section from storage`);
 
   if (scheme === "light") {
     await page.click("#settingsBtn");
@@ -86,14 +87,14 @@ const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, de
 const page = await ctx.newPage();
 page.on("pageerror", (e) => errors.push("pageerror: " + e.message));
 await page.goto(base);
-await page.setInputFiles("#file", path.join(ROOT, "test/fixtures/sample-guide.txt"));
+await page.setInputFiles("#file", path.join(ROOT, "test/fixtures/ember-crown-guide.txt"));
 await page.waitForSelector(".home");
 check(await page.locator("#toc").isHidden(), "[phone] contents hidden by default");
 await page.click("#tocBtn");
 check(await page.locator("#toc").isVisible(), "[phone] contents drawer opens");
 await page.screenshot({ path: path.join(SHOTS, "6-phone-drawer.png") });
-await page.click('details[data-group="2.0"] summary');
-await page.click('.toc-list a[data-key="2.1.2"]');
+await page.click('details[data-group="3.0"] summary');
+await page.click('.toc-list a[data-key="3.1.2"]');
 await page.waitForSelector("article.sec");
 check(await page.locator("#toc").isHidden(), "[phone] drawer closes after picking a section");
 const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1);
