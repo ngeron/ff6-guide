@@ -23,6 +23,7 @@ To pick up edits to your master copy, import it again (Reading settings → Impo
 - Remembers your place, and lets you mark sections done
 - Text size, Paper/Night themes, Charter or system typeface, and an option to keep the screen on
 - Offline support through a service worker
+- Reset button at the bottom of the contents panel: after an "are you really sure?" check (No is the default), it removes the guide and its progress and returns to the import page
 
 ## Editing your copy
 

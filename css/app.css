@@ -74,7 +74,11 @@ main > * { max-width: 38em; margin-inline: auto; }
   :root:has(#toc:not([hidden])) main { padding-left: calc(var(--side-w) + 24px); }
   .toc-panel { width: var(--side-w); }
 }
-.toc-in { padding: 10px 10px calc(env(safe-area-inset-bottom, 0px) + 40px); }
+.toc-in { min-height: 100%; display: flex; flex-direction: column; padding: 10px 10px calc(env(safe-area-inset-bottom, 0px) + 16px); }
+.toc-foot { margin-top: auto; padding: 24px 0 0; }
+.reset-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 44px; padding: 0 12px; border-radius: 10px; border: 1.5px solid var(--rule); background: transparent; color: var(--bad); font: 600 14px var(--ui); cursor: pointer; }
+.reset-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.reset-btn:active { background: var(--panel); }
 .toc-progress { margin: 4px 8px 10px; color: var(--mute); font-size: 13px; }
 .toc-list, .toc-list ol { list-style: none; margin: 0; padding: 0; }
 .toc-list summary { list-style: none; cursor: pointer; border-radius: 8px; }
@@ -203,6 +207,14 @@ mark { background: var(--hit); color: inherit; border-radius: 2px; padding: 0 1p
 .confirm p { margin: 0 0 10px; }
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
+.modal { width: min(26rem, calc(100vw - 32px)); border: 0; border-radius: 16px; padding: 20px; background: var(--bg); color: var(--fg); font: 15px/1.45 var(--ui); box-shadow: 0 16px 48px rgb(0 0 0 / .32); }
+.modal::backdrop { background: rgb(0 0 0 / .45); }
+.modal h2 { margin: 0 0 .5em; font-size: 1.2rem; }
+.modal p { margin: 0 0 .8em; }
+.modal-note { color: var(--mute); font-size: 14px; }
+.modal .row2 { margin-top: 1.2em; }
+.modal .btn:focus-visible { outline: 3px solid var(--acc); outline-offset: 2px; }
+.btn:disabled { opacity: .45; }
 .toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 20px); transform: translateX(-50%); z-index: 50; background: var(--fg); color: var(--bg); font: 600 14px var(--ui); padding: 10px 16px; border-radius: 999px; box-shadow: 0 6px 20px rgb(0 0 0 / .25); }
 
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
