@@ -1,15 +1,17 @@
 import { parseGuide, sectionText, detectKind, readText, importDocument, parseText, extFor, ACCEPT } from "./importers/index.js";
 import { renderBlocks, renderHeading, esc, inline } from "./render.js";
 import { loadGuide, saveGuide, removeGuide, askPersist, getPref, setPref } from "./store.js";
+import { DEFAULT_NAMES, loadNames, saveNames, renameDoc } from "./names.js";
 import { initMaps, loadMaps, getMap, itemsForSection, importFiles as importMapFiles, renderPanel as renderMapsPanel, bindPanel as bindMapsPanel, renderViewer as renderMapViewer } from "./maps.js";
 
-const VERSION = "0.4.0";
+const VERSION = "0.5.0";
 const $ = (id) => document.getElementById(id);
 const root = document.documentElement;
 
 const state = {
   guide: null,      // { text, name, importedAt, source }
-  doc: null,        // parsed document
+  base: null,       // parsed document, as imported
+  doc: null,        // parsed document with your character names applied
   byKey: new Map(), // route key -> section
   byNum: new Map(), // section number -> section
   order: [],        // sections in reading order
@@ -52,6 +54,53 @@ $("fsUp").onclick = () => setPrefValue("fs", Math.min(28, prefs.fs + 1));
 $("themeSeg").onclick = (e) => { const b = e.target.closest("button"); if (b) setPrefValue("theme", b.dataset.v); };
 $("fontSeg").onclick = (e) => { const b = e.target.closest("button"); if (b) setPrefValue("font", b.dataset.v); };
 
+/* ---------------- character names ---------------- */
+
+let names = loadNames();
+$("nameSugg").innerHTML = DEFAULT_NAMES.map((n) => `<option value="${n}">`).join("");
+
+function renderNames() {
+  $("nameList").innerHTML = names.map((n, i) => `<li data-i="${i}">
+    <input type="text" class="nm-from" value="${esc(n.from)}" aria-label="Name in the guide" placeholder="In the guide" list="nameSugg" autocomplete="off" autocapitalize="words" spellcheck="false">
+    <span class="nm-arrow" aria-hidden="true">→</span>
+    <input type="text" class="nm-to" value="${esc(n.to)}" aria-label="Your name for ${esc(n.from || "this character")}" placeholder="Your name" autocomplete="off" autocapitalize="words" spellcheck="false">
+    <button type="button" class="mp-x nm-x" aria-label="Remove ${esc(n.from || "this name")}">×</button></li>`).join("");
+}
+
+// Saves the names and re-renders the guide with them, keeping your place on the page.
+function applyNames() {
+  saveNames(names.filter((n) => n.from.trim() || n.to.trim()));
+  if (!state.base) return;
+  const y = window.scrollY;
+  indexDoc();
+  if (state.current) {
+    const s = state.byKey.get(state.current.key);
+    if (s) { viewSection(s); window.scrollTo(0, y); }
+  } else if (state.doc && !state.currentMap && /^#\/?$|^$/.test(location.hash)) viewHome();
+}
+
+$("nameList").addEventListener("change", (e) => {
+  const li = e.target.closest("li");
+  if (!li) return;
+  const n = names[+li.dataset.i];
+  n.from = li.querySelector(".nm-from").value.trim();
+  n.to = li.querySelector(".nm-to").value.trim();
+  applyNames();
+});
+$("nameList").addEventListener("click", (e) => {
+  const b = e.target.closest(".nm-x");
+  if (!b) return;
+  names.splice(+b.closest("li").dataset.i, 1);
+  renderNames();
+  applyNames();
+});
+$("nameAdd").onclick = () => {
+  names.push({ from: "", to: "" });
+  renderNames();
+  $("nameList").lastElementChild.querySelector(".nm-from").focus();
+};
+renderNames();
+
 /* ---------------- wake lock ---------------- */
 
 async function updateWakeLock() {
@@ -87,7 +136,14 @@ function toast(msg) {
 
 function useGuide(guide) {
   state.guide = guide;
-  state.doc = parseGuide(guide);
+  state.base = parseGuide(guide);
+  indexDoc();
+  updateGuideInfo();
+}
+
+// Applies character names to the parsed guide and rebuilds everything that shows its text.
+function indexDoc() {
+  state.doc = renameDoc(state.base, names);
   state.byKey.clear();
   state.byNum.clear();
   state.order = state.doc.sections;
@@ -99,7 +155,6 @@ function useGuide(guide) {
   document.title = shortTitle();
   buildToc();
   $("secNums").innerHTML = state.order.filter((s) => s.num).map((s) => `<option value="${esc(s.num)}">${esc(s.title)}</option>`).join("");
-  updateGuideInfo();
 }
 
 function shortTitle() {
@@ -694,7 +749,7 @@ async function purgeGuideData() {
 $("removeYes").onclick = async () => {
   await purgeGuideData();
   state.done.clear();
-  state.guide = state.doc = null;
+  state.guide = state.base = state.doc = null;
   state.byKey.clear();
   state.byNum.clear();
   state.order = [];

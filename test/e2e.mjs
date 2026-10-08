@@ -273,6 +273,52 @@ for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, heigh
   await ctx.close();
 }
 
+// Character names: rename on display, persist, search, and undo.
+{
+  const ctx = await browser.newContext({ viewport: { width: 1180, height: 820 } });
+  const page = await ctx.newPage();
+  page.on("pageerror", (e) => errors.push("pageerror: " + e.message));
+  page.on("console", (m) => { if (m.type() === "error") errors.push("console: " + m.text()); });
+  await page.goto(base);
+  const unit = await page.evaluate(async () => {
+    const { renamer } = await import("./js/names.js");
+    const r = renamer([{ from: "terra", to: "Prns Donut" }, { from: "Celes", to: "Terra" }]);
+    return [r("Terra's TERRA terrapin Celes"), r.html('<a href="#terra">Terra</a> &amp; Celes'), r.pre("Terra      120  Celes   9")];
+  });
+  check(unit[0] === "Prns Donut's PRNS DONUT terrapin Terra", `[names] whole words, capitals and swaps (${unit[0]})`);
+  check(unit[1] === '<a href="#terra">Prns Donut</a> &amp; Terra', `[names] HTML attributes untouched (${unit[1]})`);
+  check(unit[2] === "Prns Donut  120  Terra   9", `[names] monospace column gap kept (${unit[2]})`);
+
+  await page.setInputFiles("#file", path.join(ROOT, "test/fixtures/ember-crown-guide.txt"));
+  await page.waitForSelector(".home");
+  await page.goto(base + "#/s/3.1.1");
+  await page.waitForSelector("article.sec");
+  await page.click("#settingsBtn");
+  await page.click("#nameAdd");
+  await page.fill("#nameList li:last-child .nm-from", "corvin");
+  await page.fill("#nameList li:last-child .nm-to", "Prns Donut");
+  await page.press("#nameList li:last-child .nm-to", "Tab");
+  await page.screenshot({ path: path.join(SHOTS, "11-names.png") });
+  const body = await page.textContent("article.sec");
+  check(body.includes("Prns Donut") && !/corvin/i.test(body), "[names] section re-rendered with the new name");
+  check(await page.locator("#settingsSheet").isVisible(), "[names] settings stay open while renaming");
+  await page.click("#settingsSheet [data-close]");
+
+  await page.reload();
+  await page.waitForSelector("article.sec");
+  check((await page.textContent("article.sec")).includes("Prns Donut"), "[names] names kept after reload");
+  await page.click("#searchBtn");
+  await page.fill("#q", "prns donut");
+  await page.waitForSelector(".results li");
+  check(await page.locator(".results li").count() >= 2, "[names] search finds the new name");
+  await page.click("#searchSheet [data-close]");
+
+  await page.click("#settingsBtn");
+  await page.click("#nameList .nm-x");
+  check(/Corvin/.test(await page.textContent("article.sec")), "[names] removing a name restores the guide's name");
+  await ctx.close();
+}
+
 await browser.close();
 server.close();
 console.log(errors.length ? `\n${errors.length} problem(s):\n` + errors.join("\n") : "\nAll checks passed.");
