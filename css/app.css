@@ -78,10 +78,6 @@ main > * { max-width: 38em; margin-inline: auto; }
   .toc-panel { width: var(--side-w); }
 }
 .toc-in { min-height: 100%; display: flex; flex-direction: column; padding: 10px 10px calc(env(safe-area-inset-bottom, 0px) + 16px); }
-.toc-foot { margin-top: auto; padding: 24px 0 0; }
-.reset-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 44px; padding: 0 12px; border-radius: 10px; border: 1.5px solid var(--rule); background: transparent; color: var(--bad); font: 600 14px var(--ui); cursor: pointer; }
-.reset-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.reset-btn:active { background: var(--panel); }
 .toc-progress { margin: 4px 8px 10px; color: var(--mute); font-size: 13px; }
 .toc-list, .toc-list ol { list-style: none; margin: 0; padding: 0; }
 .toc-list summary { list-style: none; cursor: pointer; border-radius: 8px; }
@@ -276,8 +272,6 @@ mark { background: var(--hit); color: inherit; border-radius: 2px; padding: 0 1p
 .mp-form input, .map-edit input { font: 16px var(--ui); padding: 9px 10px; border-radius: 8px; border: 1.5px solid var(--rule); background: var(--bg); color: var(--fg); width: 100%; }
 .mp-form .btn { margin-top: 6px; }
 .mp-err { color: var(--bad); font-size: 13.5px; margin: 2px 0 0; }
-.mp-foot { display: flex; flex-direction: column; gap: 8px; padding-left: 8px; padding-right: 8px; }
-.reset-btn:disabled { opacity: .45; cursor: default; }
 
 /* ---------- section map chips ---------- */
 .sec-maps { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin: -.2em 0 1.2em; font-family: var(--ui); }

@@ -4,9 +4,9 @@ import { loadGuide, saveGuide, removeGuide, askPersist, getPref, setPref } from 
 import { makeBackup, readBackup, describeBackup, restoreBackup } from "./backup.js";
 import { KINDS, KIND_LABEL, loadTags, saveTags, buildTerms, matcher, markNames } from "./tags.js";
 import { DEFAULT_NAMES, loadNames, saveNames, renameDoc } from "./names.js";
-import { initMaps, loadMaps, getMap, hasMaps, itemsForSection, importFiles as importMapFiles, renderPanel as renderMapsPanel, bindPanel as bindMapsPanel, renderViewer as renderMapViewer } from "./maps.js";
+import { initMaps, loadMaps, getMap, hasMaps, mapCounts, exportPack, removeAllMaps, itemsForSection, importFiles as importMapFiles, renderPanel as renderMapsPanel, bindPanel as bindMapsPanel, renderViewer as renderMapViewer } from "./maps.js";
 
-const VERSION = "0.8.0";
+const VERSION = "0.8.1";
 const $ = (id) => document.getElementById(id);
 const root = document.documentElement;
 
@@ -848,6 +848,7 @@ function openSheet(id) {
 }
 function closeSheets() {
   for (const id of ["searchSheet", "settingsSheet"]) $(id).hidden = true;
+  $("mapClearConfirm").hidden = true;
   if ($("scrim").hidden) document.body.classList.remove("locked");
 }
 for (const b of document.querySelectorAll("[data-close]")) b.onclick = closeSheets;
@@ -871,8 +872,22 @@ function updateGuideInfo() {
     ? `${g.name}, imported ${new Date(g.importedAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}. ${state.order.length - 1} sections.`
     : "No guide imported yet.";
   for (const id of ["exportBtn", "resetBtn"]) $(id).disabled = !g;
+  const mc = mapCounts();
+  $("mapInfo").textContent = hasMaps()
+    ? `${mc.maps} map${mc.maps === 1 ? "" : "s"} and ${mc.links} link${mc.links === 1 ? "" : "s"} on this device. A map pack (.zip) holds just your maps, to share or add on another device.`
+    : "No maps on this device yet. Add them from the Maps tab in the side panel.";
+  for (const id of ["mapExportBtn", "mapClearBtn"]) $(id).disabled = !hasMaps();
 }
 $("exportBtn").onclick = exportText;
+$("mapExportBtn").onclick = () => exportPack();
+$("mapClearBtn").onclick = () => { $("mapClearConfirm").hidden = false; $("mapClearNo").focus(); };
+$("mapClearNo").onclick = () => { $("mapClearConfirm").hidden = true; };
+$("mapClearYes").onclick = async () => {
+  await removeAllMaps();
+  $("mapClearConfirm").hidden = true;
+  updateGuideInfo();
+  toast("Maps and links removed");
+};
 $("replaceBtn").onclick = () => { closeSheets(); location.hash = "#/import"; };
 // Deletes the stored guide and everything tied to it (done marks, reading positions, last
 // section, search). Reading preferences such as text size and theme are kept.

@@ -219,6 +219,14 @@ for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, heigh
     await page.waitForSelector(".import");
     const left = await page.evaluate(async () => { const m = await import("./js/store.js"); return (await m.listMaps()).length; });
     check(left === 3, "[maps ipad] reset keeps maps");
+    check(await page.locator("#toc #mapClearBtn, #toc #mapExportBtn").count() === 0, "[maps ipad] maps panel has no pack or remove-all buttons");
+    await page.click("#settingsBtn");
+    check(/3 maps and 3 links/.test(await page.textContent("#mapInfo")) && await page.isEnabled("#mapExportBtn"), "[maps ipad] settings show map counts and Save map pack");
+    await page.click("#mapClearBtn");
+    await page.click("#mapClearYes");
+    await page.waitForFunction(() => /No maps/.test(document.getElementById("mapInfo").textContent));
+    const gone = await page.evaluate(async () => { const m = await import("./js/store.js"); return (await m.listMaps()).length + (await m.loadLinks()).length; });
+    check(gone === 0 && await page.isDisabled("#mapClearBtn"), "[maps ipad] Remove all maps and links in settings clears them");
   }
   await ctx.close();
 }

@@ -43,6 +43,7 @@ export async function loadMaps() {
 
 export const getMap = (id) => maps.find((m) => m.id === id);
 export const hasMaps = () => maps.length > 0 || links.length > 0;
+export const mapCounts = () => ({ maps: maps.length, links: links.length });
 
 function urlFor(m) {
   if (!urls.has(m.id)) urls.set(m.id, URL.createObjectURL(new Blob([m.data], { type: m.type })));
@@ -282,14 +283,6 @@ export function renderPanel(container, currentMapId) {
       </form>
     </details>
 
-    <div class="toc-foot mp-foot">
-      <button type="button" class="btn" id="mapExportBtn"${hasMaps() ? "" : " disabled"}>Save map pack</button>
-      <button type="button" class="reset-btn" id="mapClearBtn"${hasMaps() ? "" : " disabled"}>Remove all maps and links</button>
-      <div class="confirm" id="mapClearConfirm" hidden>
-        <p>Remove every map image and link from this device? Save a map pack first if you want to keep them.</p>
-        <div class="row2"><button type="button" class="btn solid" id="mapClearNo">No, keep them</button><button type="button" class="btn danger" id="mapClearYes">Remove</button></div>
-      </div>
-    </div>
   </div>`;
 }
 
@@ -298,10 +291,6 @@ export function bindPanel(container, pickFiles) {
   container.addEventListener("click", async (e) => {
     const t = e.target;
     if (t.closest("#mapAddBtn")) return pickFiles();
-    if (t.closest("#mapExportBtn")) return exportPack();
-    if (t.closest("#mapClearBtn")) { $("mapClearConfirm").hidden = false; $("mapClearNo").focus(); return; }
-    if (t.closest("#mapClearNo")) { $("mapClearConfirm").hidden = true; return; }
-    if (t.closest("#mapClearYes")) { await removeAllMaps(); ctx.toast("Maps and links removed"); return; }
     const un = t.closest("[data-unlink]");
     if (un) {
       const l = links.find((x) => x.id === un.dataset.unlink);

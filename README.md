@@ -49,7 +49,7 @@ The left panel has two tabs, **Contents** and **Maps**. Maps holds two kinds of 
 
 A map or link attached to a guide section (for example `3.1.3`) also appears as a chip at the top of that section.
 
-**Save map pack** exports everything as `maps.zip`, so you can back it up or move it to another device. **Remove all maps and links** clears them. Resetting the guide keeps your maps.
+In Settings, **Save map pack** exports your maps and links as `maps.zip`, so you can share them or add them on another device, and **Remove all maps and links** (under Start over) clears them. Resetting the guide keeps your maps.
 
 ### Map pack format
 
