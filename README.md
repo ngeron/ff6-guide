@@ -22,8 +22,39 @@ To pick up edits to your master copy, import it again (Reading settings → Impo
 - Search across the whole guide, with matches highlighted in the section
 - Remembers your place, and lets you mark sections done
 - Text size, Paper/Night themes, Charter or system typeface, and an option to keep the screen on
+- Maps: your own map images and links to hosted maps, attachable to guide sections
 - Offline support through a service worker
 - Reset button at the bottom of the contents panel: after an "are you really sure?" check (No is the default), it removes the guide and its progress and returns to the import page
+
+## Maps
+
+The left panel has two tabs, **Contents** and **Maps**. Maps holds two kinds of things:
+
+- **My maps:** your own map images, stored on this device like the guide. Tap **Add map images** and pick PNG, JPEG, WebP or GIF files, or a **map pack**. Open a map to pan and zoom (pinch, double-tap, or the Fit / − / + / Actual size buttons). Under **Map details** you can rename it, attach it to a guide section, or delete it.
+- **Map links:** bookmarks to maps hosted on other sites. Add one with the form in the panel. Links open in a new tab.
+
+A map or link attached to a guide section (for example `3.1.3`) also appears as a chip at the top of that section.
+
+**Save map pack** exports everything as `maps.zip`, so you can back it up or move it to another device. **Remove all maps and links** clears them. Resetting the guide keeps your maps.
+
+### Map pack format
+
+A map pack is a `.zip` with images and an optional `maps.json` (folders inside the zip are fine). Unlisted images are added with a title made from the file name. A `maps.json` on its own can be imported to add links.
+
+```json
+{
+  "title": "Ember Crown maps",
+  "maps": [
+    { "file": "world.png", "title": "World map", "section": "3.0" },
+    { "file": "old-quarry.png", "title": "Old Quarry", "section": "3.1.3" }
+  ],
+  "links": [
+    { "title": "Interactive world map", "url": "https://example.com/maps/world", "section": "3.0", "note": "optional" }
+  ]
+}
+```
+
+`test/fixtures/ember-crown-maps.zip` is an example pack for the invented test guide.
 
 ## Editing your copy
 
@@ -51,11 +82,14 @@ js/app.js             routing, views, import/export, search, settings
 js/parse.js           guide text → sections and blocks
 js/render.js          blocks → HTML
 js/extract.js         PDF → fixed-width text lines (uses pdf.js)
-js/store.js           IndexedDB for the guide, localStorage for settings and progress
+js/store.js           IndexedDB for the guide and maps, localStorage for settings and progress
+js/maps.js            maps panel, map pack import/export, map viewer
+js/zip.js             minimal zip reader/writer for map packs
 sw.js                 offline cache
 vendor/pdfjs/         pdf.js legacy build (Apache-2.0, see its LICENSE)
 test/e2e.mjs          headless browser smoke test
 test/make_fixture.py  generates an invented guide (and optionally a PDF) for testing
+test/make_maps.py     generates the invented Ember Crown map pack
 test/fixtures/        that invented guide, public domain (not the real walkthrough)
 ```
 

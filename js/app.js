@@ -1,8 +1,9 @@
 import { parse, sectionText } from "./parse.js";
 import { renderBlocks, renderHeading, esc, inline } from "./render.js";
 import { loadGuide, saveGuide, removeGuide, askPersist, getPref, setPref } from "./store.js";
+import { initMaps, loadMaps, getMap, itemsForSection, importFiles as importMapFiles, renderPanel as renderMapsPanel, bindPanel as bindMapsPanel, renderViewer as renderMapViewer } from "./maps.js";
 
-const VERSION = "0.2.0";
+const VERSION = "0.3.0";
 const $ = (id) => document.getElementById(id);
 const root = document.documentElement;
 
@@ -97,6 +98,7 @@ function useGuide(guide) {
   state.searchText = null;
   document.title = shortTitle();
   buildToc();
+  $("secNums").innerHTML = state.order.filter((s) => s.num).map((s) => `<option value="${esc(s.num)}">${esc(s.title)}</option>`).join("");
   updateGuideInfo();
 }
 
@@ -143,7 +145,7 @@ function buildToc() {
   }
   html.push(`</ol><div class="toc-foot"><button type="button" class="reset-btn" id="resetBtn">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4.5h4.5"/></svg>Reset and remove guide</button></div></div>`);
-  $("toc").innerHTML = html.join("");
+  $("tocContents").innerHTML = html.join("");
   updateTocProgress();
 }
 
@@ -284,6 +286,7 @@ function viewSection(s, opts = {}) {
   $("view").innerHTML = `
   <article class="sec lv${s.level}">
     ${s.level === 1 ? renderHeading(s) : renderHeading(s)}
+    ${sectionMaps(s)}
     <div class="body">${renderBlocks(s.blocks, linkNum)}</div>
     ${s.level === 1 ? "" : `<button type="button" class="done-btn${isDone ? " on" : ""}" id="doneBtn" aria-pressed="${isDone}">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span>${isDone ? "Done" : "Mark section done"}</span></button>`}
@@ -307,6 +310,82 @@ function viewSection(s, opts = {}) {
   }
   window.scrollTo(0, 0);
 }
+
+function sectionMaps(s) {
+  const items = itemsForSection(s.num);
+  if (!items.length) return "";
+  return `<div class="sec-maps"><span class="eyebrow">Maps</span>${items.map((it) => it.kind === "map"
+    ? `<a class="chip" href="${it.href}">${esc(it.title)}</a>`
+    : `<a class="chip ext" href="${esc(it.href)}" target="_blank" rel="noopener noreferrer">${esc(it.title)} ↗</a>`).join("")}</div>`;
+}
+
+function viewMap(m) {
+  state.current = null;
+  state.currentMap = m.id;
+  showChrome(true);
+  setBar(`<span class="bt">${esc(m.title)}</span>`, "#/");
+  const sec = m.section ? state.byNum.get(m.section) : null;
+  renderMapViewer($("view"), m, { sectionLabel: sec ? { href: hrefFor(sec), title: sec.title } : null });
+  setPanelTab("maps");
+  refreshMapsPanel();
+  window.scrollTo(0, 0);
+}
+
+/* ---------------- panel tabs and maps ---------------- */
+
+function setPanelTab(tab) {
+  const maps = tab === "maps";
+  $("tabContents").setAttribute("aria-selected", String(!maps));
+  $("tabMaps").setAttribute("aria-selected", String(maps));
+  $("tocContents").hidden = maps;
+  $("tocMaps").hidden = !maps;
+  setPref("panelTab", tab);
+}
+$("tabContents").onclick = () => { setPanelTab("contents"); markTocCurrent(); scrollTocToCurrent(); };
+$("tabMaps").onclick = () => setPanelTab("maps");
+
+function refreshMapsPanel() {
+  const panel = $("tocMaps");
+  const scroll = $("toc").scrollTop;
+  const open = panel.querySelector(".mp-form")?.open;
+  renderMapsPanel(panel, state.currentMap);
+  if (open !== undefined) panel.querySelector(".mp-form").open = open;
+  $("toc").scrollTop = scroll;
+}
+
+initMaps({
+  toast: (m) => toast(m),
+  onChange: () => {
+    refreshMapsPanel();
+    if (state.current) {
+      const box = $("view").querySelector(".sec-maps");
+      const html = sectionMaps(state.current);
+      if (box) box.outerHTML = html || "";
+      else if (html) $("view").querySelector(".sec-h")?.insertAdjacentHTML("afterend", html);
+    }
+  },
+});
+bindMapsPanel($("tocMaps"), () => $("mapFile").click());
+
+$("mapFile").addEventListener("change", async (e) => {
+  const files = [...(e.target.files || [])];
+  e.target.value = "";
+  if (!files.length) return;
+  toast("Adding maps…");
+  try {
+    const r = await importMapFiles(files, (msg) => toast(msg));
+    const parts = [];
+    if (r.added) parts.push(`${r.added} map${r.added === 1 ? "" : "s"}`);
+    if (r.linksAdded) parts.push(`${r.linksAdded} link${r.linksAdded === 1 ? "" : "s"}`);
+    const msg = parts.length ? `Added ${parts.join(" and ")}` : "Nothing new was added";
+    toast(r.problems.length ? `${msg}. ${r.problems[0]}.` : msg);
+    setPanelTab("maps");
+    askPersist();
+  } catch (ex) {
+    console.error(ex);
+    toast(ex && ex.message ? ex.message : "Those files couldn't be added.");
+  }
+});
 
 function toggleDone(s, btn) {
   if (state.done.has(s.key)) state.done.delete(s.key);
@@ -352,6 +431,12 @@ function route() {
   closeSheets();
   const h = location.hash;
   if (!state.doc || h === "#/import") return viewImport();
+  state.currentMap = null;
+  const mm = h.match(/^#\/map\/(.+)$/);
+  if (mm) {
+    const map = getMap(decodeURIComponent(mm[1]));
+    if (map) return viewMap(map);
+  }
   const m = h.match(/^#\/s\/(.+)$/);
   if (m) {
     const s = state.byKey.get(decodeURIComponent(m[1]));
@@ -592,7 +677,7 @@ $("removeYes").onclick = async () => {
   state.byKey.clear();
   state.byNum.clear();
   state.order = [];
-  $("toc").innerHTML = "";
+  $("tocContents").innerHTML = "";
   syncTocMode();
   closeSheets();
   updateGuideInfo();
@@ -647,6 +732,9 @@ async function start() {
   } catch (ex) {
     console.error(ex);
   }
+  await loadMaps();
+  refreshMapsPanel();
+  setPanelTab(getPref("panelTab", "contents"));
   syncTocMode();
   route();
 }
