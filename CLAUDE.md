@@ -28,6 +28,7 @@ js/render.js             blocks → HTML
 js/store.js              IndexedDB (guide, maps) and localStorage (settings, progress)
 js/maps.js, js/zip.js    maps panel, map packs (.zip + maps.json), map viewer
 js/names.js              character renames, applied to the parsed guide when shown
+js/tags.js               color coding: finds characters, monsters, bosses and places; marks them in the page
 js/backup.js             backup .zip: guide, progress, names, maps; save and restore
 sw.js                    offline cache
 test/                    e2e smoke test and fixture generators

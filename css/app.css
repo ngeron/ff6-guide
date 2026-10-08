@@ -15,6 +15,7 @@
   --fs: 18px;
   --read: Charter, "Iowan Old Style", "Palatino", Georgia, serif;
   --ui: -apple-system, system-ui, "Segoe UI", Roboto, sans-serif;
+  --party: #6A3D9A; --enemy: #995200; --boss: #B3261E; --place: #1D5FA6;
   --mono: ui-monospace, Menlo, "SF Mono", Consolas, monospace;
   --bar-h: 52px;
   --side-w: 330px;
@@ -24,11 +25,13 @@
   :root:not([data-theme="light"]) {
     --bg: #1C1B19; --fg: #E6E1D6; --mute: #9A9284; --rule: #34312C; --panel: #262420; --side: #201F1C;
     --acc: #86B9B4; --acc-ink: #10201F; --hit: #6B5A22; --ok: #8DC497; --bad: #E58A80; color-scheme: dark;
+    --party: #C7A6F0; --enemy: #E3A857; --boss: #F28B82; --place: #8DB8F2;
   }
 }
 :root[data-theme="dark"] {
   --bg: #1C1B19; --fg: #E6E1D6; --mute: #9A9284; --rule: #34312C; --panel: #262420; --side: #201F1C;
   --acc: #86B9B4; --acc-ink: #10201F; --hit: #6B5A22; --ok: #8DC497; --bad: #E58A80; color-scheme: dark;
+  --party: #C7A6F0; --enemy: #E3A857; --boss: #F28B82; --place: #8DB8F2;
 }
 :root[data-font="sans"] { --read: var(--ui); }
 
@@ -207,7 +210,17 @@ mark { background: var(--hit); color: inherit; border-radius: 2px; padding: 0 1p
 .names li { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto; align-items: center; gap: 6px; }
 .names input { font: 16px var(--ui); padding: 9px 10px; border-radius: 8px; border: 1.5px solid var(--rule); background: var(--panel); color: var(--fg); width: 100%; min-width: 0; }
 .nm-arrow { color: var(--mute); }
-#nameAdd { width: 100%; }
+#nameAdd, #tagAdd { width: 100%; }
+.tags li { grid-template-columns: minmax(0, 1fr) auto auto; }
+.tags select { font: 15px var(--ui); padding: 9px 8px; border-radius: 8px; border: 1.5px solid var(--rule); background: var(--panel); color: var(--fg); }
+.tag-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: .2em 0 .4em; font: 600 14px var(--ui); }
+.tag-legend .cnt { color: var(--mute); font-weight: 400; font-size: 12.5px; }
+
+/* ---------- color-coded names ---------- */
+.ent-party { color: var(--party); }
+.ent-enemy { color: var(--enemy); }
+.ent-boss { color: var(--boss); }
+.ent-place { color: var(--place); }
 .stack { display: flex; flex-direction: column; gap: 8px; }
 .confirm { border: 1px solid var(--bad); border-radius: 12px; padding: 12px; font-size: 14.5px; }
 .confirm p { margin: 0 0 10px; }

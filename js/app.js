@@ -2,10 +2,11 @@ import { parseGuide, sectionText, detectKind, readText, importDocument, parseTex
 import { renderBlocks, renderHeading, esc, inline } from "./render.js";
 import { loadGuide, saveGuide, removeGuide, askPersist, getPref, setPref } from "./store.js";
 import { makeBackup, readBackup, describeBackup, restoreBackup } from "./backup.js";
+import { KINDS, KIND_LABEL, loadTags, saveTags, buildTerms, matcher, markNames } from "./tags.js";
 import { DEFAULT_NAMES, loadNames, saveNames, renameDoc } from "./names.js";
 import { initMaps, loadMaps, getMap, hasMaps, itemsForSection, importFiles as importMapFiles, renderPanel as renderMapsPanel, bindPanel as bindMapsPanel, renderViewer as renderMapViewer } from "./maps.js";
 
-const VERSION = "0.6.0";
+const VERSION = "0.7.0";
 const $ = (id) => document.getElementById(id);
 const root = document.documentElement;
 
@@ -30,6 +31,7 @@ const prefs = {
   theme: getPref("theme", "auto"),
   font: getPref("font", "serif"),
   wake: getPref("wake", false),
+  colorNames: getPref("colorNames", true),
 };
 
 function applyPrefs() {
@@ -42,6 +44,7 @@ function applyPrefs() {
     for (const b of $(segId).querySelectorAll("button")) b.setAttribute("aria-checked", String(b.dataset.v === val));
   }
   $("wake").checked = prefs.wake;
+  $("colorNames").checked = prefs.colorNames;
 }
 
 function setPrefValue(key, value) {
@@ -71,6 +74,11 @@ function renderNames() {
 // Saves the names and re-renders the guide with them, keeping your place on the page.
 function applyNames() {
   saveNames(names.filter((n) => n.from.trim() || n.to.trim()));
+  rerender();
+}
+
+// Rebuilds the guide from its source and shows the current page again in the same place.
+function rerender() {
   if (!state.base) return;
   const y = window.scrollY;
   indexDoc();
@@ -101,6 +109,54 @@ $("nameAdd").onclick = () => {
   $("nameList").lastElementChild.querySelector(".nm-from").focus();
 };
 renderNames();
+
+/* ---------------- color coding ---------------- */
+
+let tags = loadTags();
+const TAG_KINDS = [...KINDS, "none"];
+const tagLabel = (k) => k === "none" ? "Not colored" : KIND_LABEL[k];
+
+function renderTags() {
+  $("tagList").innerHTML = tags.map((t, i) => `<li data-i="${i}">
+    <input type="text" class="tg-text" value="${esc(t.text)}" aria-label="Word" placeholder="Name or word" autocomplete="off" autocapitalize="words" spellcheck="false">
+    <select class="tg-kind" aria-label="Color for ${esc(t.text || "this word")}">${TAG_KINDS.map((k) => `<option value="${k}"${k === t.kind ? " selected" : ""}>${tagLabel(k)}</option>`).join("")}</select>
+    <button type="button" class="mp-x tg-x" aria-label="Remove ${esc(t.text || "this word")}">×</button></li>`).join("");
+}
+
+function renderLegend() {
+  const counts = Object.fromEntries(KINDS.map((k) => [k, 0]));
+  for (const k of (state.terms || new Map()).values()) counts[k]++;
+  $("tagLegend").innerHTML = KINDS.map((k) => `<span class="ent ent-${k}">${KIND_LABEL[k]}</span>${state.terms ? ` <span class="cnt">${counts[k]}</span>` : ""}`).map((h) => `<span class="lg">${h}</span>`).join("");
+}
+
+function applyTags() {
+  saveTags(tags.filter((t) => t.text.trim()));
+  rerender();
+}
+
+$("colorNames").onchange = (e) => { setPrefValue("colorNames", e.target.checked); rerender(); };
+$("tagList").addEventListener("change", (e) => {
+  const li = e.target.closest("li");
+  if (!li) return;
+  const t = tags[+li.dataset.i];
+  t.text = li.querySelector(".tg-text").value.trim();
+  t.kind = li.querySelector(".tg-kind").value;
+  applyTags();
+});
+$("tagList").addEventListener("click", (e) => {
+  const b = e.target.closest(".tg-x");
+  if (!b) return;
+  tags.splice(+b.closest("li").dataset.i, 1);
+  renderTags();
+  applyTags();
+});
+$("tagAdd").onclick = () => {
+  tags.push({ text: "", kind: "party" });
+  renderTags();
+  $("tagList").lastElementChild.querySelector(".tg-text").focus();
+};
+renderTags();
+renderLegend();
 
 /* ---------------- wake lock ---------------- */
 
@@ -145,6 +201,9 @@ function useGuide(guide) {
 // Applies character names to the parsed guide and rebuilds everything that shows its text.
 function indexDoc() {
   state.doc = renameDoc(state.base, names);
+  state.terms = buildTerms(state.doc, names, tags);
+  state.matcher = matcher(state.terms);
+  renderLegend();
   state.byKey.clear();
   state.byNum.clear();
   state.order = state.doc.sections;
@@ -353,18 +412,18 @@ function viewSection(s, opts = {}) {
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span>${isDone ? "Done" : "Mark section done"}</span></button>`}
     <nav class="pager" aria-label="Section navigation">${navLink(prev, "prev")}${navLink(next, "next")}</nav>
   </article>`;
+  // Search highlights go first: they can span several names, and names inside them stay plain.
+  const q = state.pendingQuery;
+  state.pendingQuery = "";
+  const first = q ? highlight($("view").querySelector("article"), q) : null;
+  if (prefs.colorNames) markNames($("view").querySelector("article.sec"), state.matcher);
   const db = $("doneBtn");
   if (db) db.onclick = () => toggleDone(s, db);
   setPref("last", s.key);
   markTocCurrent();
   if (wide() && !$("toc").hidden) scrollTocToCurrent();
 
-  if (state.pendingQuery) {
-    const q = state.pendingQuery;
-    state.pendingQuery = "";
-    const first = highlight($("view").querySelector("article"), q);
-    if (first) { first.scrollIntoView({ block: "center" }); return; }
-  }
+  if (first) { first.scrollIntoView({ block: "center" }); return; }
   if (opts.resume) {
     const pos = getPref("pos", {})[s.key];
     if (pos) { requestAnimationFrame(() => window.scrollTo(0, pos * document.documentElement.scrollHeight)); return; }

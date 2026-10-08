@@ -319,6 +319,58 @@ for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, heigh
   await ctx.close();
 }
 
+// Color coding: names found from the guide, corrections, and the on/off switch.
+{
+  const ctx = await browser.newContext({ viewport: { width: 1180, height: 820 } });
+  const page = await ctx.newPage();
+  page.on("pageerror", (e) => errors.push("pageerror: " + e.message));
+  page.on("console", (m) => { if (m.type() === "error") errors.push("console: " + m.text()); });
+  await page.goto(base);
+  const unit = await page.evaluate(async () => {
+    const { buildTerms, matcher } = await import("./js/tags.js");
+    const doc = { sections: [{ title: "Scenario Sabin: The battle with the Phantom Train", level: 3, blocks: [] },
+      { title: "Traveling over the Veldt to Mobliz", level: 3, blocks: [] }, { title: "Version History", level: 2, blocks: [] }] };
+    const terms = buildTerms(doc, [{ from: "Terra", to: "Prns Donut" }], [{ text: "Mobliz", kind: "none" }]);
+    const m = matcher(terms);
+    const hits = ("Shadow and shadow, SHADOW, Prns Donut, Kefka's, Veldt, Mobliz, the Phantom Train".match(m.re) || []).map((h) => h + "=" + m.kindOf(h));
+    return hits.join(" ");
+  });
+  check(unit === "Shadow=party SHADOW=party Prns Donut=party Kefka=boss Veldt=place Phantom Train=boss", `[colors] matching rules (${unit})`);
+
+  await page.setInputFiles("#file", path.join(ROOT, "test/fixtures/ember-crown-guide.txt"));
+  await page.waitForSelector(".home");
+  await page.goto(base + "#/s/3.1.1");
+  await page.waitForSelector("article.sec");
+  const kinds = await page.evaluate(() => Object.fromEntries(["party", "enemy", "boss", "place"].map((k) => [k, [...new Set([...document.querySelectorAll("article .ent-" + k)].map((e) => e.textContent))]])));
+  check(kinds.enemy.includes("Hollowlurker") && kinds.enemy.includes("Wispgolem") && !kinds.enemy.some((t) => t.includes("(")), `[colors] monsters from opponents and formations (${kinds.enemy.join(", ")})`);
+  check(kinds.place.includes("Harrowgate"), `[colors] places from headings (${kinds.place.join(", ")})`);
+  await page.goto(base + "#/s/3.2.4");
+  await page.waitForSelector("article.sec");
+  check(await page.locator(".sec-h .ent-boss").textContent() === "Gloomlurker Queen", "[colors] boss from 'The battle with' heading");
+
+  await page.goto(base + "#/s/3.1.1");
+  await page.waitForSelector("article.sec");
+  await page.click("#settingsBtn");
+  await page.click("#tagAdd");
+  await page.fill("#tagList li:last-child .tg-text", "Isolde");
+  await page.selectOption("#tagList li:last-child .tg-kind", "party");
+  await page.click("#tagAdd");
+  await page.fill("#tagList li:last-child .tg-text", "Harrowgate");
+  await page.selectOption("#tagList li:last-child .tg-kind", "none");
+  await page.screenshot({ path: path.join(SHOTS, "14-colors-settings.png") });
+  await page.click("#settingsSheet [data-close]");
+  check(await page.locator(".ent-party", { hasText: "Isolde" }).count() >= 1, "[colors] word added as a character");
+  check(await page.locator(".ent", { hasText: "Harrowgate" }).count() === 0, "[colors] word set to Not colored");
+  await page.screenshot({ path: path.join(SHOTS, "15-colors-light.png") });
+  await page.emulateMedia({ colorScheme: "dark" });
+  await page.screenshot({ path: path.join(SHOTS, "16-colors-dark.png") });
+  await page.click("#settingsBtn");
+  await page.click("#colorNames");
+  await page.click("#settingsSheet [data-close]");
+  check(await page.locator("article.sec .ent").count() === 0, "[colors] switch turns colors off");
+  await ctx.close();
+}
+
 // Backup: save on one device, restore on a fresh one, and restore over existing data.
 {
   const watch = (page) => {
@@ -341,6 +393,9 @@ for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, heigh
   await page.fill("#nameList li:last-child .nm-from", "Corvin");
   await page.fill("#nameList li:last-child .nm-to", "Prns Donut");
   await page.press("#nameList li:last-child .nm-to", "Tab");
+  await page.click("#tagAdd");
+  await page.fill("#tagList li:last-child .tg-text", "Isolde");
+  await page.press("#tagList li:last-child .tg-text", "Tab");
   await page.screenshot({ path: path.join(SHOTS, "12-backup-settings.png") });
   const [dl] = await Promise.all([page.waitForEvent("download"), page.click("#backupBtn")]);
   const backup = path.join(SHOTS, "backup.zip");
@@ -367,6 +422,7 @@ for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, heigh
   await p2.goto(base + "#/s/3.1.1");
   await p2.waitForSelector("article.sec");
   check((await p2.textContent("article.sec")).includes("Prns Donut"), "[backup] restored character names");
+  check(await p2.locator(".ent-party", { hasText: "Isolde" }).count() >= 1, "[backup] restored color-coding fixes");
 
   // Restore over existing data asks first; Cancel keeps things, Replace restores.
   await p2.click("#settingsBtn");
