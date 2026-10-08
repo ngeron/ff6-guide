@@ -220,6 +220,59 @@ for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, heigh
   await ctx.close();
 }
 
+// Every importer: the same guide as text, PDF-free web page, web archive, Markdown and a
+// text guide wrapped in <pre> should give the same sections and working links.
+{
+  const V = path.join(ROOT, "test/fixtures/variants");
+  // An old-style guide saved in Windows-1252 (curly quotes as single bytes).
+  const cp = path.join(SHOTS, "cp1252-guide.txt");
+  const body = "Old Guide\n\n 1.0  Start\n**********\n\nIt\u2019s \u201cquoted\u201d text from 1999, caf\u00e9 included.\n\n 2.0  End\n**********\n\nDone.\n" + "filler line\n".repeat(20);
+  fs.writeFileSync(cp, Buffer.from(body.replace(/\u2019/g, "\x92").replace(/\u201c/g, "\x93").replace(/\u201d/g, "\x94"), "latin1"));
+  const cases = [
+    ["ember-crown-formatted.html", "html"],
+    ["ember-crown.webarchive", "html"],
+    ["ember-crown.md", "markdown"],
+    ["ember-crown-pre.html", "text"],
+  ];
+  for (const [name, format] of cases) {
+    const ctx = await browser.newContext({ viewport: { width: 1180, height: 820 } });
+    const page = await ctx.newPage();
+    page.on("pageerror", (e) => errors.push(`pageerror (${name}): ` + e.message));
+    page.on("console", (m) => { if (m.type() === "error") errors.push(`console (${name}): ` + m.text()); });
+    await page.goto(base);
+    await page.setInputFiles("#file", path.join(V, name));
+    await page.waitForSelector(".home", { timeout: 15000 }).catch(() => {});
+    const stored = await page.evaluate(async () => { const m = await import("./js/store.js"); const g = await m.loadGuide(); return g ? { format: g.format, text: g.text } : null; });
+    check(stored && stored.format === format, `[${name}] imported as ${format}`);
+    check(await page.locator(".toc-list a").count() === 44, `[${name}] same 44 contents entries as the text guide`);
+    if (format === "html") check(!/GuideSite|Advertisement|More guides/.test(stored.text), `[${name}] clean copy leaves out the site's menus and sidebar`);
+    await page.goto(base + "#/s/3.0");
+    await page.waitForSelector("article.sec");
+    await page.click('.body a[href="#/s/3.9.3"]');
+    await page.waitForFunction(() => /Clockwork Vault/.test(document.querySelector(".sec-h")?.textContent || ""));
+    check(true, `[${name}] in-guide contents link opens the right section`);
+    await page.goto(base + "#/s/3.1.1");
+    await page.waitForFunction(() => /Harrowgate/.test(document.querySelector(".sec-h")?.textContent || ""));
+    const shop = await page.locator(".body table, .body pre").count();
+    check(shop >= 2, `[${name}] shop tables kept (${shop})`);
+    await page.click("#searchBtn");
+    await page.fill("#q", "porridge");
+    await page.waitForSelector(".results li");
+    check(await page.locator(".results li").count() >= 1, `[${name}] search finds text`);
+    await ctx.close();
+  }
+  const ctx = await browser.newContext();
+  const page = await ctx.newPage();
+  await page.goto(base);
+  await page.setInputFiles("#file", cp);
+  await page.waitForSelector(".home");
+  await page.goto(base + "#/s/1.0");
+  await page.waitForSelector("article.sec");
+  const txt = await page.textContent(".body");
+  check(txt.includes("It\u2019s \u201cquoted\u201d text from 1999, caf\u00e9 included."), "[cp1252] Windows-1252 text decoded with curly quotes intact");
+  await ctx.close();
+}
+
 await browser.close();
 server.close();
 console.log(errors.length ? `\n${errors.length} problem(s):\n` + errors.join("\n") : "\nAll checks passed.");

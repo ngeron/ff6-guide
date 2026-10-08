@@ -11,7 +11,7 @@ Live app: https://ngeron.github.io/ff6-guide/
 1. **Save the guide.** In Safari, open the guide on GameFAQs, tap **Share → Options → PDF**, and save it to Files.
 2. **Open the app** in Safari (or Chrome) and tap **Share → Add to Home Screen**. Use the Home Screen icon from then on. It opens full screen, works offline, and its storage isn't cleared after a week of disuse the way a regular Safari tab's can be. The Home Screen app keeps its own storage, separate from the browser, so import inside it.
 3. **Import** the PDF. The app rebuilds the guide's text from the PDF and splits it into sections.
-4. **Save the cleaned text** (Reading settings → Save cleaned text) to iCloud Drive. That `.txt` file is your master copy: edit it as you like, and import it instead of the PDF from then on.
+4. **Save a clean copy** (Reading settings → Save a clean copy) to iCloud Drive. That file is your master copy: edit it as you like, and import it instead of the PDF from then on.
 
 To pick up edits to your master copy, import it again (Reading settings → Import a new copy). Your progress is kept as long as section numbers don't change.
 
@@ -25,6 +25,20 @@ To pick up edits to your master copy, import it again (Reading settings → Impo
 - Maps: your own map images and links to hosted maps, attachable to guide sections
 - Offline support through a service worker
 - Reset button at the bottom of the contents panel: after an "are you really sure?" check (No is the default), it removes the guide and its progress and returns to the import page
+
+## Guide formats
+
+The app imports guides in several formats. Each has its own importer, and all of them produce the same sections, so contents, search, progress and maps work the same way for every format.
+
+| File | What it's for | Clean copy saved as |
+|---|---|---|
+| PDF (`.pdf`) | A text guide page saved from Safari (Share → Options → PDF). The guide must be in a fixed-width font. | `.txt` |
+| Text (`.txt`) | Classic fixed-width text guides, including your edited copy. UTF-8 or Windows-1252. | `.txt` |
+| Web page (`.html`) | A saved guide page. Formatted guides use the page's headings (h1–h6), lists, tables and links; text guides shown in `<pre>` on the page go through the text importer. Site menus, sidebars and footers are left out. | `.html` (guide only) |
+| Web archive (`.webarchive`) | Safari's Share → Options → Web Archive. Unwrapped and imported like a web page. | `.html` (guide only) |
+| Markdown (`.md`) | `#` headings, lists, tables, code blocks, links. Contents links like `[3.1 Town](#31-town)` work (GitHub-style heading ids). | `.md` |
+
+Sections come from headings. In text guides, a heading is a line underlined with asterisks (see *Editing your copy*). In web pages and Markdown, the top heading level used becomes chapters and deeper levels become subsections; a single `h1` above other headings is treated as the guide's title. A number at the start of a heading (`3.1.1 Harrowgate`) becomes the section number used for links and maps.
 
 ## Maps
 
@@ -79,7 +93,11 @@ There's no build step. The app is plain HTML, CSS and JavaScript modules, and Gi
 index.html            shell: top bar, contents panel, search and settings sheets
 css/app.css           all styles; color tokens for Paper and Night at the top
 js/app.js             routing, views, import/export, search, settings
-js/parse.js           guide text → sections and blocks
+js/importers/index.js  importer overview, document structure, format detection, search text
+js/importers/text.js   fixed-width text guides → sections and blocks
+js/importers/html.js   web pages → sections and blocks (finds the guide's part of the page)
+js/importers/markdown.js  Markdown → HTML → html.js
+js/importers/webarchive.js  Safari web archives → HTML
 js/render.js          blocks → HTML
 js/extract.js         PDF → fixed-width text lines (uses pdf.js)
 js/store.js           IndexedDB for the guide and maps, localStorage for settings and progress
@@ -90,7 +108,8 @@ vendor/pdfjs/         pdf.js legacy build (Apache-2.0, see its LICENSE)
 test/e2e.mjs          headless browser smoke test
 test/make_fixture.py  generates an invented guide (and optionally a PDF) for testing
 test/make_maps.py     generates the invented Ember Crown map pack
-test/fixtures/        that invented guide, public domain (not the real walkthrough)
+test/make_variants.py the invented guide as a web page, web archive, Markdown and <pre> page
+test/fixtures/        those invented test files, public domain (not the real walkthrough)
 ```
 
 To run it locally, serve the folder and open it in a browser:

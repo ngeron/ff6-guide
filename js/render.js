@@ -21,11 +21,34 @@ function labelled(s) {
   return inline(s);
 }
 
-// link(num) returns an href for a section number, or null.
-export function renderBlocks(blocks, link) {
+// Sanitized inline HTML from the HTML importer: in-page links (#id) become links to the
+// section that holds the target, and links to other sites open in a new tab.
+function fixHtml(html, anchor) {
+  return html.replace(/<a href="([^"]*)">/g, (m, href) => {
+    if (href.startsWith("#")) {
+      const to = anchor(decodeURIComponent(href.slice(1)).replace(/&amp;/g, "&"));
+      return to ? `<a href="${to}">` : `<a class="deadlink">`;
+    }
+    return `<a href="${href}" target="_blank" rel="noopener noreferrer">`;
+  });
+}
+
+// link(num) returns an href for a section number; anchor(id) one for an element id. Either may return null.
+export function renderBlocks(blocks, link, anchor = () => null) {
   const out = [];
   for (const b of blocks) {
-    if (b.type === "p") {
+    if (b.html !== undefined && (b.type === "p" || b.type === "quote")) {
+      const h = fixHtml(b.html, anchor);
+      out.push(b.type === "quote" ? `<blockquote>${h}</blockquote>` : `<p>${h}</p>`);
+    } else if (b.type === "list") {
+      out.push(renderList(b, anchor));
+    } else if (b.type === "table") {
+      const row = (r, th) => "<tr>" + r.map((c) => `<${th ? "th" : "td"}>${fixHtml(c.html, anchor)}</${th ? "th" : "td"}>`).join("") + "</tr>";
+      const [first, ...rest] = b.rows;
+      out.push(`<div class="tbl"><table>${b.head ? `<thead>${row(first, true)}</thead><tbody>${rest.map((r) => row(r)).join("")}` : `<tbody>${b.rows.map((r) => row(r)).join("")}`}</tbody></table></div>`);
+    } else if (b.type === "img") {
+      out.push(`<figure class="fig"><img src="${esc(b.src)}" alt="${esc(b.alt)}" loading="lazy" referrerpolicy="no-referrer">${b.caption ? `<figcaption>${esc(b.caption)}</figcaption>` : ""}</figure>`);
+    } else if (b.type === "p") {
       const t = b.text;
       if (/:$/.test(t) && t.length <= 48 && !/[.!?]\s/.test(t)) out.push(`<p class="label">${inline(t)}</p>`);
       else out.push(`<p${b.indent ? ' class="ind"' : ""}>${labelled(t)}</p>`);
@@ -52,6 +75,24 @@ export function renderBlocks(blocks, link) {
     }
   }
   return out.join("\n");
+}
+
+function renderList(b, anchor) {
+  // Items carry a nesting depth; rebuild the nested lists.
+  const tag = b.ordered ? "ol" : "ul";
+  let html = "", depth = -1;
+  for (const it of b.items) {
+    const d = Math.max(0, it.depth | 0);
+    if (d > depth) {
+      for (; depth < d; depth++) html += depth < 0 ? `<${tag} class="list${b.plain ? " plain" : ""}"><li>` : `<${tag}><li>`;
+    } else {
+      for (; depth > d; depth--) html += `</li></${tag}>`;
+      html += "</li><li>";
+    }
+    html += fixHtml(it.html, anchor);
+  }
+  for (; depth >= 0; depth--) html += `</li></${tag}>`;
+  return html;
 }
 
 export function renderHeading(s) {

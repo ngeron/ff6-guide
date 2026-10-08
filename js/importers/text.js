@@ -1,14 +1,5 @@
-// Turns the guide's plain text (79-column GameFAQs format) into a structured document.
-//
-// Document shape:
-//   { title, author, width, sections: [Section] }
-//   Section = { key, num, title, level, id, blocks: [Block], subtitle? }
-//     level 1 = front matter / title page, 2 = chapter (1.0, 4.0, Foreword), 3 = subsection (4.15.2)
-//   Block = { type: "p", text, indent }
-//         | { type: "lines", items: [{ text, indent }] }   short lines kept as separate rows
-//         | { type: "pre", lines: [string] }                column-aligned tables (shops, charts)
-//         | { type: "meta", label, text }                   indented info boxes ("Opponents:")
-//         | { type: "toc", entries: [{ num, text }] }       tables of contents
+// Plain-text importer: turns a fixed-width text guide (the classic GameFAQs format) into the
+// shared document structure described in ./index.js.
 
 const DIVIDER = /^\s*([*\-=_~#])\1{9,}\s*$/;
 const STARS = /^\s*\*{8,}\s*$/;
@@ -16,7 +7,7 @@ const TOCLINE = /^\s{0,3}(\d{1,2}\.\d{1,2}(?:\.\d{1,2})?)\s+(\S.*)$/;
 const ALIGNED = /\S {3,}\S/;
 
 export function normSpace(s) {
-  return s.replace(/[     ]/g, " ").replace(/\t/g, "    ").replace(/\r$/, "");
+  return s.replace(/[\u00a0\u2007\u202f\u2002\u2003]/g, " ").replace(/\t/g, "    ").replace(/\r$/, "");
 }
 
 function textWidth(lines) {
@@ -32,7 +23,7 @@ function slug(s) {
 const indentOf = (s) => s.length - s.replace(/^ +/, "").length;
 const firstWord = (s) => s.trim().split(/\s+/)[0] || "";
 
-export function parse(text) {
+export function parseText(text) {
   const lines = (Array.isArray(text) ? text : text.split("\n")).map((l) => normSpace(l).replace(/\s+$/, ""));
   const W = textWidth(lines);
   const used = new Set();
@@ -95,7 +86,7 @@ export function parse(text) {
     const m = l.match(/^([^,]{2,40}),\s+[A-Z][a-z]+ \d{4}$/);
     if (m && !author) author = m[1];
   }
-  return { title, author, sections: all, width: W };
+  return { title, author, sections: all, width: W, anchors: {} };
 }
 
 function isWrapped(a, b, W) {
@@ -196,17 +187,4 @@ function blocksFrom(body, W) {
     }
   }
   return blocks;
-}
-
-// Plain text of a section, for search.
-export function sectionText(s) {
-  const parts = [s.title];
-  for (const b of s.blocks) {
-    if (b.type === "p") parts.push(b.text);
-    else if (b.type === "lines") for (const it of b.items) parts.push(it.text);
-    else if (b.type === "pre") parts.push(b.lines.join("\n"));
-    else if (b.type === "meta") parts.push(b.label + ": " + b.text);
-    else if (b.type === "toc") for (const e of b.entries) parts.push(e.num + " " + e.text);
-  }
-  return parts.join("\n");
 }

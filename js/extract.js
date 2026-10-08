@@ -2,7 +2,7 @@
 // The guide is set in a monospace font; everything else on the page (site menus,
 // ads, footers) is in other fonts or sizes and gets dropped.
 
-import { normSpace } from "./parse.js";
+import { normSpace } from "./importers/text.js";
 
 function mode(map) {
   let best = null, bw = -1;
