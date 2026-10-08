@@ -98,6 +98,16 @@
   </div>
 </div>
 
+<dialog id="resetDialog" class="modal" aria-labelledby="resetTitle" aria-describedby="resetDesc">
+  <h2 id="resetTitle">Are you really sure?</h2>
+  <p id="resetDesc">This removes <strong id="resetGuideName">the current guide</strong> from this device, along with every section you've marked done and your reading positions. The app then starts over at the import page.</p>
+  <p class="modal-note">Files in iCloud Drive or Files aren't touched, so you can import your copy again.</p>
+  <div class="row2">
+    <button type="button" class="btn solid" id="resetNo" autofocus>No, keep it</button>
+    <button type="button" class="btn danger" id="resetYes">Yes, reset</button>
+  </div>
+</dialog>
+
 <input type="file" id="file" accept=".pdf,.txt,application/pdf,text/plain" multiple hidden>
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 

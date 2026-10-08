@@ -2,7 +2,7 @@ import { parse, sectionText } from "./parse.js";
 import { renderBlocks, renderHeading, esc, inline } from "./render.js";
 import { loadGuide, saveGuide, removeGuide, askPersist, getPref, setPref } from "./store.js";
 
-const VERSION = "0.1.0";
+const VERSION = "0.2.0";
 const $ = (id) => document.getElementById(id);
 const root = document.documentElement;
 
@@ -141,7 +141,8 @@ function buildToc() {
     }
     html.push("</ol></details></li>");
   }
-  html.push("</ol></div>");
+  html.push(`</ol><div class="toc-foot"><button type="button" class="reset-btn" id="resetBtn">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4.5h4.5"/></svg>Reset and remove guide</button></div></div>`);
   $("toc").innerHTML = html.join("");
   updateTocProgress();
 }
@@ -577,9 +578,15 @@ $("exportBtn").onclick = exportText;
 $("replaceBtn").onclick = () => { closeSheets(); location.hash = "#/import"; };
 $("removeBtn").onclick = () => { $("removeConfirm").hidden = false; };
 $("removeCancel").onclick = () => { $("removeConfirm").hidden = true; };
-$("removeYes").onclick = async () => {
+// Deletes the stored guide and everything tied to it (done marks, reading positions, last
+// section, search). Reading preferences such as text size and theme are kept.
+async function purgeGuideData() {
   await removeGuide();
   for (const k of ["done", "last", "pos", "savedText", "lastQuery"]) setPref(k, null);
+}
+
+$("removeYes").onclick = async () => {
+  await purgeGuideData();
   state.done.clear();
   state.guide = state.doc = null;
   state.byKey.clear();
@@ -593,6 +600,33 @@ $("removeYes").onclick = async () => {
   route();
   toast("Guide removed from this device");
 };
+/* ---------------- reset (contents panel) ---------------- */
+
+const resetDialog = $("resetDialog");
+$("toc").addEventListener("click", (e) => {
+  if (!e.target.closest("#resetBtn")) return;
+  $("resetGuideName").textContent = state.guide ? state.guide.name : "the current guide";
+  resetDialog.showModal();
+  $("resetNo").focus(); // "No" is the default choice
+});
+$("resetNo").onclick = () => resetDialog.close("no");
+resetDialog.addEventListener("click", (e) => { if (e.target === resetDialog) resetDialog.close("no"); });
+$("resetYes").onclick = async () => {
+  $("resetYes").disabled = $("resetNo").disabled = true;
+  try {
+    await purgeGuideData();
+  } catch (ex) {
+    console.error(ex);
+    $("resetYes").disabled = $("resetNo").disabled = false;
+    resetDialog.close("no");
+    toast("The guide couldn't be removed. Try again.");
+    return;
+  }
+  // Reload from a clean URL so the app starts fresh on the import page.
+  history.replaceState(null, "", location.pathname);
+  location.reload();
+};
+
 $("appVersion").textContent = `Version ${VERSION}. The guide and your progress are stored only in this browser.`;
 
 /* ---------------- start ---------------- */

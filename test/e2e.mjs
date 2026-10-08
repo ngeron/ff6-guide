@@ -102,6 +102,42 @@ check(!overflow, "[phone] no horizontal page scroll");
 await page.screenshot({ path: path.join(SHOTS, "7-phone-section.png"), fullPage: true });
 await ctx.close();
 
+// Reset from the contents panel.
+{
+  const ctx = await browser.newContext({ viewport: { width: 1180, height: 820 } });
+  const page = await ctx.newPage();
+  page.on("pageerror", (e) => errors.push("pageerror: " + e.message));
+  await page.goto(base);
+  await page.setInputFiles("#file", path.join(ROOT, "test/fixtures/ember-crown-guide.txt"));
+  await page.waitForSelector(".home");
+  await page.goto(base + "#/s/3.1.1");
+  await page.waitForSelector("#doneBtn");
+  await page.click("#doneBtn");
+  check(await page.locator("#resetBtn").isVisible(), "[reset] button shown at the bottom of the contents panel");
+  await page.click("#resetBtn");
+  check(await page.locator("#resetDialog").isVisible(), "[reset] confirmation dialog opens");
+  check(await page.evaluate(() => document.activeElement && document.activeElement.id) === "resetNo", "[reset] 'No' is focused by default");
+  await page.screenshot({ path: path.join(SHOTS, "8-reset-dialog.png") });
+  await page.keyboard.press("Enter");
+  check(await page.locator("#resetDialog").isHidden(), "[reset] pressing Enter chooses No and closes");
+  check(await page.locator("article.sec").count() === 1, "[reset] guide still loaded after No");
+  await page.click("#resetBtn");
+  await page.keyboard.press("Escape");
+  check(await page.locator("#resetDialog").isHidden(), "[reset] Escape cancels");
+  await page.click("#resetBtn");
+  await Promise.all([page.waitForEvent("load"), page.click("#resetYes")]);
+  await page.waitForSelector(".import");
+  check(true, "[reset] Yes reloads to the import page");
+  check(await page.evaluate(() => location.hash) === "", "[reset] URL reset to the start page");
+  const left = await page.evaluate(async () => {
+    const m = await import("./js/store.js");
+    return { guide: await m.loadGuide(), done: localStorage.getItem("ff6g:done"), last: localStorage.getItem("ff6g:last") };
+  });
+  check(!left.guide && left.done === null && left.last === null, "[reset] guide, done marks and last section purged");
+  check(await page.locator("#tocBtn").isHidden(), "[reset] contents button hidden with no guide");
+  await ctx.close();
+}
+
 await browser.close();
 server.close();
 console.log(errors.length ? `\n${errors.length} problem(s):\n` + errors.join("\n") : "\nAll checks passed.");
