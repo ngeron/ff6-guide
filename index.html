@@ -18,15 +18,15 @@
 </head>
 <body>
 <header class="bar" id="bar">
-  <button type="button" class="ib" id="tocBtn" aria-label="Contents" aria-controls="toc" aria-expanded="false">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+  <button type="button" class="ib" id="tocBtn" aria-label="Contents and maps" aria-controls="toc" aria-expanded="false">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4.5" width="18" height="15" rx="2.5"/><path d="M9.5 4.5v15M5.5 8.5h1.5M5.5 11.5h1.5"/></svg>
   </button>
   <a class="bar-title" id="barTitle" href="#/">FF6 Guide</a>
   <button type="button" class="ib" id="searchBtn" aria-label="Search the guide">
     <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg>
   </button>
-  <button type="button" class="ib" id="settingsBtn" aria-label="Reading settings">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 19 8.5 5h1L15 19M5 14h8"/><path d="M15.5 19l3-8h.6l3 8M16.4 16.6h4.8"/></svg>
+  <button type="button" class="ib" id="settingsBtn" aria-label="Settings">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.5h16M4 12h16M4 17.5h16"/></svg>
   </button>
 </header>
 
@@ -58,9 +58,10 @@
 <div id="settingsSheet" class="sheet" role="dialog" aria-modal="true" aria-labelledby="settingsTitle" hidden>
   <div class="sheet-in">
     <div class="sheet-head">
-      <h2 id="settingsTitle">Reading</h2>
+      <h2 id="settingsTitle">Settings</h2>
       <button type="button" class="txt-btn" data-close>Done</button>
     </div>
+    <h2 class="sheet-sub first">Reading</h2>
     <div class="setting">
       <span class="setting-k">Text size</span>
       <div class="stepper">
@@ -107,20 +108,17 @@
     <div class="stack">
       <button type="button" class="btn" id="exportBtn">Save a clean copy</button>
       <button type="button" class="btn" id="replaceBtn">Import a new copy</button>
-      <button type="button" class="btn danger" id="removeBtn">Remove from this device</button>
-      <div id="removeConfirm" class="confirm" hidden>
-        <p>This deletes the guide and your progress from this device. Your files in iCloud Drive aren't touched.</p>
-        <div class="row2">
-          <button type="button" class="btn" id="removeCancel">Keep it</button>
-          <button type="button" class="btn danger solid" id="removeYes">Remove</button>
-        </div>
-      </div>
     </div>
     <h2 class="sheet-sub">Backup</h2>
     <p class="hint">One file with the guide, your progress, character names and maps. Restore it here or on another device to pick up where you left off.</p>
     <div class="stack">
       <button type="button" class="btn" id="backupBtn">Save a backup</button>
       <button type="button" class="btn" id="restoreBtn">Restore from a backup</button>
+    </div>
+    <h2 class="sheet-sub">Start over</h2>
+    <p class="hint">Removes the guide and your progress from this device. Maps, character names and color-coding fixes are kept.</p>
+    <div class="stack">
+      <button type="button" class="btn danger" id="resetBtn">Reset and remove guide</button>
     </div>
     <p class="hint small" id="appVersion"></p>
   </div>
@@ -129,7 +127,7 @@
 <dialog id="resetDialog" class="modal" aria-labelledby="resetTitle" aria-describedby="resetDesc">
   <h2 id="resetTitle">Are you really sure?</h2>
   <p id="resetDesc">This removes <strong id="resetGuideName">the current guide</strong> from this device, along with every section you've marked done and your reading positions. The app then starts over at the import page.</p>
-  <p class="modal-note">Your maps and map links are kept. Files in iCloud Drive or Files aren't touched, so you can import your copy again.</p>
+  <p class="modal-note">Your maps, character names and color-coding fixes are kept. Files in iCloud Drive or Files aren't touched, so you can import your copy again.</p>
   <div class="row2">
     <button type="button" class="btn solid" id="resetNo" autofocus>No, keep it</button>
     <button type="button" class="btn danger" id="resetYes">Yes, reset</button>

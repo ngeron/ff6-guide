@@ -103,7 +103,7 @@ export async function importFiles(files, onProgress = () => {}) {
     onProgress(`Reading ${f.name}`);
     if (e === "zip") {
       const entries = await unzip(await f.arrayBuffer());
-      if (entries.some((en) => en.name === "backup.json")) { problems.push(`${f.name} is a full backup. Restore it from Reading settings`); continue; }
+      if (entries.some((en) => en.name === "backup.json")) { problems.push(`${f.name} is a full backup. Restore it from Settings`); continue; }
       for (const en of entries) {
         if (baseName(en.name).startsWith(".") || en.name.includes("__MACOSX")) continue;
         if (baseName(en.name).toLowerCase() === "maps.json") manifest = parseManifest(en.data, problems);

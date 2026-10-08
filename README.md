@@ -11,9 +11,9 @@ Live app: https://ngeron.github.io/ff6-guide/
 1. **Save the guide.** In Safari, open the guide on GameFAQs, tap **Share → Options → PDF**, and save it to Files.
 2. **Open the app** in Safari (or Chrome) and tap **Share → Add to Home Screen**. Use the Home Screen icon from then on. It opens full screen, works offline, and its storage isn't cleared after a week of disuse the way a regular Safari tab's can be. The Home Screen app keeps its own storage, separate from the browser, so import inside it.
 3. **Import** the PDF. The app rebuilds the guide's text from the PDF and splits it into sections.
-4. **Save a clean copy** (Reading settings → Save a clean copy) to iCloud Drive. That file is your master copy: edit it as you like, and import it instead of the PDF from then on.
+4. **Save a clean copy** (Settings → Save a clean copy) to iCloud Drive. That file is your master copy: edit it as you like, and import it instead of the PDF from then on.
 
-To pick up edits to your master copy, import it again (Reading settings → Import a new copy). Your progress is kept as long as section numbers don't change.
+To pick up edits to your master copy, import it again (Settings → Import a new copy). Your progress is kept as long as section numbers don't change.
 
 ## Features
 

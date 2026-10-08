@@ -6,7 +6,7 @@ import { KINDS, KIND_LABEL, loadTags, saveTags, buildTerms, matcher, markNames }
 import { DEFAULT_NAMES, loadNames, saveNames, renameDoc } from "./names.js";
 import { initMaps, loadMaps, getMap, hasMaps, itemsForSection, importFiles as importMapFiles, renderPanel as renderMapsPanel, bindPanel as bindMapsPanel, renderViewer as renderMapViewer } from "./maps.js";
 
-const VERSION = "0.7.0";
+const VERSION = "0.8.0";
 const $ = (id) => document.getElementById(id);
 const root = document.documentElement;
 
@@ -259,8 +259,7 @@ function buildToc() {
     }
     html.push("</ol></details></li>");
   }
-  html.push(`</ol><div class="toc-foot"><button type="button" class="reset-btn" id="resetBtn">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4.5h4.5"/></svg>Reset and remove guide</button></div></div>`);
+  html.push("</ol></div>");
   $("tocContents").innerHTML = html.join("");
   updateTocProgress();
 }
@@ -357,7 +356,7 @@ function viewImport(message) {
     <dl class="kinds">
       <div><dt>A PDF of a text guide</dt><dd>In Safari, open the guide on GameFAQs, tap Share, then Options, choose PDF, and save it to Files. This works for guides set in a fixed-width (typewriter) font.</dd></div>
       <div><dt>A saved web page</dt><dd>An .html file or a Safari web archive (Share, Options, Web Archive). Works for formatted guides with headings, lists and tables, and for text guides shown on a web page.</dd></div>
-      <div><dt>A backup from this app</dt><dd>A .zip saved with "Save a backup" in Reading settings, from this or another device. It brings back the guide, your progress, character names and maps.</dd></div>
+      <div><dt>A backup from this app</dt><dd>A .zip saved with "Save a backup" in Settings, from this or another device. It brings back the guide, your progress, character names and maps.</dd></div>
       <div><dt>A text or Markdown file</dt><dd>The clean copy this app saves, a guide in its original fixed-width text format, or Markdown (.md) using # for headings. Edited copies work too.</dd></div>
     </dl>
     <p class="hint">After importing a PDF or web page, save the clean copy the app offers and import that from then on.</p>
@@ -849,12 +848,12 @@ function openSheet(id) {
 }
 function closeSheets() {
   for (const id of ["searchSheet", "settingsSheet"]) $(id).hidden = true;
-  $("removeConfirm").hidden = true;
   if ($("scrim").hidden) document.body.classList.remove("locked");
 }
 for (const b of document.querySelectorAll("[data-close]")) b.onclick = closeSheets;
 for (const id of ["searchSheet", "settingsSheet"]) $(id).addEventListener("click", (e) => { if (e.target.id === id) closeSheets(); });
-addEventListener("keydown", (e) => { if (e.key === "Escape") { closeSheets(); if (!wide()) setTocOpen(false); } });
+// Escape closes a dialog first (the browser does that), and only then the sheet or drawer under it.
+addEventListener("keydown", (e) => { if (e.key === "Escape" && !document.querySelector("dialog[open]")) { closeSheets(); if (!wide()) setTocOpen(false); } });
 
 $("searchBtn").onclick = () => {
   openSheet("searchSheet");
@@ -871,12 +870,10 @@ function updateGuideInfo() {
   $("guideInfo").textContent = g
     ? `${g.name}, imported ${new Date(g.importedAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}. ${state.order.length - 1} sections.`
     : "No guide imported yet.";
-  for (const id of ["exportBtn", "removeBtn"]) $(id).disabled = !g;
+  for (const id of ["exportBtn", "resetBtn"]) $(id).disabled = !g;
 }
 $("exportBtn").onclick = exportText;
 $("replaceBtn").onclick = () => { closeSheets(); location.hash = "#/import"; };
-$("removeBtn").onclick = () => { $("removeConfirm").hidden = false; };
-$("removeCancel").onclick = () => { $("removeConfirm").hidden = true; };
 // Deletes the stored guide and everything tied to it (done marks, reading positions, last
 // section, search). Reading preferences such as text size and theme are kept.
 async function purgeGuideData() {
@@ -884,26 +881,10 @@ async function purgeGuideData() {
   for (const k of ["done", "last", "pos", "savedText", "lastQuery"]) setPref(k, null);
 }
 
-$("removeYes").onclick = async () => {
-  await purgeGuideData();
-  state.done.clear();
-  state.guide = state.base = state.doc = null;
-  state.byKey.clear();
-  state.byNum.clear();
-  state.order = [];
-  $("tocContents").innerHTML = "";
-  syncTocMode();
-  closeSheets();
-  updateGuideInfo();
-  location.hash = "#/import";
-  route();
-  toast("Guide removed from this device");
-};
-/* ---------------- reset (contents panel) ---------------- */
+/* ---------------- reset ---------------- */
 
 const resetDialog = $("resetDialog");
-$("toc").addEventListener("click", (e) => {
-  if (!e.target.closest("#resetBtn")) return;
+$("resetBtn").addEventListener("click", () => {
   $("resetGuideName").textContent = state.guide ? state.guide.name : "the current guide";
   resetDialog.showModal();
   $("resetNo").focus(); // "No" is the default choice

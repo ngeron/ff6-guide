@@ -113,7 +113,9 @@ await ctx.close();
   await page.goto(base + "#/s/3.1.1");
   await page.waitForSelector("#doneBtn");
   await page.click("#doneBtn");
-  check(await page.locator("#resetBtn").isVisible(), "[reset] button shown at the bottom of the contents panel");
+  check(await page.locator(".toc-list").isVisible() && await page.locator("#toc #resetBtn").count() === 0, "[reset] contents panel has no reset button");
+  await page.click("#settingsBtn");
+  check(await page.locator("#settingsSheet #resetBtn").isVisible(), "[reset] reset button shown in settings");
   await page.click("#resetBtn");
   check(await page.locator("#resetDialog").isVisible(), "[reset] confirmation dialog opens");
   check(await page.evaluate(() => document.activeElement && document.activeElement.id) === "resetNo", "[reset] 'No' is focused by default");
@@ -124,6 +126,7 @@ await ctx.close();
   await page.click("#resetBtn");
   await page.keyboard.press("Escape");
   check(await page.locator("#resetDialog").isHidden(), "[reset] Escape cancels");
+  check(await page.locator("#settingsSheet").isVisible(), "[reset] Escape leaves settings open");
   await page.click("#resetBtn");
   await Promise.all([page.waitForEvent("load"), page.click("#resetYes")]);
   await page.waitForSelector(".import");
@@ -210,7 +213,7 @@ for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, heigh
     await page.waitForSelector(".mp-item");
     check(await page.locator(".mp-item").count() === 3 && await page.locator(".mp-link").count() === 3, "[maps ipad] maps and links persist across reloads");
     // Reset removes the guide but keeps maps.
-    await page.click("#tabContents");
+    await page.click("#settingsBtn");
     await page.click("#resetBtn");
     await Promise.all([page.waitForEvent("load"), page.click("#resetYes")]);
     await page.waitForSelector(".import");

@@ -181,6 +181,7 @@ mark { background: var(--hit); color: inherit; border-radius: 2px; padding: 0 1p
 .sheet-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
 .sheet-head h2 { flex: 1; margin: 0; font-size: 1.15rem; }
 .sheet-sub { font-size: 1rem; margin: 1.4em 0 .3em; }
+.sheet-sub.first { margin-top: .6em; }
 #q { flex: 1; min-width: 0; font: 17px var(--ui); padding: 10px 12px; border-radius: 10px; border: 1.5px solid var(--rule); background: var(--panel); color: var(--fg); }
 .hint { color: var(--mute); font-size: 14px; margin: .3em 0 .6em; }
 .hint.small { font-size: 12.5px; margin-top: 1.4em; }
