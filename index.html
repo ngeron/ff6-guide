@@ -107,6 +107,12 @@
         </div>
       </div>
     </div>
+    <h2 class="sheet-sub">Backup</h2>
+    <p class="hint">One file with the guide, your progress, character names and maps. Restore it here or on another device to pick up where you left off.</p>
+    <div class="stack">
+      <button type="button" class="btn" id="backupBtn">Save a backup</button>
+      <button type="button" class="btn" id="restoreBtn">Restore from a backup</button>
+    </div>
     <p class="hint small" id="appVersion"></p>
   </div>
 </div>
@@ -122,6 +128,17 @@
 </dialog>
 
 <input type="file" id="file" accept=".pdf,.txt,application/pdf,text/plain" multiple hidden>
+<dialog id="restoreDialog" class="modal" aria-labelledby="restoreTitle" aria-describedby="restoreDesc">
+  <h2 id="restoreTitle">Replace what's on this device?</h2>
+  <p id="restoreDesc">The backup from <strong id="restoreWhen"></strong> replaces the guide, progress, character names and maps on this device.</p>
+  <p class="modal-note">In the backup: <span id="restoreWhat"></span></p>
+  <div class="row2">
+    <button type="button" class="btn solid" id="restoreNo" autofocus>Cancel</button>
+    <button type="button" class="btn danger" id="restoreYes">Replace</button>
+  </div>
+</dialog>
+
+<input type="file" id="backupFile" accept=".zip,application/zip" hidden>
 <input type="file" id="mapFile" accept="image/*,.zip,.json,application/zip,application/json" multiple hidden>
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 

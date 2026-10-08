@@ -319,6 +319,83 @@ for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, heigh
   await ctx.close();
 }
 
+// Backup: save on one device, restore on a fresh one, and restore over existing data.
+{
+  const watch = (page) => {
+    page.on("pageerror", (e) => errors.push("pageerror: " + e.message));
+    page.on("console", (m) => { if (m.type() === "error") errors.push("console: " + m.text()); });
+  };
+  const ctx = await browser.newContext({ viewport: { width: 1180, height: 820 }, acceptDownloads: true });
+  const page = await ctx.newPage();
+  watch(page);
+  await page.goto(base);
+  await page.setInputFiles("#file", path.join(ROOT, "test/fixtures/ember-crown-guide.txt"));
+  await page.waitForSelector(".home");
+  await page.setInputFiles("#mapFile", path.join(ROOT, "test/fixtures/ember-crown-maps.zip"));
+  await page.waitForFunction(() => document.querySelectorAll(".mp-item").length === 4, null, { timeout: 15000 });
+  await page.goto(base + "#/s/3.1.1");
+  await page.waitForSelector("#doneBtn");
+  await page.click("#doneBtn");
+  await page.click("#settingsBtn");
+  await page.click("#nameAdd");
+  await page.fill("#nameList li:last-child .nm-from", "Corvin");
+  await page.fill("#nameList li:last-child .nm-to", "Prns Donut");
+  await page.press("#nameList li:last-child .nm-to", "Tab");
+  await page.screenshot({ path: path.join(SHOTS, "12-backup-settings.png") });
+  const [dl] = await Promise.all([page.waitForEvent("download"), page.click("#backupBtn")]);
+  const backup = path.join(SHOTS, "backup.zip");
+  await dl.saveAs(backup);
+  check(/^FF6 Guide backup \d{4}-\d\d-\d\d\.zip$/.test(dl.suggestedFilename()), `[backup] saved as ${dl.suggestedFilename()}`);
+  await page.click("#settingsSheet [data-close]");
+
+  // A backup zip added as maps is turned away rather than imported as loose images.
+  await page.setInputFiles("#mapFile", backup);
+  await page.waitForFunction(() => /full backup/.test(document.getElementById("toast").textContent));
+  check(await page.locator(".mp-item").count() === 4, "[backup] maps picker refuses a backup");
+
+  // Restore on a fresh device from the import page.
+  const ctx2 = await browser.newContext({ viewport: { width: 1180, height: 820 } });
+  const p2 = await ctx2.newPage();
+  watch(p2);
+  await p2.goto(base);
+  await p2.waitForSelector(".import");
+  await Promise.all([p2.waitForEvent("load"), p2.setInputFiles("#file", backup)]);
+  await p2.waitForSelector("article.sec");
+  check((await p2.textContent(".sec-h")).includes("Harrowgate"), "[backup] restore resumes at the last section read");
+  check(await p2.locator('.toc-list a.done[data-key="3.1.1"]').count() === 1, "[backup] restored done marks");
+  check(await p2.locator("#tocMaps .mp-item").count() === 4 && await p2.locator("#tocMaps .mp-link").count() === 3, "[backup] restored maps and links");
+  await p2.goto(base + "#/s/3.1.1");
+  await p2.waitForSelector("article.sec");
+  check((await p2.textContent("article.sec")).includes("Prns Donut"), "[backup] restored character names");
+
+  // Restore over existing data asks first; Cancel keeps things, Replace restores.
+  await p2.click("#settingsBtn");
+  await p2.fill("#nameList .nm-to", "Someone Else");
+  await p2.press("#nameList .nm-to", "Tab");
+  await p2.setInputFiles("#backupFile", backup);
+  await p2.waitForSelector("#restoreDialog[open]");
+  check(/Corvin|guide/.test(await p2.textContent("#restoreWhat")), `[backup] dialog lists the contents (${await p2.textContent("#restoreWhat")})`);
+  await p2.screenshot({ path: path.join(SHOTS, "13-restore-dialog.png") });
+  await p2.click("#restoreNo");
+  check((await p2.textContent("article.sec")).includes("Someone Else"), "[backup] Cancel keeps current data");
+  await p2.click("#settingsBtn");
+  await p2.setInputFiles("#backupFile", backup);
+  await p2.waitForSelector("#restoreDialog[open]");
+  await Promise.all([p2.waitForEvent("load"), p2.click("#restoreYes")]);
+  await p2.waitForSelector("article.sec");
+  await p2.goto(base + "#/s/3.1.1");
+  await p2.waitForSelector("article.sec");
+  check((await p2.textContent("article.sec")).includes("Prns Donut"), "[backup] Replace restores the backup");
+
+  // A map pack chosen as a backup is explained.
+  await p2.goto(base + "#/import");
+  await p2.setInputFiles("#file", path.join(ROOT, "test/fixtures/ember-crown-maps.zip"));
+  await p2.waitForSelector("#importErr:not([hidden])");
+  check(/isn't a backup/.test(await p2.textContent("#importErr")), "[backup] map pack on the import page is explained");
+  await ctx2.close();
+  await ctx.close();
+}
+
 await browser.close();
 server.close();
 console.log(errors.length ? `\n${errors.length} problem(s):\n` + errors.join("\n") : "\nAll checks passed.");

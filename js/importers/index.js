@@ -28,17 +28,18 @@ import { importHtml } from "./html.js";
 import { importMarkdown } from "./markdown.js";
 import { webarchiveToHtml } from "./webarchive.js";
 
-export const ACCEPT = ".pdf,.txt,.text,.html,.htm,.webarchive,.md,.markdown,application/pdf,text/plain,text/html,text/markdown";
+export const ACCEPT = ".pdf,.txt,.text,.html,.htm,.webarchive,.md,.markdown,.zip,application/pdf,text/plain,text/html,text/markdown,application/zip";
 
 const ext = (name) => (name.split(".").pop() || "").toLowerCase();
 
-// What kind of file this is: "pdf", "text", "html", "webarchive" or "markdown".
+// What kind of file this is: "pdf", "text", "html", "webarchive", "markdown" or "zip" (an app backup).
 export async function detectKind(file) {
   const e = ext(file.name);
   const head = new Uint8Array(await file.slice(0, 512).arrayBuffer());
   const sig = new TextDecoder("latin1").decode(head);
   if (sig.startsWith("%PDF")) return "pdf";
   if (sig.startsWith("bplist00")) return "webarchive";
+  if (sig.startsWith("PK\x03\x04") || e === "zip") return "zip";
   if (e === "md" || e === "markdown") return "markdown";
   if (e === "html" || e === "htm" || /^\s*(<!doctype html|<html|<head|<body)/i.test(sig.replace(/^﻿|^\xef\xbb\xbf/, ""))) return "html";
   if (e === "pdf") return "pdf";

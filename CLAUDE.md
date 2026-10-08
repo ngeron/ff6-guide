@@ -4,10 +4,11 @@ A reader web app for the owner's own copy of a Final Fantasy VI Advance walkthro
 
 ## Rules
 
-- **Never commit the walkthrough or any real guide text.** It's the author's copyrighted work. The app imports the user's own copy into on-device storage; the repo holds only code. `.gitignore` blocks `*.txt`, `*.pdf` and `*.epub` outside `test/fixtures/`. Test with the invented Ember Crown fixtures instead, and keep any new fixtures original and public domain.
+- **Never commit the walkthrough or any real guide text.** It's the author's copyrighted work. The app imports the user's own copy into on-device storage; the repo holds only code. `.gitignore` blocks `*.txt`, `*.pdf`, `*.epub` and `*.zip` (backups hold the guide) outside `test/fixtures/`. Test with the invented Ember Crown fixtures instead, and keep any new fixtures original and public domain.
 - **Commit directly to `main` and push.** No branches or pull requests unless the owner asks. Every push deploys.
 - **No build step.** Plain HTML, CSS and ES modules served as they are. Don't add bundlers, frameworks or npm dependencies to the app. The npm registry isn't reachable from Claude's cloud sessions anyway. Vendored libraries go in `vendor/` with their license (currently pdf.js, the legacy build).
 - **When you add, rename or remove an app file, update `APP` in `sw.js` and bump `CACHE`**, or the offline cache serves stale files.
+- **Anything the user adds or changes (progress, names, maps, future settings) goes in backups.** `js/backup.js` defines the backup .zip (`backup.json` manifest plus files); add new data there as a new key and extend the backup test in `e2e.mjs`. Per-device reading settings (text size, theme) stay out.
 - Keep the UI working at iPad (landscape and portrait) and phone widths, and in both the Paper (light) and Night (dark) themes. Colors come from the tokens at the top of `css/app.css`.
 - Bump `VERSION` in `js/app.js` for user-visible changes.
 
@@ -26,6 +27,8 @@ js/extract.js            PDF → fixed-width text lines (pdf.js), for monospace 
 js/render.js             blocks → HTML
 js/store.js              IndexedDB (guide, maps) and localStorage (settings, progress)
 js/maps.js, js/zip.js    maps panel, map packs (.zip + maps.json), map viewer
+js/names.js              character renames, applied to the parsed guide when shown
+js/backup.js             backup .zip: guide, progress, names, maps; save and restore
 sw.js                    offline cache
 test/                    e2e smoke test and fixture generators
 ```

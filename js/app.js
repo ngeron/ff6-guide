@@ -1,10 +1,11 @@
 import { parseGuide, sectionText, detectKind, readText, importDocument, parseText, extFor, ACCEPT } from "./importers/index.js";
 import { renderBlocks, renderHeading, esc, inline } from "./render.js";
 import { loadGuide, saveGuide, removeGuide, askPersist, getPref, setPref } from "./store.js";
+import { makeBackup, readBackup, describeBackup, restoreBackup } from "./backup.js";
 import { DEFAULT_NAMES, loadNames, saveNames, renameDoc } from "./names.js";
-import { initMaps, loadMaps, getMap, itemsForSection, importFiles as importMapFiles, renderPanel as renderMapsPanel, bindPanel as bindMapsPanel, renderViewer as renderMapViewer } from "./maps.js";
+import { initMaps, loadMaps, getMap, hasMaps, itemsForSection, importFiles as importMapFiles, renderPanel as renderMapsPanel, bindPanel as bindMapsPanel, renderViewer as renderMapViewer } from "./maps.js";
 
-const VERSION = "0.5.0";
+const VERSION = "0.6.0";
 const $ = (id) => document.getElementById(id);
 const root = document.documentElement;
 
@@ -297,6 +298,7 @@ function viewImport(message) {
     <dl class="kinds">
       <div><dt>A PDF of a text guide</dt><dd>In Safari, open the guide on GameFAQs, tap Share, then Options, choose PDF, and save it to Files. This works for guides set in a fixed-width (typewriter) font.</dd></div>
       <div><dt>A saved web page</dt><dd>An .html file or a Safari web archive (Share, Options, Web Archive). Works for formatted guides with headings, lists and tables, and for text guides shown on a web page.</dd></div>
+      <div><dt>A backup from this app</dt><dd>A .zip saved with "Save a backup" in Reading settings, from this or another device. It brings back the guide, your progress, character names and maps.</dd></div>
       <div><dt>A text or Markdown file</dt><dd>The clean copy this app saves, a guide in its original fixed-width text format, or Markdown (.md) using # for headings. Edited copies work too.</dd></div>
     </dl>
     <p class="hint">After importing a PDF or web page, save the clean copy the app offers and import that from then on.</p>
@@ -528,6 +530,10 @@ $("file").addEventListener("change", async (e) => {
   $("pickBtn").disabled = true;
   try {
     const kinds = await Promise.all(files.map(detectKind));
+    if (kinds.includes("zip")) {
+      if (files.length > 1) throw new Error("onebackup");
+      return await startRestore(files[0], (msg) => { err.textContent = msg; err.hidden = false; });
+    }
     let guide, doc, pages = 0;
     const name = files.map((f) => f.name).join(", ");
     const docKinds = kinds.filter((k) => k === "html" || k === "webarchive" || k === "markdown");
@@ -580,6 +586,8 @@ $("file").addEventListener("change", async (e) => {
     const msg = String(ex && ex.message || ex);
     err.textContent = msg === "notext"
       ? "No guide text was found in that file. If it's a PDF, save the guide page itself from Safari (Share, Options, PDF) and try again."
+      : msg === "onebackup"
+        ? "Import a backup on its own."
       : msg === "onedoc"
         ? "Import a web page or Markdown file on its own. Several files at once only works for PDFs and text files."
       : msg === "nosections:text"
@@ -622,6 +630,77 @@ async function exportText() {
   setTimeout(() => URL.revokeObjectURL(url), 10000);
   setPref("savedText", true);
 }
+
+/* ---------------- backup ---------------- */
+
+async function shareOrDownload(file) {
+  try {
+    if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file] }); return; }
+  } catch (ex) {
+    if (ex && ex.name === "AbortError") return;
+  }
+  const url = URL.createObjectURL(file);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = file.name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+}
+
+$("backupBtn").onclick = async () => {
+  try {
+    await shareOrDownload(await makeBackup(VERSION));
+  } catch (ex) {
+    console.error(ex);
+    toast("The backup couldn't be made.");
+  }
+};
+$("restoreBtn").onclick = () => $("backupFile").click();
+$("backupFile").addEventListener("change", (e) => {
+  const f = e.target.files && e.target.files[0];
+  e.target.value = "";
+  if (f) startRestore(f, toast);
+});
+
+// Reads a backup and, after asking if it would replace anything, restores it and restarts.
+async function startRestore(file, onError) {
+  let b;
+  try {
+    b = await readBackup(file);
+  } catch (ex) {
+    const msg = String(ex && ex.message || ex);
+    if (msg !== "notbackup") console.error(ex);
+    onError(msg === "notbackup"
+      ? "That .zip isn't a backup from this app. To add a map pack, use the Maps tab."
+      : msg.startsWith("That ") ? msg : `That backup couldn't be read (${msg}).`);
+    return;
+  }
+  $("restoreWhat").textContent = describeBackup(b);
+  $("restoreWhen").textContent = b.createdAt ? new Date(b.createdAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }) : "an unknown date";
+  if (state.base || hasMaps() || names.length) {
+    closeSheets();
+    restoreDialog.returnValue = "";
+    restoreDialog.showModal();
+    $("restoreNo").focus();
+    if (await new Promise((resolve) => restoreDialog.addEventListener("close", () => resolve(restoreDialog.returnValue === "yes"), { once: true })) === false) return;
+  }
+  try {
+    await restoreBackup(b);
+  } catch (ex) {
+    console.error(ex);
+    onError("The backup couldn't be restored. Try again.");
+    return;
+  }
+  history.replaceState(null, "", location.pathname);
+  location.reload();
+}
+
+const restoreDialog = $("restoreDialog");
+$("restoreNo").onclick = () => restoreDialog.close("no");
+$("restoreYes").onclick = () => restoreDialog.close("yes");
+restoreDialog.addEventListener("click", (e) => { if (e.target === restoreDialog) restoreDialog.close("no"); });
 
 /* ---------------- search ---------------- */
 

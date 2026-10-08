@@ -3,7 +3,9 @@
 *.txt
 *.pdf
 *.epub
+*.zip
 !test/fixtures/*.txt
+!test/fixtures/*.zip
 
 # Local clutter
 .DS_Store
