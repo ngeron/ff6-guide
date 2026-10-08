@@ -1,6 +1,6 @@
 // Offline support. App files are fetched fresh when online (so changes pushed to GitHub show up
 // on the next load) and served from the cache when offline. The PDF reader is cache-first.
-const CACHE = "ff6-guide-v1";
+const CACHE = "ff6-guide-v2";
 const APP = [
   "./",
   "index.html",
@@ -10,6 +10,8 @@ const APP = [
   "js/render.js",
   "js/store.js",
   "js/extract.js",
+  "js/maps.js",
+  "js/zip.js",
   "manifest.webmanifest",
   "icons/icon-192.png",
   "icons/icon-512.png",

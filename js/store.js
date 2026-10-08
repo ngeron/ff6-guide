@@ -2,21 +2,26 @@
 
 const DB = "ff6-guide";
 const STORE = "kv";
+const MAPS = "maps";
 
 function open() {
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB, 1);
-    req.onupgradeneeded = () => req.result.createObjectStore(STORE);
+    const req = indexedDB.open(DB, 2);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(STORE)) db.createObjectStore(STORE);
+      if (!db.objectStoreNames.contains(MAPS)) db.createObjectStore(MAPS, { keyPath: "id" });
+    };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
   });
 }
 
-async function tx(mode, fn) {
+async function tx(mode, fn, store = STORE) {
   const db = await open();
   return new Promise((resolve, reject) => {
-    const t = db.transaction(STORE, mode);
-    const req = fn(t.objectStore(STORE));
+    const t = db.transaction(store, mode);
+    const req = fn(t.objectStore(store));
     t.oncomplete = () => { db.close(); resolve(req && req.result); };
     t.onerror = t.onabort = () => { db.close(); reject(t.error); };
   });
@@ -25,6 +30,15 @@ async function tx(mode, fn) {
 export const idbGet = (key) => tx("readonly", (s) => s.get(key));
 export const idbSet = (key, value) => tx("readwrite", (s) => s.put(value, key));
 export const idbDel = (key) => tx("readwrite", (s) => s.delete(key));
+
+// Map images: { id, title, section, blob, type, width, height, order, addedAt }
+export const listMaps = async () => ((await tx("readonly", (s) => s.getAll(), MAPS)) || []).sort((a, b) => a.order - b.order || a.addedAt - b.addedAt);
+export const putMap = (m) => tx("readwrite", (s) => s.put(m), MAPS);
+export const deleteMap = (id) => tx("readwrite", (s) => s.delete(id), MAPS);
+export const clearMaps = () => tx("readwrite", (s) => s.clear(), MAPS);
+// Map links: [{ id, title, url, note }]
+export const loadLinks = async () => (await idbGet("mapLinks")) || [];
+export const saveLinks = (links) => idbSet("mapLinks", links);
 
 // Guide source: { text, name, importedAt }
 export const loadGuide = () => idbGet("guide");

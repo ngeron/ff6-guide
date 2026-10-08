@@ -138,6 +138,88 @@ await ctx.close();
   await ctx.close();
 }
 
+// Maps: import a map pack, view, zoom, section chips, links.
+for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, height: 844, tag: "phone" }]) {
+  const ctx = await browser.newContext({ viewport: { width: vp.width, height: vp.height }, deviceScaleFactor: vp.tag === "phone" ? 2 : 1 });
+  const page = await ctx.newPage();
+  page.on("pageerror", (e) => errors.push("pageerror: " + e.message));
+  page.on("console", (m) => { if (m.type() === "error") errors.push("console: " + m.text()); });
+  await page.goto(base);
+  await page.setInputFiles("#file", path.join(ROOT, "test/fixtures/ember-crown-guide.txt"));
+  await page.waitForSelector(".home");
+  if (vp.tag === "phone") await page.click("#tocBtn");
+  await page.click("#tabMaps");
+  check(await page.locator(".mp-empty").count() === 2, `[maps ${vp.tag}] empty states shown before import`);
+  await page.setInputFiles("#mapFile", path.join(ROOT, "test/fixtures/ember-crown-maps.zip"));
+  await page.waitForFunction(() => document.querySelectorAll(".mp-item").length === 4, null, { timeout: 15000 });
+  check(true, `[maps ${vp.tag}] map pack added 4 maps`);
+  check(await page.locator(".mp-link").count() === 3, `[maps ${vp.tag}] map pack added 3 links`);
+  const titles = await page.locator(".mp-item .mp-t").allTextContents();
+  check(/^World map/.test(titles[0]) && /Clockwork Vault/.test(titles[3]), `[maps ${vp.tag}] titles and order come from maps.json`);
+  await page.screenshot({ path: path.join(SHOTS, `9-maps-panel-${vp.tag}.png`) });
+  await page.click(".mp-item >> nth=0");
+  await page.waitForSelector("#mapImg");
+  await page.waitForFunction(() => document.getElementById("mapImg").naturalWidth > 0);
+  check(await page.evaluate(() => document.getElementById("mapImg").naturalWidth) === 2400, `[maps ${vp.tag}] world map image loads at full size`);
+  if (vp.tag === "phone") check(await page.locator("#toc").isHidden(), "[maps phone] drawer closes when a map is opened");
+  const pct1 = await page.textContent("#zPct");
+  await page.click("#zIn");
+  const pct2 = await page.textContent("#zPct");
+  check(parseInt(pct2) > parseInt(pct1), `[maps ${vp.tag}] zoom in (${pct1} -> ${pct2})`);
+  await page.click("#zFit");
+  check(await page.evaluate(() => { const st = document.getElementById("stage"); return st.scrollWidth <= st.clientWidth + 2 && st.scrollHeight <= st.clientHeight + 2; }), `[maps ${vp.tag}] Fit shows the whole map`);
+  check(!(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), `[maps ${vp.tag}] no horizontal page scroll in viewer`);
+  await page.screenshot({ path: path.join(SHOTS, `10-map-viewer-${vp.tag}.png`) });
+
+  await page.goto(base + "#/s/3.1.3");
+  await page.waitForSelector(".sec-maps");
+  check((await page.textContent(".sec-maps")).includes("Old Quarry"), `[maps ${vp.tag}] section 3.1.3 shows its map chip`);
+  await page.goto(base + "#/s/3.7.4");
+  await page.waitForSelector(".sec-maps");
+  check(await page.locator(".sec-maps a.ext").count() === 1, `[maps ${vp.tag}] section 3.7.4 shows its external link chip`);
+
+  if (vp.tag === "ipad") {
+    // Edit a map's section, add and remove a link, delete a map.
+    await page.click(".mp-item >> nth=2");
+    await page.waitForSelector(".map-edit summary");
+    await page.click(".map-edit summary");
+    await page.fill("#mapSec", "3.1.2");
+    await page.click('#mapForm button[type="submit"]');
+    await page.goto(base + "#/s/3.1.2");
+    await page.waitForSelector(".sec-maps");
+    check((await page.textContent(".sec-maps")).includes("Old Quarry"), "[maps ipad] changing a map's section moves its chip");
+    const form = page.locator(".mp-form");
+    if (!(await form.evaluate((d) => d.open))) await page.click(".mp-form summary");
+    await page.fill("#linkTitle", "Fan wiki");
+    await page.fill("#linkUrl", "wiki.example.com/ember");
+    await page.click('#linkForm button[type="submit"]');
+    await page.waitForFunction(() => document.querySelectorAll(".mp-link").length === 4);
+    check((await page.getAttribute(".mp-link >> nth=3", "href")) === "https://wiki.example.com/ember", "[maps ipad] link form adds https:// when missing");
+    await page.click('[data-unlink] >> nth=3');
+    await page.click('[data-unlink] >> nth=3');
+    await page.waitForFunction(() => document.querySelectorAll(".mp-link").length === 3);
+    check(true, "[maps ipad] link removed after a second tap");
+    await page.click(".mp-item >> nth=3");
+    await page.waitForSelector(".map-edit summary");
+    await page.click(".map-edit summary");
+    await page.click("#mapDel");
+    await page.click("#mapDelYes");
+    await page.waitForFunction(() => document.querySelectorAll(".mp-item").length === 3);
+    check(true, "[maps ipad] map deleted after confirmation");
+    await page.reload();
+    await page.waitForSelector(".mp-item");
+    check(await page.locator(".mp-item").count() === 3 && await page.locator(".mp-link").count() === 3, "[maps ipad] maps and links persist across reloads");
+    // Reset removes the guide but keeps maps.
+    await page.click("#tabContents");
+    await page.click("#resetBtn");
+    await Promise.all([page.waitForEvent("load"), page.click("#resetYes")]);
+    await page.waitForSelector(".import");
+    const left = await page.evaluate(async () => { const m = await import("./js/store.js"); return (await m.listMaps()).length; });
+    check(left === 3, "[maps ipad] reset keeps maps");
+  }
+  await ctx.close();
+}
+
 await browser.close();
 server.close();
 console.log(errors.length ? `\n${errors.length} problem(s):\n` + errors.join("\n") : "\nAll checks passed.");
