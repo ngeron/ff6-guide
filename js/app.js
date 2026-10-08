@@ -1,9 +1,9 @@
-import { parse, sectionText } from "./parse.js";
+import { parseGuide, sectionText, detectKind, readText, importDocument, parseText, extFor, ACCEPT } from "./importers/index.js";
 import { renderBlocks, renderHeading, esc, inline } from "./render.js";
 import { loadGuide, saveGuide, removeGuide, askPersist, getPref, setPref } from "./store.js";
 import { initMaps, loadMaps, getMap, itemsForSection, importFiles as importMapFiles, renderPanel as renderMapsPanel, bindPanel as bindMapsPanel, renderViewer as renderMapViewer } from "./maps.js";
 
-const VERSION = "0.3.0";
+const VERSION = "0.4.0";
 const $ = (id) => document.getElementById(id);
 const root = document.documentElement;
 
@@ -87,7 +87,7 @@ function toast(msg) {
 
 function useGuide(guide) {
   state.guide = guide;
-  state.doc = parse(guide.text);
+  state.doc = parseGuide(guide);
   state.byKey.clear();
   state.byNum.clear();
   state.order = state.doc.sections;
@@ -108,6 +108,7 @@ function shortTitle() {
 
 const hrefFor = (s) => "#/s/" + encodeURIComponent(s.key);
 const linkNum = (num) => { const s = state.byNum.get(num); return s ? hrefFor(s) : null; };
+const linkAnchor = (id) => { const key = state.doc && state.doc.anchors && state.doc.anchors[id]; const s = key && state.byKey.get(key); return s ? hrefFor(s) : null; };
 
 /* ---------------- contents ---------------- */
 
@@ -239,9 +240,11 @@ function viewImport(message) {
     <p class="err" id="importErr"${message ? "" : " hidden"}>${message ? esc(message) : ""}</p>
     <h2>Which file?</h2>
     <dl class="kinds">
-      <div><dt>A PDF of the guide page</dt><dd>In Safari, open the guide on GameFAQs, tap Share, then Options, choose PDF, and save it to Files. After importing, save the cleaned text and use that from then on.</dd></div>
-      <div><dt>A text file</dt><dd>The cleaned text this app saves, or any copy of the guide in its original fixed-width text format, including one you've edited.</dd></div>
+      <div><dt>A PDF of a text guide</dt><dd>In Safari, open the guide on GameFAQs, tap Share, then Options, choose PDF, and save it to Files. This works for guides set in a fixed-width (typewriter) font.</dd></div>
+      <div><dt>A saved web page</dt><dd>An .html file or a Safari web archive (Share, Options, Web Archive). Works for formatted guides with headings, lists and tables, and for text guides shown on a web page.</dd></div>
+      <div><dt>A text or Markdown file</dt><dd>The clean copy this app saves, a guide in its original fixed-width text format, or Markdown (.md) using # for headings. Edited copies work too.</dd></div>
     </dl>
+    <p class="hint">After importing a PDF or web page, save the clean copy the app offers and import that from then on.</p>
     ${replacing ? `<p><a href="#/">Back to the guide</a></p>` : ""}
   </section>`;
   $("pickBtn").onclick = () => $("file").click();
@@ -255,13 +258,14 @@ function viewHome() {
   const last = state.byKey.get(getPref("last", ""));
   const total = state.order.length - 1;
   const done = state.order.filter((s) => state.done.has(s.key)).length;
-  const fromPdf = state.guide.source === "pdf" && !getPref("savedText", false);
+  const needsMaster = !["text", "markdown"].includes(state.guide.source) && !getPref("savedText", false);
+  const copyKind = { html: "web page copy", markdown: "Markdown" }[state.guide.format] || "text";
   const chapters = groups().filter((g) => g.head.level === 2);
   $("view").innerHTML = `
   <section class="home">
     ${renderHeading(front)}
     ${last ? `<a class="continue" href="${hrefFor(last)}" data-resume="1"><span class="eyebrow">Continue</span><span class="ct">${last.num ? `<span class="num">${esc(last.num)}</span>` : ""}${inline(last.title)}</span></a>` : ""}
-    ${fromPdf ? `<div class="notice"><p><strong>Keep a clean master copy.</strong> Save the cleaned text to iCloud Drive and import that next time. It's the file to edit if you want to change the guide.</p><button type="button" class="btn" id="homeExport">Save cleaned text</button></div>` : ""}
+    ${needsMaster ? `<div class="notice"><p><strong>Keep a clean master copy.</strong> Save the cleaned ${copyKind} to iCloud Drive and import that next time. It has just the guide, without the rest of the ${state.guide.source === "pdf" ? "PDF" : "web page"}, and it's the file to edit if you want to change the guide.</p><button type="button" class="btn" id="homeExport">Save a clean copy</button></div>` : ""}
     <p class="stat">${total} sections${done ? ` · ${done} done` : ""}</p>
     <ol class="chapters">
       <li><a href="${hrefFor(front)}"><span class="n"></span><span class="t">Title page and contents</span></a></li>
@@ -287,7 +291,7 @@ function viewSection(s, opts = {}) {
   <article class="sec lv${s.level}">
     ${s.level === 1 ? renderHeading(s) : renderHeading(s)}
     ${sectionMaps(s)}
-    <div class="body">${renderBlocks(s.blocks, linkNum)}</div>
+    <div class="body">${renderBlocks(s.blocks, linkNum, linkAnchor)}</div>
     ${s.level === 1 ? "" : `<button type="button" class="done-btn${isDone ? " on" : ""}" id="doneBtn" aria-pressed="${isDone}">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span>${isDone ? "Done" : "Mark section done"}</span></button>`}
     <nav class="pager" aria-label="Section navigation">${navLink(prev, "prev")}${navLink(next, "next")}</nav>
@@ -468,37 +472,50 @@ $("file").addEventListener("change", async (e) => {
   err.hidden = true;
   $("pickBtn").disabled = true;
   try {
-    let lines = [];
-    let source = "text";
-    let pages = 0;
-    for (let f = 0; f < files.length; f++) {
-      const file = files[f];
-      const tag = files.length > 1 ? ` (${f + 1} of ${files.length})` : "";
-      if (/\.pdf$/i.test(file.name) || file.type === "application/pdf") {
-        source = "pdf";
-        status("Loading the PDF reader" + tag, "", 0.02);
-        const { linesFromPdf } = await import("./extract.js");
-        const res = await linesFromPdf(await file.arrayBuffer(), (p, n) => status("Reading pages" + tag, `${p} / ${n}`, 0.03 + 0.92 * (p / n)));
-        lines = lines.concat(res.lines, [""]);
-        pages += res.pages;
-      } else {
-        status("Reading text" + tag, "", 0.5);
-        lines = lines.concat((await file.text()).split(/\r?\n/), [""]);
+    const kinds = await Promise.all(files.map(detectKind));
+    let guide, doc, pages = 0;
+    const name = files.map((f) => f.name).join(", ");
+    const docKinds = kinds.filter((k) => k === "html" || k === "webarchive" || k === "markdown");
+    if (docKinds.length) {
+      // Web pages, web archives and Markdown are imported one file at a time.
+      if (files.length > 1) throw new Error("onedoc");
+      status(kinds[0] === "markdown" ? "Reading Markdown" : "Reading the web page", "", 0.4);
+      const r = await importDocument(files[0], kinds[0]);
+      guide = { format: r.format, text: r.text, name, importedAt: Date.now(), source: kinds[0] };
+      doc = r.doc;
+    } else {
+      let lines = [];
+      let source = "text";
+      for (let f = 0; f < files.length; f++) {
+        const file = files[f];
+        const tag = files.length > 1 ? ` (${f + 1} of ${files.length})` : "";
+        if (kinds[f] === "pdf") {
+          source = "pdf";
+          status("Loading the PDF reader" + tag, "", 0.02);
+          const { linesFromPdf } = await import("./extract.js");
+          const res = await linesFromPdf(await file.arrayBuffer(), (p, n) => status("Reading pages" + tag, `${p} / ${n}`, 0.03 + 0.92 * (p / n)));
+          lines = lines.concat(res.lines, [""]);
+          pages += res.pages;
+        } else {
+          status("Reading text" + tag, "", 0.5);
+          lines = lines.concat((await readText(file)).split(/\r?\n/), [""]);
+        }
       }
+      while (lines.length && !lines[lines.length - 1].trim()) lines.pop();
+      if (lines.filter((l) => l.trim()).length < 20) throw new Error("notext");
+      const text = lines.join("\n");
+      guide = { format: "text", text, name, importedAt: Date.now(), source };
+      doc = parseText(text);
     }
-    while (lines.length && !lines[lines.length - 1].trim()) lines.pop();
-    if (lines.filter((l) => l.trim()).length < 20) throw new Error("notext");
     status("Finding sections", "", 0.97);
     await new Promise((r) => setTimeout(r, 20));
-    const text = lines.join("\n");
-    const guide = { text, name: files.map((f) => f.name).join(", "), importedAt: Date.now(), source };
-    const test = parse(text);
-    if (test.sections.length < 3) throw new Error("nosections:" + (test.sections.length - 1));
+    const found = doc.sections.length - 1;
+    if (found < (guide.format === "text" ? 2 : 1)) throw new Error("nosections:" + guide.format);
     await saveGuide(guide);
     askPersist();
-    if (source === "pdf") setPref("savedText", false);
+    setPref("savedText", guide.source === "text" || guide.source === "markdown");
     useGuide(guide);
-    status("Ready", (pages ? `${pages} pages · ` : "") + `${test.sections.length - 1} sections`, 1);
+    status("Ready", (pages ? `${pages} pages · ` : "") + `${found} sections`, 1);
     syncTocMode();
     toast("Guide imported");
     location.hash = "#/";
@@ -508,8 +525,12 @@ $("file").addEventListener("change", async (e) => {
     const msg = String(ex && ex.message || ex);
     err.textContent = msg === "notext"
       ? "No guide text was found in that file. If it's a PDF, save the guide page itself from Safari (Share, Options, PDF) and try again."
+      : msg === "onedoc"
+        ? "Import a web page or Markdown file on its own. Several files at once only works for PDFs and text files."
+      : msg === "nosections:text"
+        ? "The text was read, but almost no section headings were found. The text importer looks for headings underlined with a row of asterisks, as GameFAQs guides use."
       : msg.startsWith("nosections")
-        ? "The text was read, but almost no section headings were found. The importer looks for headings underlined with a row of asterisks, as GameFAQs guides use."
+        ? "The page was read, but it has no headings (h1–h6 in a web page, # in Markdown) to split it into sections."
         : ex && ex.name === "PasswordException"
           ? "That PDF is password protected. Save an unprotected copy and try again."
           : `That file couldn't be read (${msg}).`;
@@ -524,9 +545,9 @@ $("file").addEventListener("change", async (e) => {
 
 async function exportText() {
   if (!state.guide) return;
-  const base = (state.guide.name.split(",")[0] || "guide").replace(/\.(pdf|txt)$/i, "").trim() || "guide";
-  const name = (state.guide.source === "pdf" ? base + " (clean)" : base) + ".txt";
-  const file = new File([state.guide.text + "\n"], name, { type: "text/plain" });
+  const base = (state.guide.name.split(",")[0] || "guide").replace(/\.(pdf|txt|text|html?|webarchive|md|markdown)$/i, "").trim() || "guide";
+  const name = (state.guide.source === "text" || state.guide.source === "markdown" ? base : base + " (clean)") + "." + extFor(state.guide.format);
+  const file = new File([state.guide.text.replace(/\n?$/, "\n")], name, { type: { html: "text/html", markdown: "text/markdown" }[state.guide.format] || "text/plain" });
   try {
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       await navigator.share({ files: [file] });
@@ -712,6 +733,7 @@ $("resetYes").onclick = async () => {
   location.reload();
 };
 
+$("file").setAttribute("accept", ACCEPT);
 $("appVersion").textContent = `Version ${VERSION}. The guide and your progress are stored only in this browser.`;
 
 /* ---------------- start ---------------- */
