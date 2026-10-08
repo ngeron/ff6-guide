@@ -1,0 +1,11 @@
+# Never commit the walkthrough itself. It's someone else's copyrighted work and
+# lives only on your own devices.
+*.txt
+*.pdf
+*.epub
+!test/fixtures/*.txt
+
+# Local clutter
+.DS_Store
+node_modules/
+test/output/

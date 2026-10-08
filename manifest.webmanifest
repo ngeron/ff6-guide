@@ -1,0 +1,15 @@
+{
+  "name": "FF6 Guide",
+  "short_name": "FF6 Guide",
+  "description": "A reader for your own copy of a Final Fantasy VI Advance walkthrough.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#F6F0E3",
+  "theme_color": "#1F3D40",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
