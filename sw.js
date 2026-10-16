@@ -1,6 +1,9 @@
 // Offline support. App files are fetched fresh when online (so changes pushed to GitHub show up
 // on the next load) and served from the cache when offline. The PDF reader is cache-first.
-const CACHE = "ff6-guide-v9";
+const CACHE = "ff6-guide-v10";
+// Monster pictures from the Final Fantasy Wiki, kept across app updates.
+const IMG = "ff6-guide-img";
+const IMG_HOST = "static.wikia.nocookie.net";
 const APP = [
   "./",
   "index.html",
@@ -22,6 +25,8 @@ const APP = [
   "js/rages-data.js",
   "js/gear.js",
   "js/gear-data.js",
+  "js/monsters.js",
+  "js/monsters-data.js",
   "js/zip.js",
   "manifest.webmanifest",
   "icons/icon-192.png",
@@ -42,7 +47,7 @@ self.addEventListener("install", (e) => {
 
 self.addEventListener("activate", (e) => {
   e.waitUntil((async () => {
-    for (const k of await caches.keys()) if (k !== CACHE) await caches.delete(k);
+    for (const k of await caches.keys()) if (k !== CACHE && k !== IMG) await caches.delete(k);
     await self.clients.claim();
   })());
 });
@@ -54,6 +59,17 @@ function timeout(ms) {
 self.addEventListener("fetch", (e) => {
   const req = e.request;
   const url = new URL(req.url);
+  if (req.method === "GET" && url.hostname === IMG_HOST) {
+    e.respondWith((async () => {
+      const c = await caches.open(IMG);
+      const hit = await c.match(req, { ignoreVary: true });
+      if (hit) return hit;
+      const res = await fetch(req);
+      if (res.ok || res.type === "opaque") c.put(req, res.clone()).catch(() => {});
+      return res;
+    })());
+    return;
+  }
   if (req.method !== "GET" || url.origin !== self.location.origin) return;
 
   if (url.pathname.includes("/vendor/")) {

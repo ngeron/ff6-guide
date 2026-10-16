@@ -423,6 +423,52 @@ for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, heigh
   await ctx.close();
 }
 
+// Monster intel.
+{
+  const ctx = await browser.newContext({ viewport: { width: 1180, height: 820 } });
+  const page = await ctx.newPage();
+  page.on("pageerror", (e) => errors.push("pageerror: " + e.message));
+  await page.goto(base);
+  await page.setInputFiles("#file", path.join(ROOT, "test/fixtures/ember-crown-guide.txt"));
+  await page.waitForSelector(".home");
+  await page.click("#monsterBtn");
+  await page.waitForSelector(".monsters");
+  const cols = await page.evaluate(() => getComputedStyle(document.getElementById("mnGrid")).gridTemplateColumns.split(" ").length);
+  const cards = await page.locator(".mn-pick").count();
+  check(cols === 3 && cards > 300, `[monsters] 3-column picture grid of ${cards} monsters`);
+  check(await page.locator(".mn-pick", { hasText: "Ymir" }).count() === 1 && await page.locator(".mn-pick", { hasText: "Kaiser Dragon" }).count() === 0, "[monsters] Pixel Remaster monsters only (no GBA-only ones)");
+  check(await page.locator(".mn-pic").first().getAttribute("referrerpolicy") === "no-referrer", "[monsters] pictures load without a referrer");
+  await page.fill("#mnQ", "leaf");
+  check(await page.locator("li:not([hidden]) > .mn-pick").count() >= 1 && await page.locator("li:not([hidden]) > .mn-pick", { hasText: "Guard" }).count() === 0, "[monsters] typing filters the grid");
+  await page.fill("#mnQ", "Leaf Bunny");
+  await page.waitForSelector(".mn-card");
+  const leaf = await page.textContent(".mn-card");
+  check(/Weak to\s*Fire\s*Water/.test(leaf) && /Absorbs\s*Ice/.test(leaf) && /HP\s*33/.test(leaf), "[monsters] exact name opens its card with weaknesses and stats");
+  check(/#\/monsters\/Leaf%20Bunny$/.test(page.url()), "[monsters] selected monster kept in the URL");
+  await page.fill("#mnQ", "vomammoth");
+  await page.waitForFunction(() => /Megalodoth/.test(document.getElementById("mnName")?.textContent || ""));
+  check(/Steal\s*Potion common · Hi-Potion rare/.test(await page.textContent(".mn-card")), "[monsters] SNES name finds the monster; steals show odds");
+  await page.fill("#mnQ", "ultr");
+  await page.press("#mnQ", "Enter");
+  await page.waitForFunction(() => /Ultros/.test(document.getElementById("mnName")?.textContent || ""));
+  const tabs = await page.locator(".mn-forms button").count();
+  await page.locator(".mn-forms button").nth(1).click();
+  check(tabs >= 2 && await page.locator('.mn-forms button[aria-selected="true"]').textContent() !== (await page.locator(".mn-forms button").first().textContent()), `[monsters] Enter picks the first match; forms switch (${tabs})`);
+  await page.screenshot({ path: path.join(SHOTS, "23-monsters.png") });
+  await page.fill("#mnQ", "Stray Cat");
+  await page.waitForSelector("#mnRage");
+  await page.check("#mnRage");
+  check((await page.evaluate(() => localStorage.getItem("ff6g:rages"))).includes("Stray Cat") && (await page.textContent("#rageCnt")) === "1/252", "[monsters] Rage checkbox updates Gau's Rages");
+  await page.reload();
+  await page.waitForSelector(".mn-card");
+  check((await page.textContent("#mnName")).includes("Stray Cat") && await page.isChecked("#mnRage"), "[monsters] reload reopens the monster");
+  await page.emulateMedia({ colorScheme: "dark" });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({ path: path.join(SHOTS, "24-monsters-phone-dark.png") });
+  check(!(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), "[monsters] no horizontal scroll at phone width");
+  await ctx.close();
+}
+
 // Inventory tracker.
 {
   const ctx = await browser.newContext({ viewport: { width: 1180, height: 820 } });

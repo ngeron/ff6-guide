@@ -31,6 +31,7 @@ js/names.js              character renames, applied to the parsed guide when sho
 js/tags.js               color coding: finds characters, monsters, bosses and places; marks them in the page
 js/rages.js, rages-data.js  Gau's Rages tracker (#/rages) and its data (credited, MIT)
 js/gear.js, gear-data.js    inventory tracker (#/gear): counts, prices, sources (data CC BY-SA, credited)
+js/monsters.js, monsters-data.js  monster intel (#/monsters/<name>): search, 3-column picture grid, stats (CC BY-SA). Pictures are hotlinked from the wiki with no referrer and cached by sw.js; never commit them
 js/backup.js             backup .zip: guide, progress, names, maps; save and restore
 sw.js                    offline cache
 test/                    e2e smoke test and fixture generators

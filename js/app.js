@@ -4,11 +4,12 @@ import { loadGuide, saveGuide, removeGuide, askPersist, getPref, setPref } from 
 import { makeBackup, readBackup, describeBackup, restoreBackup } from "./backup.js";
 import { renderRages, rageCounts } from "./rages.js";
 import { renderGear, gearCounts } from "./gear.js";
+import { renderMonsters, findMonster } from "./monsters.js";
 import { KINDS, KIND_LABEL, loadTags, saveTags, buildTerms, matcher, markNames } from "./tags.js";
 import { DEFAULT_NAMES, loadNames, saveNames, renameDoc } from "./names.js";
 import { initMaps, loadMaps, getMap, hasMaps, mapCounts, exportPack, removeAllMaps, itemsForSection, importFiles as importMapFiles, renderPanel as renderMapsPanel, bindPanel as bindMapsPanel, renderViewer as renderMapViewer } from "./maps.js";
 
-const VERSION = "0.12.0";
+const VERSION = "0.13.0";
 const $ = (id) => document.getElementById(id);
 const root = document.documentElement;
 
@@ -245,7 +246,7 @@ function tocLabel(s) {
 }
 
 function buildToc() {
-  const html = [`<div class="toc-in"><a class="toc-tracker" href="#/rages"><span class="t">Gau's Rages</span><span class="cnt" id="rageCnt">${rageLabel()}</span></a><a class="toc-tracker" href="#/gear"><span class="t">Inventory</span><span class="cnt" id="gearCnt">${gearLabel()}</span></a><p class="toc-progress" id="tocProgress"></p><ol class="toc-list">`];
+  const html = [`<div class="toc-in"><a class="toc-tracker" href="#/rages"><span class="t">Gau's Rages</span><span class="cnt" id="rageCnt">${rageLabel()}</span></a><a class="toc-tracker" href="#/monsters"><span class="t">Monster intel</span></a><a class="toc-tracker" href="#/gear"><span class="t">Inventory</span><span class="cnt" id="gearCnt">${gearLabel()}</span></a><p class="toc-progress" id="tocProgress"></p><ol class="toc-list">`];
   for (const g of groups()) {
     const h = g.head;
     const doneH = state.done.has(h.key) ? " done" : "";
@@ -348,7 +349,7 @@ function setBar(text, href = "#/") {
 }
 
 function showChrome(on) {
-  for (const id of ["tocBtn", "searchBtn"]) $(id).hidden = !on;
+  for (const id of ["tocBtn", "searchBtn", "monsterBtn"]) $(id).hidden = !on;
 }
 
 function viewImport(message) {
@@ -398,8 +399,9 @@ function viewHome() {
       <li><a href="${hrefFor(front)}"><span class="n"></span><span class="t">Title page and contents</span></a></li>
       ${chapters.map((g) => `<li><a href="${hrefFor(g.head)}"><span class="n">${esc(g.head.num)}</span><span class="t">${esc(g.head.title)}</span>${g.items.length ? `<span class="cnt">${g.items.length}</span>` : ""}</a></li>`).join("")}
     </ol>
-    <p class="stat">Trackers</p>
+    <p class="stat">Tools</p>
     <ol class="chapters">
+      <li><a href="#/monsters"><span class="n"></span><span class="t">Monster intel</span><span class="cnt">Weaknesses, steals, Rages</span></a></li>
       <li><a href="#/rages"><span class="n"></span><span class="t">Gau's Rages</span><span class="cnt">${rageCounts().have} of ${rageCounts().total} learned</span></a></li>
       <li><a href="#/gear"><span class="n"></span><span class="t">Inventory</span><span class="cnt">${gearCounts().kinds} of ${gearCounts().total} kinds</span></a></li>
     </ol>
@@ -463,6 +465,21 @@ function viewRages() {
   $("toc").querySelector('.toc-tracker[href="#/rages"]')?.setAttribute("aria-current", "page");
   window.scrollTo(0, 0);
 }
+
+function viewMonsters(selected) {
+  state.current = null;
+  showChrome(true);
+  setBar(`<span class="bt">Monster intel</span>`, "#/");
+  renderMonsters($("view"), selected, {
+    onFind: (name) => openSearch(name),
+    onRage: () => { const c = $("rageCnt"); if (c) c.textContent = rageLabel(); },
+    toast,
+  });
+  markTocCurrent();
+  $("toc").querySelector('.toc-tracker[href="#/monsters"]')?.setAttribute("aria-current", "page");
+  if (!selected) window.scrollTo(0, 0);
+}
+$("monsterBtn").onclick = () => { closeSheets(); if (!wide()) setTocOpen(false); location.hash = "#/monsters"; };
 
 function viewGear() {
   state.current = null;
@@ -651,6 +668,8 @@ function route() {
   }
   if (h === "#/rages") return viewRages();
   if (h === "#/gear") return viewGear();
+  const mn = h.match(/^#\/monsters(?:\/(.+))?$/);
+  if (mn) return viewMonsters(mn[1] ? findMonster(decodeURIComponent(mn[1])) : null);
   const m = h.match(/^#\/s\/(.+)$/);
   if (m) {
     const s = state.byKey.get(decodeURIComponent(m[1]));

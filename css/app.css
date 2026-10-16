@@ -273,6 +273,41 @@ mark { background: var(--hit); color: inherit; border-radius: 2px; padding: 0 1p
 .gr-find svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
 .toc-tracker + .toc-tracker { margin-top: 0; }
 
+/* ---------- monster intel ---------- */
+.mn-search { position: sticky; top: calc(var(--bar-h) + env(safe-area-inset-top, 0px)); z-index: 5; background: var(--bg); padding: 6px 0 8px; }
+.mn-search input { width: 100%; font: 18px var(--ui); padding: 12px 14px; border-radius: 12px; border: 1.5px solid var(--rule); background: var(--panel); color: var(--fg); }
+.mn-grid { list-style: none; margin: .6em 0 1.2em; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.mn-pick { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 6px; border-radius: 12px; border: 1px solid var(--rule); background: var(--bg); color: var(--fg); font: 600 13.5px/1.25 var(--ui); cursor: pointer; text-align: center; }
+.mn-pick:active { background: var(--panel); }
+.mn-pick[aria-pressed="true"] { border-color: var(--acc); box-shadow: 0 0 0 1.5px var(--acc); }
+.mn-pic { width: 72px; height: 72px; object-fit: contain; image-rendering: pixelated; }
+.mn-noimg { display: grid; place-items: center; border-radius: 10px; background: var(--panel); color: var(--mute); font: 700 26px var(--ui); }
+.mn-n { overflow-wrap: anywhere; }
+.mn-card { border: 1px solid var(--rule); border-radius: 14px; padding: 14px 16px 12px; margin: .4em 0 1em; background: var(--bg); scroll-margin-top: calc(var(--bar-h) + 80px); }
+.mn-head { display: flex; gap: 14px; align-items: center; }
+.mn-head h2 { margin: 0; font-size: 1.35rem; }
+.mn-big { width: 96px; height: 96px; object-fit: contain; image-rendering: pixelated; flex: none; }
+.mn-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: .4em 0 0; }
+.badge.boss { color: var(--boss); border-color: currentColor; }
+.mn-forms { margin: 12px 0 2px; flex-wrap: wrap; }
+.mn-forms button[aria-selected="true"] { background: var(--acc); color: var(--acc-ink); }
+.mn-stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin: 12px 0; }
+.mn-stats div { background: var(--panel); border-radius: 10px; padding: 6px 8px; text-align: center; }
+.mn-stats dt { font-size: 11.5px; color: var(--mute); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+.mn-stats dd { margin: 0; font: 700 16px var(--ui); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.mn-tbl { margin-bottom: 8px; }
+.chip-el { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 13px; font-weight: 600; border: 1px solid currentColor; margin: 1px 0; }
+.el-weak { color: var(--boss); }
+.el-absorb { color: var(--ok); }
+.el-immune { color: var(--mute); }
+.el-resist { color: var(--place); }
+.mn-odds { color: var(--mute); font-size: 12.5px; }
+.mn-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; border-top: 1px solid var(--rule); padding-top: 8px; }
+.mn-rage { display: flex; align-items: center; gap: 8px; font-size: 14.5px; }
+.mn-rage input { width: 20px; height: 20px; accent-color: var(--ok); margin: 0; }
+.mn-save { font-size: inherit; padding: 0; }
+@media (max-width: 520px) { .mn-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); } .mn-pic { width: 56px; height: 56px; } }
+
 /* ---------- color-coded names ---------- */
 .ent-party { color: var(--party); }
 .ent-enemy { color: var(--enemy); }
