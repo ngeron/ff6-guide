@@ -185,3 +185,61 @@ export function optimizeParty(members, bag) {
   for (const [n, k] of Object.entries(pool)) if (k > 0) left[n] = k;
   return { loadouts: result, bag: left };
 }
+
+// ---------------- espers ----------------
+// Espers don't change stats directly: they teach spells after each battle (AP × learn rate,
+// learned at 100) and give their bonus at each level-up. So the choice is between learning the
+// most spells still missing and earning the level-up bonus that suits the character.
+
+const CANT_EQUIP_ESPERS = new Set(["Gogo", "Umaro"]);
+export const canEquipEsper = (char) => !CANT_EQUIP_ESPERS.has(char.name);
+
+export function bonusValue(char, goal, b) {
+  if (!b) return 0;
+  const role = { phys: [1, 0.1], mixed: [0.6, 0.6], magic: [0.1, 1] }[char.role] || [1, 0.1];
+  let v = 0;
+  if (b.stat === "str") v = role[0] * b.amt;
+  else if (b.stat === "mag") v = role[1] * b.amt;
+  else if (b.stat === "agi") v = 0.8 * b.amt;
+  else if (b.stat === "sta") v = 0.3 * b.amt;
+  else if (b.stat === "hp") v = 0.08 * b.amt;
+  else if (b.stat === "mp") v = (role[1] * 0.5 + 0.05) * (b.amt / 10);
+  if (goal === "attack" && (b.stat === "str" || b.stat === "mag")) v *= 1.5;
+  if (goal === "defense" && (b.stat === "hp" || b.stat === "sta")) v *= 1.5;
+  if (goal === "magic" && (b.stat === "mag" || b.stat === "mp")) v *= 1.5;
+  return v;
+}
+
+// How much is left to learn: the sum of learn rates of spells this character doesn't know yet.
+export const learning = (esper, learned) => esper.spells.reduce((a, [s, r]) => a + (learned.has(s) ? 0 : r), 0);
+
+export function esperValue(char, goal, esper, learned, mode) {
+  const spells = learning(esper, learned), bonus = bonusValue(char, goal, esper.bonus);
+  return mode === "bonus" ? bonus + spells / 100 : spells / 20 + bonus * 0.3;
+}
+
+// members: [{ char, goal, learned: Set, esper, locked }]; espers: available esper objects.
+// Returns the best esper name (or "") for each member, each esper used once.
+export function assignEspers(members, espers, mode) {
+  const taken = new Set(members.filter((m) => m.locked && m.esper).map((m) => m.esper));
+  const free = espers.filter((e) => !taken.has(e.name));
+  const choices = members.map((m) => {
+    if (m.locked || !canEquipEsper(m.char)) return [{ name: m.locked ? m.esper || "" : "", v: 0 }];
+    const ranked = free.map((e) => ({ name: e.name, v: esperValue(m.char, m.goal, e, m.learned, mode) })).sort((a, b) => b.v - a.v).slice(0, 8);
+    return [...ranked, { name: "", v: 0 }];
+  });
+  let best = null, bestV = -Infinity;
+  const pick = (i, used, acc, v) => {
+    if (i === members.length) { if (v > bestV) { bestV = v; best = [...acc]; } return; }
+    for (const c of choices[i]) {
+      if (c.name && used.has(c.name) && !members[i].locked) continue;
+      if (c.name) used.add(c.name);
+      acc.push(c.name);
+      pick(i + 1, used, acc, v + c.v);
+      acc.pop();
+      if (c.name && !members[i].locked) used.delete(c.name);
+    }
+  };
+  pick(0, new Set(taken), [], 0);
+  return best || members.map((m) => m.esper || "");
+}

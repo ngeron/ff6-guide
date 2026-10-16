@@ -485,6 +485,25 @@ for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, heigh
   check(ms < 5000, `[party] optimizer runs quickly (${ms} ms)`);
   const CODE = { Terra: "Te", Locke: "Lo", Sabin: "Sa", Gau: "Ga" };
   check(Object.entries(after.p.chars).every(([n, c]) => Object.values(c.eq).every((it) => EQ[it].who === "all" || EQ[it].who.split(" ").includes(CODE[n]))), "[party] only items each character can equip");
+  // Espers
+  check(await page.locator(".pt-howto").count() === 1 && await page.locator(".pt-esper").count() === 27, "[espers] explainer and all 27 Pixel Remaster espers listed");
+  for (const n of ["Ramuh", "Kirin", "Siren", "Bismarck", "Golem"]) await page.click(`.pt-esper[data-e="${n}"]`);
+  await page.selectOption('article[data-c="Terra"] .pc-esper', "Ramuh");
+  await page.click('article[data-c="Terra"] .pc-spell[data-s="Thunder"]');
+  check(await page.locator('article[data-c="Terra"] .pc-spell:checked').count() === 1 && /teaches 2 spells/.test(await page.textContent('article[data-c="Terra"] .pc-spells')), "[espers] equipped esper shows its spells; learned ones tick off");
+  await page.selectOption('article[data-c="Locke"] .pc-esper', "Ramuh");
+  check(await page.inputValue('article[data-c="Terra"] .pc-esper') === "" && await page.inputValue('article[data-c="Locke"] .pc-esper') === "Ramuh", "[espers] an esper moves from one character to another");
+  check(await page.locator('article[data-c="Gau"] .pc-esper').count() === 1, "[espers] Gau can hold an esper");
+  await page.selectOption("#ptEsperMode", "bonus");
+  await page.click("#ptOpt");
+  await page.waitForSelector("#ptApply");
+  await page.click("#ptApply");
+  await page.waitForSelector(".party");
+  const ep = await page.evaluate(() => JSON.parse(localStorage.getItem("ff6g:party")));
+  const held = st => Object.values(ep.chars).map((c) => c.esper).filter(Boolean);
+  check(new Set(held()).size === held().length && held().length === 4, `[espers] optimizer gives each party member a different esper (${held().join(", ")})`);
+  check(["Locke", "Sabin"].some((n) => ep.chars[n].esper === "Bismarck"), "[espers] level-up mode gives Bismarck (Strength +2) to a fighter");
+  await page.screenshot({ path: path.join(SHOTS, "27-espers.png"), fullPage: true });
   await page.reload();
   await page.waitForSelector(".party");
   check(await page.locator("article.pc").count() === 4 && (await page.inputValue('article[data-c="Terra"] .pc-lvn')) === "30", "[party] kept after reload");

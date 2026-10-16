@@ -336,6 +336,20 @@ mark { background: var(--hit); color: inherit; border-radius: 2px; padding: 0 1p
 .pt-res { border-top: 1px solid var(--rule); padding: 8px 0; }
 .pt-res h3 { margin: 0 0 4px; font-size: 1rem; }
 .pt-panel .row2 { margin-top: 8px; }
+.pc-spells { margin: 6px 0 4px; }
+.pc-spells ul { list-style: none; padding: 0; margin: 4px 0 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.pc-spells label { display: flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1px solid var(--rule); border-radius: 999px; font-size: 14px; cursor: pointer; }
+.pc-spells input { width: 18px; height: 18px; margin: 0; accent-color: var(--ok); }
+.pc-esper { font: 15px var(--ui); padding: 7px 8px; border-radius: 8px; border: 1.5px solid var(--rule); background: var(--panel); color: var(--fg); width: 100%; }
+.pt-howto { border: 1px solid var(--rule); border-radius: 12px; padding: 0 14px; margin: 0 0 10px; font: 15px/1.5 var(--ui); }
+.pt-howto summary { cursor: pointer; padding: 10px 0; font-weight: 600; color: var(--acc); }
+.pt-howto ul { margin: 0 0 12px; padding-left: 1.2em; }
+.pt-howto li { margin: .3em 0; }
+.pt-espers { list-style: none; padding: 0; margin: 0 0 1.2em; display: grid; grid-template-columns: repeat(auto-fill, minmax(16em, 1fr)); gap: 8px; }
+.pt-espers label { display: flex; gap: 10px; align-items: flex-start; padding: 8px 10px; border: 1px solid var(--rule); border-radius: 10px; cursor: pointer; font-size: 15px; height: 100%; box-sizing: border-box; }
+.pt-espers input { width: 20px; height: 20px; margin: 1px 0 0; flex: none; accent-color: var(--ok); }
+.pt-espers li.on label { border-color: var(--ok); }
+.pt-espers .badge { margin-left: 4px; }
 @media (max-width: 520px) { .pc-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 
 /* ---------- color-coded names ---------- */
