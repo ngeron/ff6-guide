@@ -388,7 +388,7 @@ for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, heigh
   await page.setInputFiles("#file", path.join(ROOT, "test/fixtures/ember-crown-guide.txt"));
   await page.waitForSelector(".home");
   check(await page.locator('.home a[href="#/rages"]').count() === 1, "[rages] home page links to the tracker");
-  await page.click(".toc-tracker");
+  await page.click('.toc-tracker[href="#/rages"]');
   await page.waitForSelector(".rages");
   check(await page.locator(".rg").count() === 256 && (await page.textContent(".rg-stat")).includes("0 of 252"), "[rages] lists 256 Rages, 252 learnable");
   await page.check('.rg:has-text("Stray Cat") input');
@@ -520,6 +520,39 @@ for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, heigh
   await page.emulateMedia({ colorScheme: "dark" });
   await page.screenshot({ path: path.join(SHOTS, "26-party-phone-dark.png"), fullPage: false });
   check(!(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), "[party] no horizontal scroll at phone width");
+  await ctx.close();
+}
+
+// Tool shortcuts: top bar on iPad, tab bar along the bottom on phones.
+{
+  const ctx = await browser.newContext({ viewport: { width: 1180, height: 820 } });
+  const page = await ctx.newPage();
+  page.on("pageerror", (e) => errors.push("pageerror: " + e.message));
+  await page.goto(base);
+  await page.waitForSelector(".import");
+  check(await page.locator("#shortcuts").isHidden(), "[shortcuts] hidden before a guide is imported");
+  await page.setInputFiles("#file", path.join(ROOT, "test/fixtures/ember-crown-guide.txt"));
+  await page.waitForSelector(".home");
+  const inBar = await page.evaluate(() => document.getElementById("shortcuts").getBoundingClientRect().top < 60);
+  check(inBar && await page.locator("#shortcuts .sc").count() === 5, "[shortcuts] five shortcuts in the top bar on iPad");
+  for (const [id, title] of [["#partyBtn", "Party"], ["#ragesBtn", "Gau's Rages"], ["#gearBtn", "Inventory"], ["#monsterBtn", "Monster intel"]]) {
+    await page.click(id);
+    await page.waitForFunction((t) => document.querySelector("main h1")?.textContent === t, title);
+    check(await page.getAttribute(id, "aria-current") === "page", `[shortcuts] ${id} opens its page and is highlighted`);
+  }
+  await page.click('.toc-tracker[href="#/party"]');
+  await page.click("#mapsBtn");
+  check(await page.locator("#tocMaps").isVisible(), "[shortcuts] Maps opens the Maps tab");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(base + "#/party");
+  await page.waitForSelector(".party");
+  const bottom = await page.evaluate(() => { const r = document.getElementById("shortcuts").getBoundingClientRect(); return Math.round(r.bottom) === innerHeight && r.top > innerHeight - 90; });
+  check(bottom, "[shortcuts] tab bar along the bottom on phones");
+  check(!(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), "[shortcuts] no horizontal scroll at phone width");
+  await page.screenshot({ path: path.join(SHOTS, "30-tabbar-phone.png") });
+  await page.click("#mapsBtn");
+  check(await page.locator("#tocMaps").isVisible(), "[shortcuts] Maps opens the drawer on phones");
+  await page.screenshot({ path: path.join(SHOTS, "31-tabbar-maps.png") });
   await ctx.close();
 }
 

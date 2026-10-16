@@ -25,9 +25,18 @@
   <button type="button" class="ib" id="searchBtn" aria-label="Search the guide">
     <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg>
   </button>
-  <button type="button" class="ib" id="monsterBtn" aria-label="Monster intel">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 10c0-4 3-6.5 7-6.5s7 2.5 7 6.5v9.5l-2.3-1.6-2.4 1.6-2.3-1.6-2.3 1.6-2.4-1.6L5 19.5z"/><circle cx="9.3" cy="10.5" r="1.2"/><circle cx="14.7" cy="10.5" r="1.2"/></svg>
-  </button>
+  <nav class="shortcuts" id="shortcuts" aria-label="Tools">
+    <a class="ib sc" id="partyBtn" href="#/party" aria-label="Party" title="Party">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 19.5c.5-3.6 3-5.6 6-5.6s5.5 2 6 5.6"/><circle cx="16.5" cy="9" r="2.6"/><path d="M15.6 14.1c2.9-.4 5 1.4 5.4 4.6"/></svg><span class="sc-l">Party</span></a>
+    <a class="ib sc" id="monsterBtn" href="#/monsters" aria-label="Monster intel" title="Monster intel">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 10c0-4 3-6.5 7-6.5s7 2.5 7 6.5v9.5l-2.3-1.6-2.4 1.6-2.3-1.6-2.3 1.6-2.4-1.6L5 19.5z"/><circle cx="9.3" cy="10.5" r="1.2"/><circle cx="14.7" cy="10.5" r="1.2"/></svg><span class="sc-l">Monsters</span></a>
+    <a class="ib sc" id="ragesBtn" href="#/rages" aria-label="Gau's Rages" title="Gau's Rages">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="16" rx="4.6" ry="3.8"/><ellipse cx="6" cy="10.5" rx="1.8" ry="2.4"/><ellipse cx="9.6" cy="6.6" rx="1.8" ry="2.4"/><ellipse cx="14.4" cy="6.6" rx="1.8" ry="2.4"/><ellipse cx="18" cy="10.5" rx="1.8" ry="2.4"/></svg><span class="sc-l">Rages</span></a>
+    <a class="ib sc" id="gearBtn" href="#/gear" aria-label="Inventory" title="Inventory">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5.5 8.5h13l-1 11.5h-11z"/><path d="M9 8.5V7a3 3 0 0 1 6 0v1.5"/><path d="M9.5 12.5h5"/></svg><span class="sc-l">Inventory</span></a>
+    <button type="button" class="ib sc" id="mapsBtn" aria-label="Maps" title="Maps">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 6.5 9 4l6 2.5L20.5 4v13.5L15 20l-6-2.5L3.5 20z"/><path d="M9 4v13.5M15 6.5V20"/></svg><span class="sc-l">Maps</span></button>
+  </nav>
   <button type="button" class="ib" id="settingsBtn" aria-label="Settings">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.5h16M4 12h16M4 17.5h16"/></svg>
   </button>

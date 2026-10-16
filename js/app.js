@@ -11,7 +11,7 @@ import { KINDS, KIND_LABEL, loadTags, saveTags, buildTerms, matcher, markNames }
 import { DEFAULT_NAMES, loadNames, saveNames, renameDoc } from "./names.js";
 import { initMaps, loadMaps, getMap, hasMaps, mapCounts, exportPack, removeAllMaps, itemsForSection, importFiles as importMapFiles, renderPanel as renderMapsPanel, bindPanel as bindMapsPanel, renderViewer as renderMapViewer } from "./maps.js";
 
-const VERSION = "0.17.0";
+const VERSION = "0.18.0";
 const $ = (id) => document.getElementById(id);
 const root = document.documentElement;
 
@@ -248,7 +248,7 @@ function tocLabel(s) {
 }
 
 function buildToc() {
-  const html = [`<div class="toc-in"><a class="toc-tracker" href="#/rages"><span class="t">Gau's Rages</span><span class="cnt" id="rageCnt">${rageLabel()}</span></a><a class="toc-tracker" href="#/party"><span class="t">Party</span><span class="cnt" id="partyCnt">${partyLabel()}</span></a><a class="toc-tracker" href="#/monsters"><span class="t">Monster intel</span></a><a class="toc-tracker" href="#/gear"><span class="t">Inventory</span><span class="cnt" id="gearCnt">${gearLabel()}</span></a><p class="toc-progress" id="tocProgress"></p><ol class="toc-list">`];
+  const html = [`<div class="toc-in"><a class="toc-tracker" href="#/party"><span class="t">Party</span><span class="cnt" id="partyCnt">${partyLabel()}</span></a><a class="toc-tracker" href="#/monsters"><span class="t">Monster intel</span></a><a class="toc-tracker" href="#/rages"><span class="t">Gau's Rages</span><span class="cnt" id="rageCnt">${rageLabel()}</span></a><a class="toc-tracker" href="#/gear"><span class="t">Inventory</span><span class="cnt" id="gearCnt">${gearLabel()}</span></a><p class="toc-progress" id="tocProgress"></p><ol class="toc-list">`];
   for (const g of groups()) {
     const h = g.head;
     const doneH = state.done.has(h.key) ? " done" : "";
@@ -356,7 +356,8 @@ function setBar(text, href = "#/") {
 }
 
 function showChrome(on) {
-  for (const id of ["tocBtn", "searchBtn", "monsterBtn"]) $(id).hidden = !on;
+  for (const id of ["tocBtn", "searchBtn", "shortcuts"]) $(id).hidden = !on;
+  document.body.classList.toggle("has-tabs", on);
 }
 
 function viewImport(message) {
@@ -487,7 +488,24 @@ function viewMonsters(selected) {
   $("toc").querySelector('.toc-tracker[href="#/monsters"]')?.setAttribute("aria-current", "page");
   if (!selected) window.scrollTo(0, 0);
 }
-$("monsterBtn").onclick = () => { closeSheets(); if (!wide()) setTocOpen(false); location.hash = "#/monsters"; };
+// Shortcuts to the tools (top bar on wide screens, tab bar along the bottom on phones).
+function markShortcut() {
+  const h = location.hash;
+  for (const a of $("shortcuts").querySelectorAll("a.sc")) {
+    const on = h === a.getAttribute("href") || h.startsWith(a.getAttribute("href") + "/");
+    if (on) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
+  }
+}
+addEventListener("hashchange", markShortcut);
+$("shortcuts").addEventListener("click", (e) => {
+  if (e.target.closest("a.sc")) { closeSheets(); if (!wide()) setTocOpen(false); }
+});
+$("mapsBtn").onclick = () => {
+  closeSheets();
+  const showing = !$("toc").hidden && !$("tocMaps").hidden;
+  setPanelTab("maps");
+  setTocOpen(!(showing && !wide()) || wide());
+};
 
 function viewParty() {
   state.current = null;
@@ -1166,6 +1184,7 @@ async function start() {
   setPanelTab(getPref("panelTab", "contents"));
   syncTocMode();
   route();
+  markShortcut();
   if (signedIn && signedIn.error) toast(signedIn.error);
   else if (signedIn && signedIn.action === "save") cloudSave();
   else if (signedIn && signedIn.action === "restore") cloudRestore();
