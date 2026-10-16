@@ -534,7 +534,7 @@ for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, heigh
   await page.setInputFiles("#file", path.join(ROOT, "test/fixtures/ember-crown-guide.txt"));
   await page.waitForSelector(".home");
   const inBar = await page.evaluate(() => document.getElementById("shortcuts").getBoundingClientRect().top < 60);
-  check(inBar && await page.locator("#shortcuts .sc").count() === 5, "[shortcuts] five shortcuts in the top bar on iPad");
+  check(inBar && await page.locator("#shortcuts .sc").count() === 6, "[shortcuts] six shortcuts in the top bar on iPad");
   for (const [id, title] of [["#partyBtn", "Party"], ["#ragesBtn", "Gau's Rages"], ["#gearBtn", "Inventory"], ["#monsterBtn", "Monster intel"]]) {
     await page.click(id);
     await page.waitForFunction((t) => document.querySelector("main h1")?.textContent === t, title);
@@ -553,6 +553,39 @@ for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, heigh
   await page.click("#mapsBtn");
   check(await page.locator("#tocMaps").isVisible(), "[shortcuts] Maps opens the drawer on phones");
   await page.screenshot({ path: path.join(SHOTS, "31-tabbar-maps.png") });
+  await ctx.close();
+}
+
+// Walkthrough.
+{
+  const ctx = await browser.newContext({ viewport: { width: 1180, height: 820 } });
+  const page = await ctx.newPage();
+  page.on("pageerror", (e) => errors.push("pageerror: " + e.message));
+  page.on("console", (m) => { if (m.type() === "error") errors.push("console: " + m.text()); });
+  await page.goto(base);
+  await page.setInputFiles("#file", path.join(ROOT, "test/fixtures/ember-crown-guide.txt"));
+  await page.waitForSelector(".home");
+  await page.evaluate(() => localStorage.setItem("ff6g:names", JSON.stringify([{ from: "Terra", to: "Prns Donut" }])));
+  await page.reload();
+  await page.click("#walkBtn");
+  await page.waitForSelector(".walk .wt-list");
+  const chapters = await page.locator(".wt-list li").count();
+  check(chapters >= 10, `[walk] index lists the chapters (${chapters})`);
+  await page.click('.wt-list a[href="#/walk/1"]');
+  await page.waitForSelector(".walk-ch .wt-boss");
+  const body = await page.textContent(".walk-ch");
+  check(/Prns Donut/.test(body) && !/\bTerra\b/.test(body.replace(/Prns Donut/g, "")), "[walk] chapters use your character names");
+  check(await page.locator('.walk-ch a.wt-mon[href="#/monsters/Ymir"]').count() >= 1, "[walk] bosses link to Monster intel");
+  await page.screenshot({ path: path.join(SHOTS, "32-walk-chapter.png") });
+  await page.click("#walkDone");
+  await page.click('.pager a[rel="next"]');
+  await page.waitForFunction(() => /#\/walk\/2$/.test(location.hash));
+  await page.click('.walk-ch a.wt-mon >> nth=0');
+  await page.waitForSelector(".mn-card");
+  check(true, "[walk] a monster link opens its card");
+  await page.goto(base + "#/walk");
+  await page.waitForSelector(".wt-list");
+  check(await page.locator('.wt-list a.done[href="#/walk/1"]').count() === 1 && /Continue/.test(await page.textContent(".walk .continue")), "[walk] done marks and Continue are kept");
   await ctx.close();
 }
 

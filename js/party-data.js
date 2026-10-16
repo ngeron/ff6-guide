@@ -171,7 +171,7 @@ export const EQUIP = {
   "Crystal Helm": {"slot": "head", "def": 29, "mdef": 19, "who": "Te Ed Ce Se"},
   "Genji Helm": {"slot": "head", "def": 36, "mdef": 38, "who": "Te Lo Cy Sh Ed Sa Ce St Re Se Mo Ga Go"},
   "Leather Armor": {"slot": "body", "def": 28, "mdef": 19, "who": "Te Lo Cy Sh Ed Ce St Re Se Mo Ga Go"},
-  "Kenpo Gi|Kenpo Gi": {"slot": "body", "def": 34, "mdef": 23, "who": "Lo Sh Sa Ga"},
+  "Kenpo Gi": {"slot": "body", "def": 34, "mdef": 23, "who": "Lo Sh Sa Ga"},
   "Mythril Vest": {"slot": "body", "def": 45, "mdef": 30, "who": "Te Lo Cy Sh Ed Sa Ce St Re Se Mo Ga Go"},
   "Ninja Gear": {"slot": "body", "def": 47, "mdef": 32, "spd": 2, "who": "Lo Sh Sa Se Ga Go"},
   "Mirage Vest": {"slot": "body", "def": 48, "mdef": 36, "mb": 10, "spd": 6, "auto": ["Image"], "who": "Te Lo Cy Sh Ed Sa Ce St Re Se Mo Ga Go"},

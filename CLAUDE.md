@@ -34,6 +34,7 @@ js/gear.js, gear-data.js    inventory tracker (#/gear): counts, prices, sources 
 js/party.js, optimizer.js, party-data.js, espers-data.js  Party page (#/party): met characters, levels, load-outs, espers (acquired, equipped, spells learned) (equipping moves items out of the gear bag), and the load-out optimizer (FF6 damage formulas; see optimizer.js header)
 js/monsters.js, monsters-data.js  monster intel (#/monsters/<name>): search, 3-column picture grid, stats (CC BY-SA). Pictures are hotlinked from the wiki with no referrer and cached by sw.js; never commit them
 js/cloud.js              Google Drive sync of the backup .zip (OAuth token redirect, drive.file scope; client ID entered in Settings per browser, never committed)
+js/walkthrough.js        the experimental walkthrough (#/walk, #/walk/<n>) read from walkthrough/ff6-pr.md: ORIGINAL text written for this app (never paste guide text into it); format notes at the top of that file
 js/backup.js             backup .zip: guide, progress, names, maps; save and restore
 sw.js                    offline cache
 test/                    e2e smoke test and fixture generators

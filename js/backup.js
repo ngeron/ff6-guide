@@ -14,7 +14,8 @@
 //     "gear":     { "Dagger": 2, "Potion": 14 },                   inventory counts (the bag)
 //     "party":    { "party": ["Terra"], "chars": { "Terra": { "met": true, "level": 12,
 //                   "goal": "balanced", "eq": { "rh": "Icebrand" }, "lock": {} } } }
-//     "progress": { "done": ["3.1.1"], "last": "3.1.2", "pos": { "3.1.2": 0.25 }, "savedText": true },
+//     "progress": { "done": ["3.1.1"], "last": "3.1.2", "pos": { "3.1.2": 0.25 }, "savedText": true,
+//                   "walkDone": ["the-raid-on-narshe"], "walkLast": "figaro-castle" },
 //     "maps":     [{ "id", "file": "maps/<id>.png", "title", "section", "type", "width", "height", "order", "addedAt" }],
 //     "links":    [{ "id", "title", "url", "section", "note" }]
 //   }
@@ -34,7 +35,7 @@ import { zip, unzip } from "./zip.js";
 
 const FORMAT = "ff6-guide-backup";
 const VERSION = 1;
-const PROGRESS = ["done", "last", "pos", "savedText"];
+const PROGRESS = ["done", "last", "pos", "savedText", "walkDone", "walkLast"];
 const IMG_EXT = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp", "image/gif": "gif" };
 const GUIDE_EXT = { html: "html", markdown: "md" };
 const GUIDE_FORMATS = ["text", "html", "markdown"];

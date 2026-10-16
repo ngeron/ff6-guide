@@ -8,10 +8,11 @@ import { renderMonsters, findMonster } from "./monsters.js";
 import { renderParty, partyCount } from "./party.js";
 import * as cloud from "./cloud.js";
 import { KINDS, KIND_LABEL, loadTags, saveTags, buildTerms, matcher, markNames } from "./tags.js";
-import { DEFAULT_NAMES, loadNames, saveNames, renameDoc } from "./names.js";
+import { DEFAULT_NAMES, loadNames, saveNames, renameDoc, renamer } from "./names.js";
+import { renderWalkIndex, renderWalkChapter, loadDone as loadWalkDone } from "./walkthrough.js";
 import { initMaps, loadMaps, getMap, hasMaps, mapCounts, exportPack, removeAllMaps, itemsForSection, importFiles as importMapFiles, renderPanel as renderMapsPanel, bindPanel as bindMapsPanel, renderViewer as renderMapViewer } from "./maps.js";
 
-const VERSION = "0.18.0";
+const VERSION = "0.19.0";
 const $ = (id) => document.getElementById(id);
 const root = document.documentElement;
 
@@ -248,7 +249,7 @@ function tocLabel(s) {
 }
 
 function buildToc() {
-  const html = [`<div class="toc-in"><a class="toc-tracker" href="#/party"><span class="t">Party</span><span class="cnt" id="partyCnt">${partyLabel()}</span></a><a class="toc-tracker" href="#/monsters"><span class="t">Monster intel</span></a><a class="toc-tracker" href="#/rages"><span class="t">Gau's Rages</span><span class="cnt" id="rageCnt">${rageLabel()}</span></a><a class="toc-tracker" href="#/gear"><span class="t">Inventory</span><span class="cnt" id="gearCnt">${gearLabel()}</span></a><p class="toc-progress" id="tocProgress"></p><ol class="toc-list">`];
+  const html = [`<div class="toc-in"><a class="toc-tracker" href="#/walk"><span class="t">Walkthrough</span><span class="cnt" id="walkCnt">${walkLabel()}</span></a><a class="toc-tracker" href="#/party"><span class="t">Party</span><span class="cnt" id="partyCnt">${partyLabel()}</span></a><a class="toc-tracker" href="#/monsters"><span class="t">Monster intel</span></a><a class="toc-tracker" href="#/rages"><span class="t">Gau's Rages</span><span class="cnt" id="rageCnt">${rageLabel()}</span></a><a class="toc-tracker" href="#/gear"><span class="t">Inventory</span><span class="cnt" id="gearCnt">${gearLabel()}</span></a><p class="toc-progress" id="tocProgress"></p><ol class="toc-list">`];
   for (const g of groups()) {
     const h = g.head;
     const doneH = state.done.has(h.key) ? " done" : "";
@@ -267,6 +268,11 @@ function buildToc() {
   html.push("</ol></div>");
   $("tocContents").innerHTML = html.join("");
   updateTocProgress();
+}
+
+function walkLabel() {
+  const n = loadWalkDone().size;
+  return n ? `${n} done` : "";
 }
 
 function partyLabel() {
@@ -409,6 +415,7 @@ function viewHome() {
     </ol>
     <p class="stat">Tools</p>
     <ol class="chapters">
+      <li><a href="#/walk"><span class="n"></span><span class="t">Walkthrough</span><span class="cnt">A short route, start to finish</span></a></li>
       <li><a href="#/party"><span class="n"></span><span class="t">Party</span><span class="cnt">Levels, equipment, optimizer</span></a></li>
       <li><a href="#/monsters"><span class="n"></span><span class="t">Monster intel</span><span class="cnt">Weaknesses, steals, Rages</span></a></li>
       <li><a href="#/rages"><span class="n"></span><span class="t">Gau's Rages</span><span class="cnt">${rageCounts().have} of ${rageCounts().total} learned</span></a></li>
@@ -506,6 +513,31 @@ $("mapsBtn").onclick = () => {
   setPanelTab("maps");
   setTocOpen(!(showing && !wide()) || wide());
 };
+
+// The walkthrough shares the reader's helpers: character names, color coding, guide links, maps.
+function walkCtx() {
+  return {
+    rename: (html) => { const r = renamer(names); return r ? r.html(html) : html; },
+    mark: (el) => { if (prefs.colorNames && el) markNames(el, state.matcher); },
+    guideHref: (num) => { const s = state.byNum.get(num) || state.byNum.get(num.replace(/\.1$/, "")); return s ? hrefFor(s) : null; },
+    mapsFor: (num) => itemsForSection(num).map((it) => it.kind === "map" ? `<a class="chip" href="${it.href}">${esc(it.title)}</a>` : `<a class="chip ext" href="${esc(it.href)}" target="_blank" rel="noopener noreferrer">${esc(it.title)} ↗</a>`).join(""),
+    toast,
+  };
+}
+function viewWalk(n) {
+  state.current = null;
+  showChrome(true);
+  setBar(`<span class="bt">Walkthrough</span>`, "#/walk");
+  markTocCurrent();
+  $("toc").querySelector('.toc-tracker[href="#/walk"]')?.setAttribute("aria-current", "page");
+  window.scrollTo(0, 0);
+  const done = () => { const c = $("walkCnt"); if (c) c.textContent = walkLabel(); };
+  if (n) renderWalkChapter($("view"), n, walkCtx()).then((c) => {
+    if (c) setBar(`<span class="num">${c.n}</span><span class="bt">${esc(c.title)}</span>`, "#/walk");
+    $("view").querySelector("#walkDone")?.addEventListener("click", done);
+  });
+  else renderWalkIndex($("view"), walkCtx());
+}
 
 function viewParty() {
   state.current = null;
@@ -711,6 +743,8 @@ function route() {
   if (h === "#/rages") return viewRages();
   if (h === "#/gear") return viewGear();
   if (h === "#/party") return viewParty();
+  const wk = h.match(/^#\/walk(?:\/(\d+))?$/);
+  if (wk) return viewWalk(wk[1] ? +wk[1] : 0);
   const mn = h.match(/^#\/monsters(?:\/(.+))?$/);
   if (mn) return viewMonsters(mn[1] ? findMonster(decodeURIComponent(mn[1])) : null);
   const m = h.match(/^#\/s\/(.+)$/);

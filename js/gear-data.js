@@ -177,7 +177,7 @@ export const GEAR = [
   {"name": "Crystal Helm", "cat": "helmet", "type": "Helmets", "buy": 10000, "sell": 5000, "get": [["Find", "Figaro Castle"], ["Buy", "Maranda (WoR), Jidoor (WoR)"], ["Metamorphose", "Platinum Dragon, Ice Dragon, Storm Dragon, Earth Dragon, Gold Dragon, Skull Dragon, Blue Dragon, Red Dragon, Proto Armor"], ["Coliseum", "Bet Genji Helmet"]]},
   {"name": "Genji Helm", "cat": "helmet", "type": "Helmets", "sell": 1, "get": [["Find", "Darill's Tomb"], ["Coliseum", "Bet Regal Crown"], ["Drop", "Gilgamesh"]]},
   {"name": "Leather Armor", "alt": "LeatherArmor", "cat": "armor", "type": "Light armor", "sell": 75, "get": [["Initial", "Terra, Locke, Edgar, Cyan, Biggs, Wedge"]]},
-  {"name": "Kenpo Gi|Kenpo Gi", "alt": "Kung-Fu Suit", "cat": "armor", "type": "Light armor", "buy": 250, "sell": 125, "get": [["Buy", "South Figaro (WoB), Mobliz (WoB), Nikeah (WoB)"], ["Initial", "Sabin"]]},
+  {"name": "Kenpo Gi", "alt": "Kung-Fu Suit", "cat": "armor", "type": "Light armor", "buy": 250, "sell": 125, "get": [["Buy", "South Figaro (WoB), Mobliz (WoB), Nikeah (WoB)"], ["Initial", "Sabin"]]},
   {"name": "Mythril Vest", "alt": "Mithril Vest", "cat": "armor", "type": "Light armor", "buy": 1200, "sell": 600, "get": [["Buy", "Jidoor (WoB), Maranda (WoB), Tzen (WoB), Albrook (WoB), Vector"], ["Steal", "Hell's Rider, Sergeant"], ["Initial", "Setzer, Gogo, Kefka"]]},
   {"name": "Ninja Gear", "cat": "armor", "type": "Light armor", "buy": 1100, "sell": 550, "get": [["Buy", "Jidoor (WoB), Tzen (WoB), Albrook (WoB), Vector"], ["Initial", "Shadow"]]},
   {"name": "Mirage Vest", "cat": "armor", "type": "Light armor", "sell": 1, "get": [["Coliseum", "Bet Thornlet"]]},
