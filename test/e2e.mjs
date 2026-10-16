@@ -421,6 +421,52 @@ for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, heigh
   await ctx.close();
 }
 
+// Inventory tracker.
+{
+  const ctx = await browser.newContext({ viewport: { width: 1180, height: 820 } });
+  const page = await ctx.newPage();
+  page.on("pageerror", (e) => errors.push("pageerror: " + e.message));
+  page.on("console", (m) => { if (m.type() === "error") errors.push("console: " + m.text()); });
+  await page.goto(base);
+  await page.setInputFiles("#file", path.join(ROOT, "test/fixtures/ember-crown-guide.txt"));
+  await page.waitForSelector(".home");
+  await page.click('.toc-tracker[href="#/gear"]');
+  await page.waitForSelector(".gear");
+  const total = await page.locator(".gr").count();
+  check(total > 250, `[gear] lists every item (${total})`);
+  const dagger = page.locator(".gr", { has: page.locator(".rg-name", { hasText: /^Dagger/ }) }).first();
+  await dagger.locator('input[type="checkbox"]').check();
+  check(await dagger.locator(".gr-n").inputValue() === "1" && (await page.textContent("#grKinds")) === "1", "[gear] checking an item sets a count of 1");
+  await dagger.locator(".gr-inc").click();
+  check(await dagger.locator(".gr-n").inputValue() === "2" && /150 gil/.test(await page.textContent("#grValue")), "[gear] + raises the count and the sell total");
+  await dagger.locator(".gr-open").click();
+  const more = await dagger.locator(".gr-more").textContent();
+  check(/Buy\s*150 gil/.test(more) && /Sell\s*75 gil/.test(more) && /Sold at\s*South Figaro/.test(more) && /150 gil for 2/.test(more), "[gear] details show buy, sell, shops and the total for your count");
+  await page.screenshot({ path: path.join(SHOTS, "21-gear.png") });
+  await dagger.locator(".gr-n").fill("12");
+  await dagger.locator(".gr-n").press("Tab");
+  check(/900 gil/.test(await page.textContent("#grValue")), "[gear] typing a count updates the total");
+  await page.selectOption("#grCat", "relic");
+  check(await dagger.isHidden(), "[gear] kind filter hides other kinds");
+  await page.selectOption("#grCat", "all");
+  await page.click('#grSeg [data-v="owned"]');
+  check(await page.locator(".gr:not([hidden])").count() === 1, "[gear] Have filter shows only what you have");
+  await page.click('#grSeg [data-v="all"]');
+  await page.fill("#grQ", "dirk");
+  check(await dagger.isVisible(), "[gear] search matches SNES names");
+  await page.fill("#grQ", "");
+  await dagger.locator(".gr-dec").click();
+  await page.reload();
+  await page.waitForSelector(".gear");
+  check(await page.locator(".gr", { has: page.locator(".rg-name", { hasText: /^Dagger/ }) }).first().locator(".gr-n").inputValue() === "11", "[gear] counts kept after reload");
+  check((await page.textContent("#gearCnt")) === "1 kind", "[gear] panel shows how many kinds you have");
+  await page.emulateMedia({ colorScheme: "dark" });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({ path: path.join(SHOTS, "22-gear-phone-dark.png") });
+  check(!(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), "[gear] no horizontal scroll at phone width");
+  await ctx.close();
+}
+
 // Color coding: names found from the guide, corrections, and the on/off switch.
 {
   const ctx = await browser.newContext({ viewport: { width: 1180, height: 820 } });
@@ -499,6 +545,7 @@ for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, heigh
   await page.fill("#tagList li:last-child .tg-text", "Isolde");
   await page.press("#tagList li:last-child .tg-text", "Tab");
   await page.evaluate(() => localStorage.setItem("ff6g:rages", JSON.stringify(["Stray Cat", "Leaf Bunny"])));
+  await page.evaluate(() => localStorage.setItem("ff6g:gear", JSON.stringify({ Dagger: 3, Potion: 14 })));
   await page.screenshot({ path: path.join(SHOTS, "12-backup-settings.png") });
   const [dl] = await Promise.all([page.waitForEvent("download"), page.click("#backupBtn")]);
   const backup = path.join(SHOTS, "backup.zip");
@@ -527,6 +574,7 @@ for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, heigh
   check((await p2.textContent("article.sec")).includes("Prns Donut"), "[backup] restored character names");
   check(await p2.locator(".ent-party", { hasText: "Isolde" }).count() >= 1, "[backup] restored color-coding fixes");
   check(JSON.stringify(await p2.evaluate(() => JSON.parse(localStorage.getItem("ff6g:rages")))) === '["Stray Cat","Leaf Bunny"]', "[backup] restored Gau's Rages");
+  check(JSON.stringify(await p2.evaluate(() => JSON.parse(localStorage.getItem("ff6g:gear")))) === '{"Dagger":3,"Potion":14}', "[backup] restored inventory counts");
 
   // Restore over existing data asks first; Cancel keeps things, Replace restores.
   await p2.click("#settingsBtn");

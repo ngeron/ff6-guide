@@ -3,11 +3,12 @@ import { renderBlocks, renderHeading, esc, inline } from "./render.js";
 import { loadGuide, saveGuide, removeGuide, askPersist, getPref, setPref } from "./store.js";
 import { makeBackup, readBackup, describeBackup, restoreBackup } from "./backup.js";
 import { renderRages, rageCounts } from "./rages.js";
+import { renderGear, gearCounts } from "./gear.js";
 import { KINDS, KIND_LABEL, loadTags, saveTags, buildTerms, matcher, markNames } from "./tags.js";
 import { DEFAULT_NAMES, loadNames, saveNames, renameDoc } from "./names.js";
 import { initMaps, loadMaps, getMap, hasMaps, mapCounts, exportPack, removeAllMaps, itemsForSection, importFiles as importMapFiles, renderPanel as renderMapsPanel, bindPanel as bindMapsPanel, renderViewer as renderMapViewer } from "./maps.js";
 
-const VERSION = "0.10.0";
+const VERSION = "0.11.0";
 const $ = (id) => document.getElementById(id);
 const root = document.documentElement;
 
@@ -244,7 +245,7 @@ function tocLabel(s) {
 }
 
 function buildToc() {
-  const html = [`<div class="toc-in"><a class="toc-tracker" href="#/rages"><span class="t">Gau's Rages</span><span class="cnt" id="rageCnt">${rageLabel()}</span></a><p class="toc-progress" id="tocProgress"></p><ol class="toc-list">`];
+  const html = [`<div class="toc-in"><a class="toc-tracker" href="#/rages"><span class="t">Gau's Rages</span><span class="cnt" id="rageCnt">${rageLabel()}</span></a><a class="toc-tracker" href="#/gear"><span class="t">Inventory</span><span class="cnt" id="gearCnt">${gearLabel()}</span></a><p class="toc-progress" id="tocProgress"></p><ol class="toc-list">`];
   for (const g of groups()) {
     const h = g.head;
     const doneH = state.done.has(h.key) ? " done" : "";
@@ -263,6 +264,11 @@ function buildToc() {
   html.push("</ol></div>");
   $("tocContents").innerHTML = html.join("");
   updateTocProgress();
+}
+
+function gearLabel() {
+  const c = gearCounts();
+  return c.kinds ? `${c.kinds} kind${c.kinds === 1 ? "" : "s"}` : "";
 }
 
 function rageLabel() {
@@ -395,6 +401,7 @@ function viewHome() {
     <p class="stat">Trackers</p>
     <ol class="chapters">
       <li><a href="#/rages"><span class="n"></span><span class="t">Gau's Rages</span><span class="cnt">${rageCounts().have} of ${rageCounts().total} learned</span></a></li>
+      <li><a href="#/gear"><span class="n"></span><span class="t">Inventory</span><span class="cnt">${gearCounts().kinds} of ${gearCounts().total} kinds</span></a></li>
     </ol>
   </section>`;
   const he = $("homeExport");
@@ -453,7 +460,21 @@ function viewRages() {
     toast,
   });
   markTocCurrent();
-  $("toc").querySelector(".toc-tracker")?.setAttribute("aria-current", "page");
+  $("toc").querySelector('.toc-tracker[href="#/rages"]')?.setAttribute("aria-current", "page");
+  window.scrollTo(0, 0);
+}
+
+function viewGear() {
+  state.current = null;
+  showChrome(true);
+  setBar(`<span class="bt">Inventory</span>`, "#/");
+  renderGear($("view"), {
+    onFind: (name) => openSearch(name),
+    onChange: () => { const c = $("gearCnt"); if (c) c.textContent = gearLabel(); },
+    toast,
+  });
+  markTocCurrent();
+  $("toc").querySelector('.toc-tracker[href="#/gear"]')?.setAttribute("aria-current", "page");
   window.scrollTo(0, 0);
 }
 
@@ -629,6 +650,7 @@ function route() {
     if (map) return viewMap(map);
   }
   if (h === "#/rages") return viewRages();
+  if (h === "#/gear") return viewGear();
   const m = h.match(/^#\/s\/(.+)$/);
   if (m) {
     const s = state.byKey.get(decodeURIComponent(m[1]));

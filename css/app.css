@@ -249,6 +249,30 @@ mark { background: var(--hit); color: inherit; border-radius: 2px; padding: 0 1p
 .badge { display: inline-block; padding: 0 6px; border-radius: 6px; border: 1px solid var(--rule); font: 600 11px/1.6 var(--ui); letter-spacing: .03em; color: var(--mute); vertical-align: 1px; }
 .badge.lore { color: var(--acc); border-color: currentColor; }
 
+/* ---------- inventory ---------- */
+.rg-tools select { font: 15px var(--ui); padding: 9px 8px; border-radius: 10px; border: 1.5px solid var(--rule); background: var(--panel); color: var(--fg); }
+.gr { display: block; }
+.gr-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
+.gr-row > input[type="checkbox"] { width: 22px; height: 22px; margin: 0; flex: none; accent-color: var(--ok); }
+.gr-open { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; padding: 6px 2px; border: 0; background: none; color: var(--fg); text-align: left; font: inherit; cursor: pointer; border-radius: 8px; }
+.gr-open:active { background: var(--panel); }
+.gr-open[aria-expanded="true"] .rg-name::after { content: " ▴"; color: var(--mute); }
+.gr.on .rg-name { color: var(--ok); }
+.gr-step { flex: none; display: flex; align-items: center; gap: 2px; }
+.gr-step button { width: 34px; height: 34px; border-radius: 8px; border: 1.5px solid var(--rule); background: var(--bg); color: var(--fg); font: 600 17px var(--ui); cursor: pointer; }
+.gr-step button:disabled { opacity: .35; cursor: default; }
+.rg .gr-n { width: 2.6em; height: 34px; margin: 0; text-align: center; font: 600 15px var(--ui); font-variant-numeric: tabular-nums; border-radius: 8px; border: 1.5px solid var(--rule); background: var(--panel); color: var(--fg); padding: 0; }
+.gr-more { margin: 0 0 10px 32px; padding: 8px 12px 10px; border-radius: 10px; background: var(--panel); }
+.gr-tbl { border-collapse: collapse; width: 100%; font-size: 14px; }
+.gr-tbl th { text-align: left; vertical-align: top; color: var(--mute); font-weight: 600; padding: 4px 12px 4px 0; white-space: nowrap; width: 1%; }
+.gr-tbl td { padding: 4px 0; }
+.gr-tbl tr + tr th, .gr-tbl tr + tr td { border-top: 1px solid var(--rule); }
+.gr-total td { font-weight: 600; }
+.gr-note { margin: .4em 0 0; font-size: 13px; color: var(--mute); font-style: italic; }
+.gr-find { display: inline-flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 14px; }
+.gr-find svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.toc-tracker + .toc-tracker { margin-top: 0; }
+
 /* ---------- color-coded names ---------- */
 .ent-party { color: var(--party); }
 .ent-enemy { color: var(--enemy); }

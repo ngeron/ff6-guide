@@ -11,6 +11,7 @@
 //     "names":    [{ "from": "Terra", "to": "Prns Donut" }],
 //     "tags":     [{ "text": "Hell's Rider", "kind": "none" }],   color-coding corrections
 //     "rages":    ["Stray Cat", "Leaf Bunny"],                     Gau's Rages learned
+//     "gear":     { "Dagger": 2, "Potion": 14 },                   inventory counts
 //     "progress": { "done": ["3.1.1"], "last": "3.1.2", "pos": { "3.1.2": 0.25 }, "savedText": true },
 //     "maps":     [{ "id", "file": "maps/<id>.png", "title", "section", "type", "width", "height", "order", "addedAt" }],
 //     "links":    [{ "id", "title", "url", "section", "note" }]
@@ -25,6 +26,7 @@ import { loadGuide, saveGuide, removeGuide, listMaps, putMap, clearMaps, loadLin
 import { loadNames, saveNames } from "./names.js";
 import { loadTags, saveTags } from "./tags.js";
 import { loadRages, saveRages } from "./rages.js";
+import { loadGear, saveGear } from "./gear.js";
 import { zip, unzip } from "./zip.js";
 
 const FORMAT = "ff6-guide-backup";
@@ -54,7 +56,7 @@ export async function makeBackup(appVersion) {
   for (const k of PROGRESS) { const v = getPref(k, null); if (v !== null) progress[k] = v; }
   const manifest = {
     format: FORMAT, version: VERSION, app: appVersion, createdAt: new Date().toISOString(),
-    guide: g, names: loadNames(), tags: loadTags(), rages: loadRages(), progress, maps, links: await loadLinks(),
+    guide: g, names: loadNames(), tags: loadTags(), rages: loadRages(), gear: loadGear(), progress, maps, links: await loadLinks(),
   };
   files.unshift({ name: "backup.json", data: JSON.stringify(manifest, null, 2) });
   const day = new Date().toISOString().slice(0, 10);
@@ -96,6 +98,7 @@ export async function readBackup(file) {
     guide,
     names: Array.isArray(m.names) ? m.names.filter((n) => n && typeof n.from === "string" && typeof n.to === "string") : [],
     tags: Array.isArray(m.tags) ? m.tags.filter((t) => t && typeof t.text === "string" && typeof t.kind === "string") : [],
+    gear: m.gear && typeof m.gear === "object" && !Array.isArray(m.gear) ? Object.fromEntries(Object.entries(m.gear).filter(([k, v]) => typeof v === "number" && v > 0)) : {},
     rages: Array.isArray(m.rages) ? m.rages.filter((r) => typeof r === "string") : [],
     progress: m.progress && typeof m.progress === "object" ? m.progress : {},
     maps,
@@ -110,6 +113,8 @@ export function describeBackup(b) {
   const done = (b.progress.done || []).length;
   if (done) parts.push(`${done} section${done === 1 ? "" : "s"} done`);
   if (b.tags.length) parts.push(`${b.tags.length} color-coding fix${b.tags.length === 1 ? "" : "es"}`);
+  const kinds = Object.keys(b.gear).length;
+  if (kinds) parts.push(`${kinds} kind${kinds === 1 ? "" : "s"} of items`);
   if (b.rages.length) parts.push(`${b.rages.length} Rage${b.rages.length === 1 ? "" : "s"}`);
   if (b.names.length) parts.push(`${b.names.length} character name${b.names.length === 1 ? "" : "s"}`);
   if (b.maps.length) parts.push(`${b.maps.length} map${b.maps.length === 1 ? "" : "s"}`);
@@ -126,6 +131,7 @@ export async function restoreBackup(b) {
   saveNames(b.names);
   saveTags(b.tags);
   saveRages(b.rages);
+  saveGear(b.gear);
   await clearMaps();
   for (const m of b.maps) await putMap(m);
   await saveLinks(b.links);
