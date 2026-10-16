@@ -3,7 +3,7 @@
 
 import { MONSTERS, IMG_BASE } from "./monsters-data.js";
 import { RAGES } from "./rages-data.js";
-import { loadRages, saveRages } from "./rages.js";
+import { loadRages, saveRages, gauNow, rageDamage, rageLabel } from "./rages.js";
 import { esc } from "./render.js";
 
 const byName = new Map(MONSTERS.map((m) => [m.name.toLowerCase(), m]));
@@ -41,7 +41,23 @@ function formHtml(f) {
   if (f.control) row("Control", esc(f.control));
   if (f.where) row("Found in", esc(f.where));
   return `<dl class="mn-stats">${stat("level", "Level")}${stat("hp", "HP")}${stat("mp", "MP")}${stat("exp", "EXP")}${stat("gil", "Gil")}</dl>
-    <table class="gr-tbl mn-tbl"><tbody>${rows.join("")}</tbody></table>`;
+    <table class="gr-tbl mn-tbl"><tbody>${rows.join("")}</tbody></table>${rageAdvice(f)}`;
+}
+
+// Gau's learned Rages ranked against this monster form, using its weaknesses.
+function rageAdvice(f) {
+  const learned = new Set(loadRages());
+  if (!learned.size) return "";
+  const gau = gauNow();
+  const rated = RAGES.filter((r) => learned.has(r.name)).map((r) => ({ r, d: rageDamage(r, gau, f) }));
+  const hitting = rated.filter(({ d }) => d.special != null && d.special > 0 && (d.kind === "magic" || d.kind === "phys" || d.kind === "frac"));
+  const best = hitting.sort((a, b) => b.d.special - a.d.special).slice(0, 5);
+  const avoid = rated.filter(({ d }) => d.factor <= 0);
+  if (!best.length && !avoid.length) return "";
+  const tag = (d) => (d.factor === 2 ? ` <span class="chip-el el-weak">weak ×2</span>` : d.factor === 0.5 ? ` <span class="chip-el el-resist">resists</span>` : "");
+  return `<div class="mn-rages"><p class="mn-rh">Gau's best Rages here <span class="mn-odds">level ${gau.level}</span></p>
+    <ol>${best.map(({ r, d }) => `<li><strong>${esc(r.name)}</strong> · ${esc(r.ability)}${tag(d)} <span class="mn-odds">${esc(rageLabel(r, d))}</span></li>`).join("")}</ol>
+    ${avoid.length ? `<p class="mn-avoid">Avoid: ${avoid.map(({ r, d }) => `${esc(r.name)} (${esc(r.ability)}, ${d.factor < 0 ? "absorbed" : "no effect"})`).join(", ")}</p>` : ""}</div>`;
 }
 
 function cardHtml(m) {

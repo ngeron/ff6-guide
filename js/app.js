@@ -10,7 +10,7 @@ import { KINDS, KIND_LABEL, loadTags, saveTags, buildTerms, matcher, markNames }
 import { DEFAULT_NAMES, loadNames, saveNames, renameDoc } from "./names.js";
 import { initMaps, loadMaps, getMap, hasMaps, mapCounts, exportPack, removeAllMaps, itemsForSection, importFiles as importMapFiles, renderPanel as renderMapsPanel, bindPanel as bindMapsPanel, renderViewer as renderMapViewer } from "./maps.js";
 
-const VERSION = "0.15.0";
+const VERSION = "0.16.0";
 const $ = (id) => document.getElementById(id);
 const root = document.documentElement;
 

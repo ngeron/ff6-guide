@@ -306,6 +306,17 @@ mark { background: var(--hit); color: inherit; border-radius: 2px; padding: 0 1p
 .mn-rage { display: flex; align-items: center; gap: 8px; font-size: 14.5px; }
 .mn-rage input { width: 20px; height: 20px; accent-color: var(--ok); margin: 0; }
 .mn-save { font-size: inherit; padding: 0; }
+.mn-rages { margin: 12px 0 0; padding: 10px 12px; border-radius: 10px; background: var(--panel); font-size: 14.5px; }
+.mn-rh { margin: 0 0 4px; font-weight: 700; }
+.mn-rages ol { margin: 0; padding-left: 1.3em; }
+.mn-rages li { margin: 3px 0; }
+.mn-avoid { margin: 6px 0 0; color: var(--bad); font-size: 13.5px; }
+.rg-pow { color: var(--fg); font-weight: 600; }
+.rg-pow[data-el="Fire"] { color: var(--boss); }
+.rg-pow[data-el="Ice"], .rg-pow[data-el="Water"] { color: var(--place); }
+.rg-pow[data-el="Lightning"] { color: var(--enemy); }
+.rg-pow[data-el="Holy"], .rg-pow[data-el="Wind"] { color: var(--party); }
+.rg-pow[data-el="Poison"], .rg-pow[data-el="Earth"] { color: var(--ok); }
 @media (max-width: 520px) { .mn-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); } .mn-pic { width: 56px; height: 56px; } }
 
 /* ---------- party ---------- */
