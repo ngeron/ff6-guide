@@ -8,18 +8,17 @@
 // in sessionStorage only.
 //
 // Needs an OAuth client ID ("Web application") from the owner's Google Cloud project, with this
-// page's address as an authorized JavaScript origin and redirect URI. It can be set in Settings
-// or in CLIENT_ID below.
+// page's address as an authorized JavaScript origin and redirect URI. It's entered in Settings
+// on each browser and kept only in that browser's storage, never in the code.
 
 import { getPref, setPref } from "./store.js";
 
-export const CLIENT_ID = ""; // set once the owner has created one; Settings can override it
 const SCOPE = "https://www.googleapis.com/auth/drive.file";
 const FILE_NAME = "FF6 Guide sync.zip";
 const TOKEN_KEY = "ff6g:gdriveToken";
 const PENDING_KEY = "ff6g:gdrivePending";
 
-export const clientId = () => (getPref("gdriveClient", "") || CLIENT_ID).trim();
+export const clientId = () => getPref("gdriveClient", "").trim();
 export const setClientId = (id) => setPref("gdriveClient", id.trim() || null);
 export const redirectUri = () => location.origin + location.pathname.replace(/index\.html$/, "");
 
