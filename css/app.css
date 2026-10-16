@@ -261,7 +261,7 @@ mark { background: var(--hit); color: inherit; border-radius: 2px; padding: 0 1p
 .gr-step { flex: none; display: flex; align-items: center; gap: 2px; }
 .gr-step button { width: 34px; height: 34px; border-radius: 8px; border: 1.5px solid var(--rule); background: var(--bg); color: var(--fg); font: 600 17px var(--ui); cursor: pointer; }
 .gr-step button:disabled { opacity: .35; cursor: default; }
-.rg .gr-n { width: 2.6em; height: 34px; margin: 0; text-align: center; font: 600 15px var(--ui); font-variant-numeric: tabular-nums; border-radius: 8px; border: 1.5px solid var(--rule); background: var(--panel); color: var(--fg); padding: 0; }
+.rg .gr-n, .pc .gr-n { width: 2.6em; height: 34px; margin: 0; text-align: center; font: 600 15px var(--ui); font-variant-numeric: tabular-nums; border-radius: 8px; border: 1.5px solid var(--rule); background: var(--panel); color: var(--fg); padding: 0; }
 .gr-more { margin: 0 0 10px 32px; padding: 8px 12px 10px; border-radius: 10px; background: var(--panel); }
 .gr-tbl { border-collapse: collapse; width: 100%; font-size: 14px; }
 .gr-tbl th { text-align: left; vertical-align: top; color: var(--mute); font-weight: 600; padding: 4px 12px 4px 0; white-space: nowrap; width: 1%; }
@@ -307,6 +307,36 @@ mark { background: var(--hit); color: inherit; border-radius: 2px; padding: 0 1p
 .mn-rage input { width: 20px; height: 20px; accent-color: var(--ok); margin: 0; }
 .mn-save { font-size: inherit; padding: 0; }
 @media (max-width: 520px) { .mn-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); } .mn-pic { width: 56px; height: 56px; } }
+
+/* ---------- party ---------- */
+.pt-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: .6em 0 1em; }
+.pc { border: 1px solid var(--rule); border-radius: 14px; padding: 12px 14px; margin: 0 0 12px; font-family: var(--ui); }
+.pc-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.pc-head h3 { margin: 0; font-size: 1.15rem; }
+.pc-other > summary { cursor: pointer; list-style: none; }
+.pc-other > summary::-webkit-details-marker { display: none; }
+.pc-in { display: flex; align-items: center; gap: 6px; font-size: 14px; white-space: nowrap; }
+.pc-in input, .pt-unmet input { width: 20px; height: 20px; margin: 0; accent-color: var(--ok); }
+.pc-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin: 10px 0 8px; }
+.pc-lv { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--mute); font-weight: 600; }
+.pc-goal { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--mute); }
+.pc-goal select, .pc-sel { font: 15px var(--ui); padding: 7px 8px; border-radius: 8px; border: 1.5px solid var(--rule); background: var(--panel); color: var(--fg); max-width: 100%; }
+.pc-eq td:nth-child(2) { width: 100%; }
+.pc-sel { width: 100%; }
+.pc-fx { display: block; font-size: 12.5px; color: var(--mute); margin-top: 3px; }
+.pc-lock { width: 36px; height: 36px; border: 0; background: none; border-radius: 8px; cursor: pointer; font-size: 16px; opacity: .55; }
+.pc-lock[aria-pressed="true"] { opacity: 1; background: var(--panel); }
+.pc-stats { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.pc-est { font-size: 14px; color: var(--mute); margin: .4em 0 0; }
+.pc-est strong { color: var(--fg); font-variant-numeric: tabular-nums; }
+.pt-unmet { list-style: none; padding: 0; margin: 0 0 1em; display: grid; grid-template-columns: repeat(auto-fill, minmax(10em, 1fr)); gap: 8px; }
+.pt-unmet label { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid var(--rule); border-radius: 10px; font-size: 15px; }
+.pt-panel { border: 1.5px solid var(--acc); border-radius: 14px; padding: 12px 14px; margin: 0 0 16px; font-family: var(--ui); font-size: 15px; }
+.pt-panel p { margin: 0 0 8px; }
+.pt-res { border-top: 1px solid var(--rule); padding: 8px 0; }
+.pt-res h3 { margin: 0 0 4px; font-size: 1rem; }
+.pt-panel .row2 { margin-top: 8px; }
+@media (max-width: 520px) { .pc-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 
 /* ---------- color-coded names ---------- */
 .ent-party { color: var(--party); }

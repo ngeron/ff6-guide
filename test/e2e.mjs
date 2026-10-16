@@ -423,6 +423,78 @@ for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, heigh
   await ctx.close();
 }
 
+// Party: characters, levels, load-outs and the optimizer.
+{
+  const ctx = await browser.newContext({ viewport: { width: 1180, height: 820 } });
+  const page = await ctx.newPage();
+  page.on("pageerror", (e) => errors.push("pageerror: " + e.message));
+  page.on("console", (m) => { if (m.type() === "error") errors.push("console: " + m.text()); });
+  await page.goto(base);
+  await page.setInputFiles("#file", path.join(ROOT, "test/fixtures/ember-crown-guide.txt"));
+  await page.waitForSelector(".home");
+  const BAG = { "Mythril Knife": 2, "Icebrand": 1, "Rune Blade": 1, "Bastard Sword": 2, "Mythril Shield": 7, "Heavy Shield": 1, "Bandana": 1, "Plumed Hat": 1, "Twist Headband": 1,
+    "Mythril Vest": 2, "Ninja Gear": 3, "White Dress": 1, "Genji Glove": 1, "Gigas Glove": 1, "Hero's Ring": 1, "Earring": 2, "Hyper Wrist": 1, "Black Belt": 1, "Hermes Sandals": 2, "Sprint Shoes": 1, "Potion": 9 };
+  await page.evaluate((b) => { localStorage.setItem("ff6g:gear", JSON.stringify(b)); localStorage.setItem("ff6g:names", JSON.stringify([{ from: "Terra", to: "Prns Donut" }])); }, BAG);
+  await page.goto(base + "#/party");
+  await page.reload();
+  await page.waitForSelector(".party");
+  check(await page.locator(".pc-met").count() === 14 && await page.isDisabled("#ptOpt"), "[party] all 14 characters start unmet; Optimize waits for a party");
+  for (const n of ["Terra", "Locke", "Sabin", "Gau"]) await page.click(`.pc-met[data-c="${n}"]`);
+  for (const n of ["Terra", "Locke", "Sabin", "Gau"]) await page.click(`[data-c="${n}"] .pc-party`);
+  check(await page.locator("article.pc").count() === 4 && (await page.textContent('article[data-c="Terra"] h3')).includes("Prns Donut"), "[party] four in the party, shown with your names");
+  await page.click('.pc-met[data-c="Celes"]');
+  await page.click('[data-c="Celes"] .pc-party');
+  check(await page.locator("article.pc").count() === 4, "[party] a fifth member is refused");
+  const hp1 = await page.textContent('article[data-c="Terra"] .pc-stats div:first-child dd');
+  await page.click('article[data-c="Terra"] .pc-lvup');
+  await page.fill('article[data-c="Terra"] .pc-lvn', "30");
+  await page.press('article[data-c="Terra"] .pc-lvn', "Tab");
+  const hp30 = await page.textContent('article[data-c="Terra"] .pc-stats div:first-child dd');
+  check(+hp30 > +hp1 && (await page.inputValue('article[data-c="Terra"] .pc-lvn')) === "30", `[party] level changes HP (${hp1} → ${hp30})`);
+  for (const n of ["Locke", "Sabin", "Gau"]) { await page.fill(`article[data-c="${n}"] .pc-lvn`, "28"); await page.press(`article[data-c="${n}"] .pc-lvn`, "Tab"); }
+  await page.selectOption('article[data-c="Locke"] tr[data-slot="rh"] .pc-sel', "Mythril Knife");
+  check(await page.evaluate(() => JSON.parse(localStorage.getItem("ff6g:gear"))["Mythril Knife"]) === 1, "[party] equipping takes the item out of the bag");
+  await page.selectOption('article[data-c="Locke"] tr[data-slot="lh"] .pc-sel', "Mythril Knife");
+  check(await page.inputValue('article[data-c="Locke"] tr[data-slot="lh"] .pc-sel') === "", "[party] two weapons without the Genji Glove are refused");
+  await page.selectOption('article[data-c="Sabin"] tr[data-slot="r2"] .pc-sel', "Sprint Shoes");
+  await page.click('article[data-c="Sabin"] tr[data-slot="r2"] .pc-lock');
+  const before = await page.evaluate(() => { const g = JSON.parse(localStorage.getItem("ff6g:gear")); const p = JSON.parse(localStorage.getItem("ff6g:party")); const t = { ...g }; for (const c of Object.values(p.chars)) for (const n of Object.values(c.eq)) t[n] = (t[n] || 0) + 1; return t; });
+  const t0 = Date.now();
+  await page.click("#ptOpt");
+  await page.waitForSelector("#ptApply");
+  const ms = Date.now() - t0;
+  await page.screenshot({ path: path.join(SHOTS, "25-party-optimize.png") });
+  await page.click("#ptApply");
+  await page.waitForSelector(".party");
+  const after = await page.evaluate(() => ({ g: JSON.parse(localStorage.getItem("ff6g:gear")), p: JSON.parse(localStorage.getItem("ff6g:party")) }));
+  const total = { ...after.g };
+  for (const c of Object.values(after.p.chars)) for (const n of Object.values(c.eq)) total[n] = (total[n] || 0) + 1;
+  const sameItems = Object.keys({ ...before, ...total }).every((n) => (before[n] || 0) === (total[n] || 0));
+  check(sameItems, "[party] optimizing never creates or loses items");
+  const EQ = await page.evaluate(async () => (await import("./js/party-data.js")).EQUIP);
+  const ok = Object.entries(after.p.chars).every(([, c]) => {
+    const w = ["rh", "lh"].filter((h) => c.eq[h] && EQ[c.eq[h]].slot === "weapon").length;
+    const genji = [c.eq.r1, c.eq.r2].includes("Genji Glove");
+    return w < 2 || genji;
+  });
+  check(ok, "[party] two weapons only with the Genji Glove");
+  check(after.p.chars.Sabin.eq.r2 === "Sprint Shoes", "[party] locked slot kept");
+  check(after.p.chars.Locke.eq.rh === "Mythril Knife" || EQ[after.p.chars.Locke.eq.rh || "Mythril Knife"].slot === "weapon", "[party] weapons stay in the right hand (no pointless hand swaps)");
+  const terra = after.p.chars.Terra.eq;
+  check([terra.r1, terra.r2].filter((n) => n === "Earring").length + ([terra.r1, terra.r2].includes("Hero's Ring") ? 1 : 0) >= 1, `[party] Terra gets magic relics (${terra.r1}, ${terra.r2})`);
+  check(ms < 5000, `[party] optimizer runs quickly (${ms} ms)`);
+  const CODE = { Terra: "Te", Locke: "Lo", Sabin: "Sa", Gau: "Ga" };
+  check(Object.entries(after.p.chars).every(([n, c]) => Object.values(c.eq).every((it) => EQ[it].who === "all" || EQ[it].who.split(" ").includes(CODE[n]))), "[party] only items each character can equip");
+  await page.reload();
+  await page.waitForSelector(".party");
+  check(await page.locator("article.pc").count() === 4 && (await page.inputValue('article[data-c="Terra"] .pc-lvn')) === "30", "[party] kept after reload");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ colorScheme: "dark" });
+  await page.screenshot({ path: path.join(SHOTS, "26-party-phone-dark.png"), fullPage: false });
+  check(!(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), "[party] no horizontal scroll at phone width");
+  await ctx.close();
+}
+
 // Monster intel.
 {
   const ctx = await browser.newContext({ viewport: { width: 1180, height: 820 } });
@@ -594,6 +666,7 @@ for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, heigh
   await page.press("#tagList li:last-child .tg-text", "Tab");
   await page.evaluate(() => localStorage.setItem("ff6g:rages", JSON.stringify(["Stray Cat", "Leaf Bunny"])));
   await page.evaluate(() => localStorage.setItem("ff6g:gear", JSON.stringify({ Dagger: 3, Potion: 14 })));
+  await page.evaluate(() => localStorage.setItem("ff6g:party", JSON.stringify({ party: ["Terra"], chars: { Terra: { met: true, level: 12, goal: "magic", eq: { rh: "Mythril Knife" }, lock: {} } } })));
   await page.screenshot({ path: path.join(SHOTS, "12-backup-settings.png") });
   const [dl] = await Promise.all([page.waitForEvent("download"), page.click("#backupBtn")]);
   const backup = path.join(SHOTS, "backup.zip");
@@ -623,6 +696,7 @@ for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, heigh
   check(await p2.locator(".ent-party", { hasText: "Isolde" }).count() >= 1, "[backup] restored color-coding fixes");
   check(JSON.stringify(await p2.evaluate(() => JSON.parse(localStorage.getItem("ff6g:rages")))) === '["Stray Cat","Leaf Bunny"]', "[backup] restored Gau's Rages");
   check(JSON.stringify(await p2.evaluate(() => JSON.parse(localStorage.getItem("ff6g:gear")))) === '{"Dagger":3,"Potion":14}', "[backup] restored inventory counts");
+  check(await p2.evaluate(() => { const p = JSON.parse(localStorage.getItem("ff6g:party")); return p.party[0] === "Terra" && p.chars.Terra.level === 12 && p.chars.Terra.eq.rh === "Mythril Knife"; }), "[backup] restored party, levels and load-outs");
 
   // Restore over existing data asks first; Cancel keeps things, Replace restores.
   await p2.click("#settingsBtn");

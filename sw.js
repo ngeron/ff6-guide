@@ -1,6 +1,6 @@
 // Offline support. App files are fetched fresh when online (so changes pushed to GitHub show up
 // on the next load) and served from the cache when offline. The PDF reader is cache-first.
-const CACHE = "ff6-guide-v10";
+const CACHE = "ff6-guide-v11";
 // Monster pictures from the Final Fantasy Wiki, kept across app updates.
 const IMG = "ff6-guide-img";
 const IMG_HOST = "static.wikia.nocookie.net";
@@ -27,6 +27,9 @@ const APP = [
   "js/gear-data.js",
   "js/monsters.js",
   "js/monsters-data.js",
+  "js/party.js",
+  "js/party-data.js",
+  "js/optimizer.js",
   "js/zip.js",
   "manifest.webmanifest",
   "icons/icon-192.png",

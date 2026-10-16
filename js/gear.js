@@ -53,7 +53,7 @@ export function renderGear(view, ctx) {
     <p class="eyebrow">Tracker</p>
     <h1>Inventory</h1>
     <p class="rg-stat"><strong id="grKinds"></strong> of ${GEAR.length} kinds · <span id="grValue"></span></p>
-    <p class="hint">Check what you have and set how many. Tap a name for its prices and where to get it. In FF6 every shop charges the same for an item and pays the same for it, so you can sell anywhere.</p>
+    <p class="hint">Count what's in your bag (the game's Items screen); what your characters wear is set on the Party page. Check what you have and set how many. Tap a name for its prices and where to get it. In FF6 every shop charges the same for an item and pays the same for it, so you can sell anywhere.</p>
     <div class="rg-tools">
       <input type="search" id="grQ" placeholder="Find an item" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Find an item">
       <select id="grCat" aria-label="Kind">${CATS.map(([v, t]) => `<option value="${v}"${v === cat ? " selected" : ""}>${t}</option>`).join("")}</select>
