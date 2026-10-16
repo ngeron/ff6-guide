@@ -32,7 +32,7 @@ export function renderRages(view, ctx) {
     <div class="meter"><i id="rgFill"></i></div>
     <p class="hint">Gau learns a Rage when he uses Leap on the Veldt after your party has fought that monster somewhere else. Rages marked <span class="badge lore">Lore</span> also teach Strago a Lore when he's in the party and sees Gau use them.</p>
     <div class="rg-tools">
-      <input type="search" id="rgQ" placeholder="Find a Rage or ability" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Find a Rage or ability">
+      <input type="search" id="rgQ" placeholder="Find a Rage, ability or bestiary number" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Find a Rage or ability">
       <div class="seg" role="radiogroup" aria-label="Show" id="rgSeg">${FILTERS.map(([v, t]) => `<button type="button" role="radio" data-v="${v}">${t}</button>`).join("")}</div>
     </div>
     <button type="button" class="txt-btn rg-start" id="rgStart" hidden>Mark the Rages Gau starts with</button>
@@ -43,7 +43,7 @@ export function renderRages(view, ctx) {
           <input type="checkbox"${r.never ? " disabled" : ""}>
           <span class="rg-main">
             <span class="rg-name">${esc(r.name)}${r.alt ? ` <span class="rg-alt">${esc(r.alt)}</span>` : ""}</span>
-            <span class="rg-ab">${esc(r.ability)}${r.lore ? ` <span class="badge lore">Lore</span>` : ""}${r.start ? ` <span class="badge">Starting</span>` : ""}</span>
+            <span class="rg-ab">${esc(r.ability)}${r.b ? ` · Bestiary ${String(r.b).padStart(3, "0")}` : ""}${r.lore ? ` <span class="badge lore">Lore</span>` : ""}${r.start ? ` <span class="badge">Starting</span>` : ""}</span>
             ${r.note ? `<span class="rg-note">${esc(r.note)}</span>` : ""}
           </span>
         </label>
@@ -68,7 +68,7 @@ export function renderRages(view, ctx) {
       const on = have.has(r.name);
       li.classList.toggle("on", on);
       li.querySelector("input").checked = on;
-      const match = !q || [r.name, r.alt, r.ability].some((s) => s && s.toLowerCase().includes(q));
+      const match = !q || [r.name, r.alt, r.ability, r.b && String(r.b).padStart(3, "0")].some((s) => s && s.toLowerCase().includes(q));
       const pass = filter === "all" ? true : filter === "learned" ? on : filter === "missing" ? !on && !r.never : !!r.lore;
       li.hidden = !(match && pass);
       if (!li.hidden) shown++;

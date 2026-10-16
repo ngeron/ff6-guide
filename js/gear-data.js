@@ -8,12 +8,13 @@
 //     Text from the wiki is available under CC BY-SA 3.0, and so is this adapted data.
 //   - Sell values: Gamer Corner's FF6 tables (https://gamercorner.net/ffvi/), matched by SNES
 //     name. Where no value was found but the item has a shop price, the sell value is half of
-//     it, as it is for every item in FF6. GBA-only items have no sell value listed.
+//     it, as it is for every item in FF6. GBA-only items have no sell value.
 //
 // FF6 prices are fixed: every shop charges the same for an item and pays the same for it.
 //
 // Fields: name, alt, cat (weapon, shield, helmet, armor, relic, item), type, buy, sell,
-// get ([[how, where]], like ["Buy", "South Figaro (WoB)"]), note.
+// get ([[how, where]], like ["Buy", "South Figaro (WoB)"]), note, gba (only in the GBA and
+// 2014 mobile/Steam releases, from their bonus dungeons: not in the Pixel Remaster, so hidden).
 
 export const GEAR = [
   {"name": "Dagger", "alt": "Dirk", "cat": "weapon", "type": "Daggers", "buy": 150, "sell": 75, "get": [["Buy", "South Figaro (WoB)"], ["Steal", "Typhon, Amduscias"], ["Coliseum", "Bet Gladius or Thief Glove"], ["Initial", "Locke"]]},
@@ -26,8 +27,8 @@ export const GEAR = [
   {"name": "Man-Eater", "alt": "Man Eater", "cat": "weapon", "type": "Daggers", "buy": 11000, "sell": 5500, "get": [["Find", "Darill's Tomb"], ["Buy", "Jidoor (WoR), Thamasa (WoR)"]]},
   {"name": "Swordbreaker", "alt": "SwordBreaker", "cat": "weapon", "type": "Daggers", "buy": 16000, "sell": 8000, "get": [["Buy", "Maranda (WoR)"], ["Steal", "Amduscias, Vector Chimera"], ["Coliseum", "Bet Assassin's Dagger"]]},
   {"name": "Gladius", "alt": "Graedus", "cat": "weapon", "type": "Daggers", "sell": 1, "get": [["Find", "Ancient Castle"], ["Coliseum", "Bet Ultima Weapon"]]},
-  {"name": "Zwill Crossblade", "cat": "weapon", "type": "Daggers", "get": [["Drop", "Gold Dragon (Dragons' Den)"], ["Coliseum", "Bet Oborozuki"]]},
-  {"name": "Excalipoor", "cat": "weapon", "type": "Swords", "get": [["Buy", "Auction House"]]},
+  {"name": "Zwill Crossblade", "cat": "weapon", "type": "Daggers", "get": [["Drop", "Gold Dragon (Dragons' Den)"], ["Coliseum", "Bet Oborozuki"]], "gba": 1},
+  {"name": "Excalipoor", "cat": "weapon", "type": "Swords", "get": [["Buy", "Auction House"]], "gba": 1},
   {"name": "Mythril Sword", "alt": "MithrilBlade", "cat": "weapon", "type": "Swords", "buy": 450, "sell": 225, "get": [["Buy", "South Figaro (WoB), Mobliz (WoB)"], ["Steal", "Trooper, Shambling Corpse"], ["Metamorphose", "Magna Roader (Purple), Trapper, Onion Knight, Magitek Armor, Sky Armor, Satellite, Dropper, Schmidt, Onion Dasher, Pluto Armor, Heavy Armor, Chaser, Fortis, Junk, Magna Roader (Red), Garm, Dueller, Magna Roader (Brown), InnoSent, Death Machine, Metal Hitman"], ["Initial", "Edgar, Biggs, Wedge, Moghan, Mugmug"]]},
   {"name": "Great Sword", "alt": "RegalCutlass", "cat": "weapon", "type": "Swords", "buy": 800, "sell": 400, "get": [["Find", "South Figaro"], ["Buy", "South Figaro (WoB), Narshe (WoB)"]]},
   {"name": "Rune Blade", "alt": "Rune Edge", "cat": "weapon", "type": "Swords", "buy": 7500, "sell": 3750, "get": [["Find", "Narshe"], ["Buy", "Nikeah (WoR)"], ["Steal", "Number 024"]]},
@@ -44,8 +45,8 @@ export const GEAR = [
   {"name": "Organyx", "alt": "Ogre Nix", "cat": "weapon", "type": "Swords", "sell": 1, "get": [["Metamorphose", "Muud Suud, Hill Gigas, Gigantos, Glasya Labolas"], ["Coliseum", "Bet Flametongue, Icebrand, Thunder Blade, or Zantetsuken"]]},
   {"name": "Zantetsuken", "alt": "Scimitar", "cat": "weapon", "type": "Swords", "sell": 1, "get": [["Drop", "Blue Dragon"], ["Coliseum", "Bet Lightbringer"]]},
   {"name": "Excalibur", "cat": "weapon", "type": "Swords", "sell": 1, "get": [["Drop", "Goddess"]]},
-  {"name": "Save the Queen", "cat": "weapon", "type": "Swords", "get": [["Drop", "Blue Dragon (Dragons' Den)"], ["Coliseum", "Bet Apocalypse"]]},
-  {"name": "Apocalypse", "cat": "weapon", "type": "Swords", "get": [["Drop", "Red Dragon (Dragons' Den)"], ["Coliseum", "Bet Save the Queen"]]},
+  {"name": "Save the Queen", "cat": "weapon", "type": "Swords", "get": [["Drop", "Blue Dragon (Dragons' Den)"], ["Coliseum", "Bet Apocalypse"]], "gba": 1},
+  {"name": "Apocalypse", "cat": "weapon", "type": "Swords", "get": [["Drop", "Red Dragon (Dragons' Den)"], ["Coliseum", "Bet Save the Queen"]], "gba": 1},
   {"name": "Ragnarok", "cat": "weapon", "type": "Swords", "sell": 1, "get": [["Find", "Narshe"], ["Steal", "Lady"]]},
   {"name": "Lightbringer", "alt": "Illumina", "cat": "weapon", "type": "Swords", "sell": 1, "get": [["Coliseum", "Bet Ragnarok"]]},
   {"name": "Ultima Weapon", "alt": "Atma Weapon", "cat": "weapon", "type": "Swords", "sell": 1, "get": [["Find", "Cave to the Sealed Gate."], ["Steal", "Rest"]]},
@@ -56,8 +57,8 @@ export const GEAR = [
   {"name": "Partisan", "cat": "weapon", "type": "Spears", "buy": 13000, "sell": 6500, "get": [["Buy", "Jidoor (WoR)"], ["Steal", "Test Rider"]]},
   {"name": "Holy Lance", "alt": "Pearl Lance", "cat": "weapon", "type": "Spears", "sell": 1, "get": [["Coliseum", "Bet Murakumo"], ["Other", "Automatically after defeating Holy Dragon"]]},
   {"name": "Radiant Lance", "alt": "Aura Lance", "cat": "weapon", "type": "Spears", "sell": 1, "get": [["Drop", "Demon"], ["Coliseum", "Bet Mutsunokami"]]},
-  {"name": "Longinus", "cat": "weapon", "type": "Spears", "get": [["Drop", "Storm Dragon (Dragons' Den)"], ["Coliseum", "Bet Gungnir"]]},
-  {"name": "Gungnir", "cat": "weapon", "type": "Spears", "get": [["Drop", "Neslug"], ["Coliseum", "Bet Longinus"]]},
+  {"name": "Longinus", "cat": "weapon", "type": "Spears", "get": [["Drop", "Storm Dragon (Dragons' Den)"], ["Coliseum", "Bet Gungnir"]], "gba": 1},
+  {"name": "Gungnir", "cat": "weapon", "type": "Spears", "get": [["Drop", "Neslug"], ["Coliseum", "Bet Longinus"]], "gba": 1},
   {"name": "Impartisan", "alt": "Imp Halberd", "cat": "weapon", "type": "Spears", "sell": 1, "get": [["Drop", "Tyrannosaur"], ["Steal", "Greater Mantis"], ["Morph", "Cactuar, Tonberry, Tonberries"], ["Coliseum", "Bet Cat-Eat Hood"]]},
   {"name": "Kunai", "alt": "Imperial", "cat": "weapon", "type": "Ninja daggers", "sell": 300, "get": [["Steal", "Baalzephon"], ["Initial", "Shadow"]]},
   {"name": "Kodachi", "cat": "weapon", "type": "Ninja daggers", "buy": 1200, "sell": 600, "get": [["Buy", "Jidoor (WoB)"]]},
@@ -65,7 +66,7 @@ export const GEAR = [
   {"name": "Sasuke", "alt": "Hardened", "cat": "weapon", "type": "Ninja daggers", "sell": 1, "get": [["Steal", "Baalzephon"], ["Drop", "Gigantos"]]},
   {"name": "Ichigeki", "alt": "Striker", "cat": "weapon", "type": "Ninja daggers", "sell": 1, "get": [["Find", "Cave on the Veldt"], ["Metamorphose", "Ninja, Covert, Outsider"]]},
   {"name": "Kagenui", "alt": "Stunner", "cat": "weapon", "type": "Ninja daggers", "sell": 1, "get": [["Find", "Cultists' Tower"]]},
-  {"name": "Oborozuki", "cat": "weapon", "type": "Ninja daggers", "get": [["Drop", "Flan Princess"], ["Coliseum", "Bet Zwill Crossblade"]]},
+  {"name": "Oborozuki", "cat": "weapon", "type": "Ninja daggers", "get": [["Drop", "Flan Princess"], ["Coliseum", "Bet Zwill Crossblade"]], "gba": 1},
   {"name": "Ashura", "cat": "weapon", "type": "Katanas", "sell": 250, "get": [["Steal", "Kamui"], ["Initial", "Cyan"]]},
   {"name": "Kotetsu", "cat": "weapon", "type": "Katanas", "buy": 800, "sell": 400, "get": [["Buy", "Mobliz (WoB), Nikeah (WoB), Narshe (WoB)"]]},
   {"name": "Kiku-ichimonji", "alt": "Forged", "cat": "weapon", "type": "Katanas", "buy": 1200, "sell": 600, "get": [["Buy", "Jidoor (WoB), Albrook (WoB), Vector (WoB)"]]},
@@ -74,7 +75,7 @@ export const GEAR = [
   {"name": "Masamune", "alt": "Aura", "cat": "weapon", "type": "Katanas", "sell": 1, "get": [["Steal", "Yojimbo"], ["Coliseum", "Bet Murasame"], ["Other", "Automatically after completing Cyan's Dream"]]},
   {"name": "Murakumo", "alt": "Strato", "cat": "weapon", "type": "Katanas", "sell": 1, "get": [["Steal", "Samurai Soul"], ["Drop", "Red Dragon"], ["Coliseum", "Bet Kagenui, Holy Lance, Masamune, or Magus Rod"]]},
   {"name": "Mutsunokami", "alt": "Sky Render", "cat": "weapon", "type": "Katanas", "sell": 1, "get": [["Drop", "Fiend"], ["Coliseum", "Bet Radiant Lance"]]},
-  {"name": "Zanmato", "cat": "weapon", "type": "Katanas", "get": [["Drop", "Holy Dragon (Dragons' Den)"], ["Coliseum", "Bet Godhand"]]},
+  {"name": "Zanmato", "cat": "weapon", "type": "Katanas", "get": [["Drop", "Holy Dragon (Dragons' Den)"], ["Coliseum", "Bet Godhand"]], "gba": 1},
   {"name": "Mythril Rod", "alt": "Mithril Rod", "cat": "weapon", "type": "Rods", "buy": 500, "sell": 250, "get": [["Buy", "Thamasa (WoB)"], ["Drop", "Joker"], ["Initial", "Strago"]]},
   {"name": "Flame Rod", "alt": "Fire Rod", "cat": "weapon", "type": "Rods", "buy": 3000, "sell": 1500, "get": [["Find", "Burning Home"], ["Buy", "Thamasa (WoB)"], ["Drop", "Wizard"]]},
   {"name": "Ice Rod", "cat": "weapon", "type": "Rods", "buy": 3000, "sell": 1500, "get": [["Find", "Burning Home"], ["Buy", "Thamasa (WoB)"], ["Steal", "Wizard"]]},
@@ -84,7 +85,7 @@ export const GEAR = [
   {"name": "Gravity Rod", "cat": "weapon", "type": "Rods", "buy": 13000, "sell": 6500, "get": [["Find", "Figaro Castle"], ["Buy", "Maranda (WoR), Thamasa (WoR)"], ["Coliseum", "Bet Punisher or Rainbow Brush"]]},
   {"name": "Holy Rod", "alt": "Pearl Rod", "cat": "weapon", "type": "Rods", "buy": 12000, "sell": 6000, "get": [["Find", "Tzen"], ["Buy", "Thamasa (WoR)"]]},
   {"name": "Magus Rod", "cat": "weapon", "type": "Rods", "sell": 1, "get": [["Drop", "Earth Dragon"], ["Coliseum", "Bet Healing Rod"]]},
-  {"name": "Stardust Rod", "cat": "weapon", "type": "Rods", "get": [["Find", "Dragons' Den"], ["Coliseum", "Bet Angel Brush"]]},
+  {"name": "Stardust Rod", "cat": "weapon", "type": "Rods", "get": [["Find", "Dragons' Den"], ["Coliseum", "Bet Angel Brush"]], "gba": 1},
   {"name": "Healing Rod", "alt": "Heal Rod", "cat": "weapon", "type": "Rods", "sell": 1, "get": [["Find", "Esper Caves, Tzen"]]},
   {"name": "Metal Knuckle", "alt": "MetalKnuckle", "cat": "weapon", "type": "Claws", "sell": 250, "get": [["Initial", "Sabin"]]},
   {"name": "Mythril Claws", "alt": "Mithril Claw", "cat": "weapon", "type": "Claws", "buy": 800, "sell": 400, "get": [["Buy", "Mobliz (WoB), Nikeah (WoB), Narshe (WoB)"], ["Steal", "Belmodar, Vargas, Exocite"], ["Initial", "Moggie"]]},
@@ -93,11 +94,11 @@ export const GEAR = [
   {"name": "Burning Fist", "alt": "Fire Knuckle", "cat": "weapon", "type": "Claws", "buy": 10000, "sell": 5000, "get": [["Find", "Zozo"], ["Buy", "Tzen (WoR)"], ["Coliseum", "Bet Fixed Dice or Tigerfang"]]},
   {"name": "Dragon Claws", "alt": "Dragon Claw", "cat": "weapon", "type": "Claws", "sell": 1, "get": [["Drop", "Angler Whelk"]]},
   {"name": "Tigerfang", "alt": "Tiger Fangs", "cat": "weapon", "type": "Claws", "sell": 1, "get": [["Find", "Cave on the Veldt"], ["Steal", "Great Behemoth"]]},
-  {"name": "Godhand", "cat": "weapon", "type": "Claws", "get": [["Drop", "Earth Dragon (Dragons' Den)"], ["Coliseum", "Bet Zanmato"]]},
+  {"name": "Godhand", "cat": "weapon", "type": "Claws", "get": [["Drop", "Earth Dragon (Dragons' Den)"], ["Coliseum", "Bet Zanmato"]], "gba": 1},
   {"name": "Chain Flail", "alt": "Flail", "cat": "weapon", "type": "Maces", "buy": 2000, "sell": 1000, "get": [["Buy", "Narshe (WoB), Kohlingen (WoB)"], ["Steal", "Wartpuck"], ["Initial", "Molulu"]]},
   {"name": "Morning Star", "cat": "weapon", "type": "Maces", "buy": 5000, "sell": 2500, "get": [["Buy", "Narshe (WoB), Thamasa (WoB)"], ["Initial", "Mogret, Kefka"]]},
   {"name": "Bone Club", "cat": "weapon", "type": "Maces", "sell": 10000, "get": [["Steal", "Punisher"], ["Coliseum", "Bet Rising Sun, Sniper, or Death Tarot"], ["Initial", "Umaro"]]},
-  {"name": "Scorpion Tail", "cat": "weapon", "type": "Maces", "get": [["Drop", "Skull Dragon (Dragons' Den)"], ["Coliseum", "Bet Final Trump"]]},
+  {"name": "Scorpion Tail", "cat": "weapon", "type": "Maces", "get": [["Drop", "Skull Dragon (Dragons' Den)"], ["Coliseum", "Bet Final Trump"]], "gba": 1},
   {"name": "Moonring Blade", "alt": "Full Moon", "cat": "weapon", "type": "Throwing weapons", "buy": 2500, "sell": 1250, "get": [["Buy", "Narshe (WoB), Kohlingen (WoB), Jidoor (WoB), Tzen (WoB)"], ["Steal", "Purusa"], ["Initial", "Moguel"]]},
   {"name": "Boomerang", "cat": "weapon", "type": "Throwing weapons", "buy": 4500, "sell": 2250, "get": [["Buy", "Tzen (WoB), Maranda (WoB), Narshe (WoB)"], ["Initial", "Cosmog"]]},
   {"name": "Hawkeye", "alt": "Hawk Eye", "cat": "weapon", "type": "Throwing weapons", "buy": 6000, "sell": 3000, "get": [["Buy", "Narshe (WoB), Thamasa (WoB)"]]},
@@ -110,12 +111,12 @@ export const GEAR = [
   {"name": "Darts", "cat": "weapon", "type": "Gambler's items", "buy": 10000, "sell": 5000, "get": [["Buy", "Thamasa (WoB), Kohlingen (WoR)"]]},
   {"name": "Viper Darts", "alt": "Trump", "cat": "weapon", "type": "Gambler's items", "buy": 13000, "sell": 6500, "get": [["Buy", "Kohlingen (WoR), Thamasa (WoR)"], ["Metamorphose", "Ninja, Covert, Outsider"]]},
   {"name": "Death Tarot", "alt": "Doom Darts", "cat": "weapon", "type": "Gambler's items", "sell": 1, "get": [["Find", "Ancient Castle"]]},
-  {"name": "Final Trump", "cat": "weapon", "type": "Gambler's items", "get": [["Drop", "Ice Dragon (Dragons' Den)"], ["Coliseum", "Bet Scorpion Tail"]]},
+  {"name": "Final Trump", "cat": "weapon", "type": "Gambler's items", "get": [["Drop", "Ice Dragon (Dragons' Den)"], ["Coliseum", "Bet Scorpion Tail"]], "gba": 1},
   {"name": "Chocobo Brush", "alt": "Chocobo Brsh", "cat": "weapon", "type": "Brushes", "sell": 300, "get": [["Initial", "Relm, Mogsy"]]},
   {"name": "Da Vinci Brush", "alt": "DaVinci Brsh", "cat": "weapon", "type": "Brushes", "buy": 7000, "sell": 3500, "get": [["Buy", "Thamasa (WoR)"]]},
   {"name": "Magical Brush", "alt": "Magical Brsh", "cat": "weapon", "type": "Brushes", "sell": 5000, "get": [["Find", "Zone Eater's Belly"]]},
   {"name": "Rainbow Brush", "alt": "Rainbow Brsh", "cat": "weapon", "type": "Brushes", "sell": 1, "get": [["Find", "Kefka's Tower"]]},
-  {"name": "Angel Brush", "cat": "weapon", "type": "Brushes", "get": [["Drop", "Plague"], ["Coliseum", "Bet Stardust Rod"]]},
+  {"name": "Angel Brush", "cat": "weapon", "type": "Brushes", "get": [["Drop", "Plague"], ["Coliseum", "Bet Stardust Rod"]], "gba": 1},
   {"name": "Shuriken", "cat": "weapon", "type": "Shurikens", "buy": 30, "sell": 15, "get": [["Buy", "Gau's father's house (WoB), Phantom Train (WoB), Kohlingen (WoB), Albrook (WoB), Thamasa (WoR)"], ["Steal", "Magna Roader (Purple), Magna Roader (Red), Magna Roader (Yellow), Magna Roader (Brown), Covert"]]},
   {"name": "Fuma Shuriken", "alt": "Ninja Star", "cat": "weapon", "type": "Shurikens", "buy": 500, "sell": 250, "get": [["Buy", "Thamasa (WoR)"], ["Steal", "Vector Lythos, Ninja"]]},
   {"name": "Pinwheel", "alt": "Tack Star", "cat": "weapon", "type": "Shurikens", "sell": 1, "get": [["Find", "Zone Eater's Belly, Kefka's Tower"], ["Steal", "Covert, Leap Frog, Demon Knight"], ["Coliseum", "Bet Fuma Shuriken"]]},
@@ -163,7 +164,7 @@ export const GEAR = [
   {"name": "Royal Crown", "alt": "Regal Crown", "cat": "helmet", "type": "Hats", "sell": 1, "get": [["Find", "Figaro Castle"], ["Coliseum", "Bet Hypno Crown"]]},
   {"name": "Cat-Ear Hood", "alt": "Cat Hood", "cat": "helmet", "type": "Hats", "sell": 1, "get": [["Coliseum", "Bet Saucer or Impartisan"]]},
   {"name": "Thornlet", "cat": "helmet", "type": "Hats", "sell": 1, "get": [["Steal", "Hidon"], ["Metamorphose", "Siegfried, Behemoth King (Undead), Daedalus, Ahriman"], ["Coliseum", "Bet Force Shield"]]},
-  {"name": "Dueling Mask", "cat": "helmet", "type": "Hats", "get": [["Find", "Dragons' Den"], ["Coliseum", "Bet Bone Wrist"]]},
+  {"name": "Dueling Mask", "cat": "helmet", "type": "Hats", "get": [["Find", "Dragons' Den"], ["Coliseum", "Bet Bone Wrist"]], "gba": 1},
   {"name": "Saucer", "alt": "Titanium", "cat": "helmet", "type": "Hats", "sell": 1, "get": [["Steal", "Tumbleweed"], ["Metamorphose", "Cactuar, Tonberry, Tonberries"]]},
   {"name": "Hairband", "alt": "Hair Band", "cat": "helmet", "type": "Female hats", "buy": 150, "sell": 75, "get": [["Buy", "South Figaro (WoB)"], ["Initial", "Celes"]]},
   {"name": "Tiara", "cat": "helmet", "type": "Female hats", "buy": 3000, "sell": 1500, "get": [["Buy", "Narshe (WoB; after Blackjack), Thamasa (WoB)"]]},
@@ -229,7 +230,7 @@ export const GEAR = [
   {"name": "Muscle Belt", "cat": "relic", "type": "Stats", "sell": 1, "get": [["Steal", "Glasya Labolas"], ["Drop", "Skull Dragon"]]},
   {"name": "Crystal Orb", "cat": "relic", "type": "Stats", "sell": 1, "get": [["Find", "Dragons' Den"], ["Steal", "Magic Master, Ultima Buster"], ["Drop", "Gold Dragon"], ["Coliseum", "Bet Muscle Belt"]]},
   {"name": "Zephyr Cloak", "alt": "Zephyr Cape", "cat": "relic", "type": "Stats", "buy": 7000, "sell": 3500, "get": [["Find", "Magitek Research Facility, Zone Eater's Belly"], ["Buy", "Nikeah (WoR), Auction House (WoR)"], ["Coliseum", "Bet Air Anchor"]], "note": "The Auction House asks 10,000"},
-  {"name": "Bone Wrist", "cat": "relic", "type": "Stats", "get": [["Find", "Dragons' Den"], ["Coliseum", "Bet Dueling Mask"]]},
+  {"name": "Bone Wrist", "cat": "relic", "type": "Stats", "get": [["Find", "Dragons' Den"], ["Coliseum", "Bet Dueling Mask"]], "gba": 1},
   {"name": "Thief's Bracer", "alt": "Sneak Ring", "cat": "relic", "type": "Command abilities", "buy": 3000, "sell": 1500, "get": [["Find", "Narshe"], ["Buy", "Tzen (WoR)"], ["Steal", "Dadaluma, Mugbear"]]},
   {"name": "Brigand's Glove", "alt": "Thief Gloves", "cat": "relic", "type": "Command abilities", "sell": 1, "get": [["Find", "Zozo"], ["Steal", "Devil Fist"], ["Coliseum", "Bet Thief's Knife or Thief's Bracer"]]},
   {"name": "Fake Moustache", "alt": "FakeMustache", "cat": "relic", "type": "Command abilities", "sell": 1, "get": [["Find", "Zone Eater's Belly"], ["Steal", "Still Life"]]},

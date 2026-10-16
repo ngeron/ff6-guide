@@ -1,6 +1,6 @@
 # FF6 Guide: notes for Claude
 
-A reader web app for the owner's own copy of a Final Fantasy VI Advance walkthrough (Djibriel's GameFAQs guide), used on an iPad while playing on another device. Live at https://ngeron.github.io/ff6-guide/ (GitHub Pages, served from `main`, root folder).
+A reader web app for the owner's own copy of a Final Fantasy VI Advance walkthrough (Djibriel's GameFAQs guide), used on an iPad while playing on another device. The owner plays the **Pixel Remaster**, not the GBA version the guide was written for: tracker data and notes follow the Pixel Remaster (no GBA bonus content such as Dragons' Den or Soul Shrine, Pixel Remaster names and bestiary numbers). Live at https://ngeron.github.io/ff6-guide/ (GitHub Pages, served from `main`, root folder).
 
 ## Rules
 

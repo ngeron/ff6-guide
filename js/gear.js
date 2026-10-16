@@ -1,10 +1,12 @@
 // Inventory tracker: how many of each weapon, armor, relic and item you have, with shop prices
 // and where to get each one. Counts are stored by name in the "gear" setting: { name: count }.
 
-import { GEAR } from "./gear-data.js";
+import { GEAR as ALL } from "./gear-data.js";
 import { getPref, setPref } from "./store.js";
 import { esc } from "./render.js";
 
+// GBA-only gear (from the GBA bonus dungeons) isn't in the Pixel Remaster, so it's left out.
+const GEAR = ALL.filter((x) => !x.gba);
 const MAX = 99; // FF6 stacks stop at 99
 const CATS = [["all", "All kinds"], ["weapon", "Weapons"], ["shield", "Shields"], ["helmet", "Helmets"], ["armor", "Armor"], ["relic", "Relics"], ["item", "Items"]];
 const SHOW = [["all", "All"], ["owned", "Have"], ["missing", "Don't have"]];
