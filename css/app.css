@@ -217,6 +217,38 @@ mark { background: var(--hit); color: inherit; border-radius: 2px; padding: 0 1p
 .tag-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: .2em 0 .4em; font: 600 14px var(--ui); }
 .tag-legend .cnt { color: var(--mute); font-weight: 400; font-size: 12.5px; }
 
+/* ---------- Gau's Rages ---------- */
+.toc-tracker { display: flex; gap: 8px; align-items: baseline; margin: 2px 0 6px; padding: 9px 8px; border-radius: 8px; color: var(--fg); text-decoration: none; font-weight: 600; border: 1px solid var(--rule); }
+.toc-tracker .t { flex: 1; }
+.toc-tracker .cnt { color: var(--mute); font-weight: 400; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.toc-tracker[aria-current="page"] { background: var(--acc); color: var(--acc-ink); border-color: var(--acc); }
+.toc-tracker[aria-current="page"] .cnt { color: inherit; opacity: .85; }
+.rages { font-family: var(--ui); }
+.rages h1 { margin: .1em 0 .2em; }
+.rg-stat { margin: 0 0 .4em; font-size: 15px; color: var(--mute); }
+.rg-stat strong { color: var(--fg); font-variant-numeric: tabular-nums; }
+.rages .meter { margin-bottom: 1em; }
+.rg-tools { display: flex; flex-wrap: wrap; gap: 8px; margin: .8em 0 .4em; }
+.rg-tools input { flex: 1 1 14em; min-width: 0; font: 16px var(--ui); padding: 9px 12px; border-radius: 10px; border: 1.5px solid var(--rule); background: var(--panel); color: var(--fg); }
+.rg-start { display: block; margin: .2em 0; font-size: 14px; }
+.rg-list { list-style: none; margin: .4em 0 1.2em; padding: 0; }
+.rg { display: flex; align-items: center; gap: 4px; border-top: 1px solid var(--rule); }
+.rg label { flex: 1; min-width: 0; display: flex; align-items: flex-start; gap: 12px; padding: 10px 2px; cursor: pointer; }
+.rg input { width: 22px; height: 22px; margin: 1px 0 0; flex: none; accent-color: var(--ok); }
+.rg-main { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.rg-name { font-weight: 600; font-size: 15.5px; }
+.rg-alt { color: var(--mute); font-weight: 400; font-size: 13px; }
+.rg-ab { color: var(--mute); font-size: 14px; }
+.rg-note { color: var(--mute); font-size: 13px; font-style: italic; }
+.rg.on .rg-name { color: var(--ok); }
+.rg.never { opacity: .55; }
+.rg.never label { cursor: default; }
+.rg-find { flex: none; width: 40px; height: 40px; display: grid; place-items: center; border: 0; background: none; color: var(--mute); border-radius: 8px; cursor: pointer; }
+.rg-find svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.rg-find:active { background: var(--panel); }
+.badge { display: inline-block; padding: 0 6px; border-radius: 6px; border: 1px solid var(--rule); font: 600 11px/1.6 var(--ui); letter-spacing: .03em; color: var(--mute); vertical-align: 1px; }
+.badge.lore { color: var(--acc); border-color: currentColor; }
+
 /* ---------- color-coded names ---------- */
 .ent-party { color: var(--party); }
 .ent-enemy { color: var(--enemy); }

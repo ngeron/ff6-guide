@@ -2,11 +2,12 @@ import { parseGuide, sectionText, detectKind, readText, importDocument, parseTex
 import { renderBlocks, renderHeading, esc, inline } from "./render.js";
 import { loadGuide, saveGuide, removeGuide, askPersist, getPref, setPref } from "./store.js";
 import { makeBackup, readBackup, describeBackup, restoreBackup } from "./backup.js";
+import { renderRages, rageCounts } from "./rages.js";
 import { KINDS, KIND_LABEL, loadTags, saveTags, buildTerms, matcher, markNames } from "./tags.js";
 import { DEFAULT_NAMES, loadNames, saveNames, renameDoc } from "./names.js";
 import { initMaps, loadMaps, getMap, hasMaps, mapCounts, exportPack, removeAllMaps, itemsForSection, importFiles as importMapFiles, renderPanel as renderMapsPanel, bindPanel as bindMapsPanel, renderViewer as renderMapViewer } from "./maps.js";
 
-const VERSION = "0.9.0";
+const VERSION = "0.10.0";
 const $ = (id) => document.getElementById(id);
 const root = document.documentElement;
 
@@ -243,7 +244,7 @@ function tocLabel(s) {
 }
 
 function buildToc() {
-  const html = [`<div class="toc-in"><p class="toc-progress" id="tocProgress"></p><ol class="toc-list">`];
+  const html = [`<div class="toc-in"><a class="toc-tracker" href="#/rages"><span class="t">Gau's Rages</span><span class="cnt" id="rageCnt">${rageLabel()}</span></a><p class="toc-progress" id="tocProgress"></p><ol class="toc-list">`];
   for (const g of groups()) {
     const h = g.head;
     const doneH = state.done.has(h.key) ? " done" : "";
@@ -262,6 +263,11 @@ function buildToc() {
   html.push("</ol></div>");
   $("tocContents").innerHTML = html.join("");
   updateTocProgress();
+}
+
+function rageLabel() {
+  const c = rageCounts();
+  return `${c.have}/${c.total}`;
 }
 
 function updateTocProgress() {
@@ -386,6 +392,10 @@ function viewHome() {
       <li><a href="${hrefFor(front)}"><span class="n"></span><span class="t">Title page and contents</span></a></li>
       ${chapters.map((g) => `<li><a href="${hrefFor(g.head)}"><span class="n">${esc(g.head.num)}</span><span class="t">${esc(g.head.title)}</span>${g.items.length ? `<span class="cnt">${g.items.length}</span>` : ""}</a></li>`).join("")}
     </ol>
+    <p class="stat">Trackers</p>
+    <ol class="chapters">
+      <li><a href="#/rages"><span class="n"></span><span class="t">Gau's Rages</span><span class="cnt">${rageCounts().have} of ${rageCounts().total} learned</span></a></li>
+    </ol>
   </section>`;
   const he = $("homeExport");
   if (he) he.onclick = exportText;
@@ -430,6 +440,20 @@ function viewSection(s, opts = {}) {
     const pos = getPref("pos", {})[s.key];
     if (pos) { requestAnimationFrame(() => window.scrollTo(0, pos * document.documentElement.scrollHeight)); return; }
   }
+  window.scrollTo(0, 0);
+}
+
+function viewRages() {
+  state.current = null;
+  showChrome(true);
+  setBar(`<span class="bt">Gau's Rages</span>`, "#/");
+  renderRages($("view"), {
+    onFind: (name) => openSearch(name),
+    onChange: () => { const c = $("rageCnt"); if (c) c.textContent = rageLabel(); },
+    toast,
+  });
+  markTocCurrent();
+  $("toc").querySelector(".toc-tracker")?.setAttribute("aria-current", "page");
   window.scrollTo(0, 0);
 }
 
@@ -604,6 +628,7 @@ function route() {
     const map = getMap(decodeURIComponent(mm[1]));
     if (map) return viewMap(map);
   }
+  if (h === "#/rages") return viewRages();
   const m = h.match(/^#\/s\/(.+)$/);
   if (m) {
     const s = state.byKey.get(decodeURIComponent(m[1]));
@@ -904,14 +929,17 @@ for (const id of ["searchSheet", "settingsSheet"]) $(id).addEventListener("click
 // Escape closes a dialog first (the browser does that), and only then the sheet or drawer under it.
 addEventListener("keydown", (e) => { if (e.key === "Escape" && !document.querySelector("dialog[open]")) { closeSheets(); if (!wide()) setTocOpen(false); } });
 
-$("searchBtn").onclick = () => {
+// Opens search, with a query to run or the last one used.
+function openSearch(query) {
   openSheet("searchSheet");
   const q = $("q");
-  if (!q.value) q.value = getPref("lastQuery", "");
+  if (query) { q.value = query; setPref("lastQuery", query); }
+  else if (!q.value) q.value = getPref("lastQuery", "");
   runSearch();
   q.focus();
   q.select();
-};
+}
+$("searchBtn").onclick = () => openSearch();
 $("settingsBtn").onclick = () => { updateGuideInfo(); openSheet("settingsSheet"); };
 
 function updateGuideInfo() {

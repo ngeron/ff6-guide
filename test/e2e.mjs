@@ -378,6 +378,49 @@ for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, heigh
   await ctx.close();
 }
 
+// Gau's Rages tracker.
+{
+  const ctx = await browser.newContext({ viewport: { width: 1180, height: 820 } });
+  const page = await ctx.newPage();
+  page.on("pageerror", (e) => errors.push("pageerror: " + e.message));
+  page.on("console", (m) => { if (m.type() === "error") errors.push("console: " + m.text()); });
+  await page.goto(base);
+  await page.setInputFiles("#file", path.join(ROOT, "test/fixtures/ember-crown-guide.txt"));
+  await page.waitForSelector(".home");
+  check(await page.locator('.home a[href="#/rages"]').count() === 1, "[rages] home page links to the tracker");
+  await page.click(".toc-tracker");
+  await page.waitForSelector(".rages");
+  check(await page.locator(".rg").count() === 256 && (await page.textContent(".rg-stat")).includes("0 of 254"), "[rages] lists 256 Rages, 254 learnable");
+  await page.check('.rg:has-text("Stray Cat") input');
+  check((await page.textContent(".rg-stat")).includes("1 of 254") && (await page.textContent("#rageCnt")) === "1/254", "[rages] checking a Rage updates the counts");
+  await page.click('#rgSeg [data-v="missing"]');
+  check(await page.locator('.rg:has-text("Stray Cat")').isHidden(), "[rages] Missing hides learned Rages");
+  check(await page.locator('.rg.never:has-text("Siegfried")').isHidden(), "[rages] Missing leaves out Rages that can't be learned");
+  await page.click('#rgSeg [data-v="lore"]');
+  check(await page.locator(".rg:not([hidden])").count() === 40, "[rages] Lores filter shows the 40 Lore sources");
+  await page.click('#rgSeg [data-v="all"]');
+  await page.fill("#rgQ", "incisor");
+  const abil = await page.locator(".rg:not([hidden]) .rg-ab").allTextContents();
+  check(abil.length >= 1 && abil.every((t) => /incisor/i.test(t)) && await page.locator('.rg:not([hidden]):has-text("Leaf Bunny")').count() === 1, `[rages] search matches abilities (${abil.length} with Incisor)`);
+  await page.fill("#rgQ", "leafer");
+  check(await page.locator('.rg:not([hidden]):has-text("Leaf Bunny")').count() === 1, "[rages] search matches SNES names");
+  await page.fill("#rgQ", "");
+  await page.click("#rgStart");
+  check((await page.textContent(".rg-stat")).includes("10 of 254") && await page.locator("#rgStart").isHidden(), "[rages] marks the starting Rages");
+  await page.screenshot({ path: path.join(SHOTS, "19-rages.png") });
+  await page.click('.rg:has-text("Stray Cat") .rg-find');
+  check(await page.locator("#searchSheet").isVisible() && await page.inputValue("#q") === "Stray Cat", "[rages] find button searches the guide");
+  await page.click("#searchSheet [data-close]");
+  await page.reload();
+  await page.waitForSelector(".rages");
+  check((await page.textContent(".rg-stat")).includes("10 of 254") && await page.locator('.rg.on:has-text("Stray Cat")').count() === 1, "[rages] kept after reload");
+  await page.emulateMedia({ colorScheme: "dark" });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({ path: path.join(SHOTS, "20-rages-phone-dark.png") });
+  check(!(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), "[rages] no horizontal scroll at phone width");
+  await ctx.close();
+}
+
 // Color coding: names found from the guide, corrections, and the on/off switch.
 {
   const ctx = await browser.newContext({ viewport: { width: 1180, height: 820 } });
@@ -455,6 +498,7 @@ for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, heigh
   await page.click("#tagAdd");
   await page.fill("#tagList li:last-child .tg-text", "Isolde");
   await page.press("#tagList li:last-child .tg-text", "Tab");
+  await page.evaluate(() => localStorage.setItem("ff6g:rages", JSON.stringify(["Stray Cat", "Leaf Bunny"])));
   await page.screenshot({ path: path.join(SHOTS, "12-backup-settings.png") });
   const [dl] = await Promise.all([page.waitForEvent("download"), page.click("#backupBtn")]);
   const backup = path.join(SHOTS, "backup.zip");
@@ -482,6 +526,7 @@ for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, heigh
   await p2.waitForSelector("article.sec");
   check((await p2.textContent("article.sec")).includes("Prns Donut"), "[backup] restored character names");
   check(await p2.locator(".ent-party", { hasText: "Isolde" }).count() >= 1, "[backup] restored color-coding fixes");
+  check(JSON.stringify(await p2.evaluate(() => JSON.parse(localStorage.getItem("ff6g:rages")))) === '["Stray Cat","Leaf Bunny"]', "[backup] restored Gau's Rages");
 
   // Restore over existing data asks first; Cancel keeps things, Replace restores.
   await p2.click("#settingsBtn");
