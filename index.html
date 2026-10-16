@@ -103,6 +103,13 @@
     <ol class="names" id="nameList"></ol>
     <datalist id="nameSugg"></datalist>
     <button type="button" class="btn" id="nameAdd">Add a name</button>
+    <h2 class="sheet-sub">Progress</h2>
+    <p class="hint" id="progressInfo"></p>
+    <form class="upto-form" id="uptoForm" novalidate>
+      <input id="uptoNum" type="text" inputmode="decimal" list="secNums" placeholder="Section, like 4.13.2" aria-label="Mark sections done up to this section number" autocomplete="off" spellcheck="false">
+      <button type="submit" class="btn">Mark done up to here</button>
+    </form>
+    <p class="mp-err" id="uptoErr" hidden></p>
     <h2 class="sheet-sub">Your guide</h2>
     <p class="hint" id="guideInfo"></p>
     <div class="stack">
@@ -145,6 +152,16 @@
 </dialog>
 
 <input type="file" id="file" accept=".pdf,.txt,application/pdf,text/plain" multiple hidden>
+<dialog id="markDialog" class="modal" aria-labelledby="markTitle" aria-describedby="markDesc">
+  <h2 id="markTitle">Mark sections done?</h2>
+  <p id="markDesc">Every section from <strong id="markFrom"></strong> through <strong id="markTo"></strong> will be marked done.</p>
+  <p class="modal-note">Sections you've already marked stay as they are. You can unmark any section later from its page.</p>
+  <div class="row2">
+    <button type="button" class="btn" id="markNo" autofocus>Cancel</button>
+    <button type="button" class="btn solid" id="markYes">Mark done</button>
+  </div>
+</dialog>
+
 <dialog id="restoreDialog" class="modal" aria-labelledby="restoreTitle" aria-describedby="restoreDesc">
   <h2 id="restoreTitle">Replace what's on this device?</h2>
   <p id="restoreDesc">The backup from <strong id="restoreWhen"></strong> replaces the guide, progress, character names and maps on this device.</p>

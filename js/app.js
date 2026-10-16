@@ -6,7 +6,7 @@ import { KINDS, KIND_LABEL, loadTags, saveTags, buildTerms, matcher, markNames }
 import { DEFAULT_NAMES, loadNames, saveNames, renameDoc } from "./names.js";
 import { initMaps, loadMaps, getMap, hasMaps, mapCounts, exportPack, removeAllMaps, itemsForSection, importFiles as importMapFiles, renderPanel as renderMapsPanel, bindPanel as bindMapsPanel, renderViewer as renderMapViewer } from "./maps.js";
 
-const VERSION = "0.8.1";
+const VERSION = "0.9.0";
 const $ = (id) => document.getElementById(id);
 const root = document.documentElement;
 
@@ -409,6 +409,7 @@ function viewSection(s, opts = {}) {
     <div class="body">${renderBlocks(s.blocks, linkNum, linkAnchor)}</div>
     ${s.level === 1 ? "" : `<button type="button" class="done-btn${isDone ? " on" : ""}" id="doneBtn" aria-pressed="${isDone}">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span>${isDone ? "Done" : "Mark section done"}</span></button>`}
+    ${s.level > 1 && notDoneThrough(s).length > (isDone ? 0 : 1) ? `<button type="button" class="txt-btn upto-btn" id="uptoBtn">Mark everything up to here done</button>` : ""}
     <nav class="pager" aria-label="Section navigation">${navLink(prev, "prev")}${navLink(next, "next")}</nav>
   </article>`;
   // Search highlights go first: they can span several names, and names inside them stay plain.
@@ -418,6 +419,8 @@ function viewSection(s, opts = {}) {
   if (prefs.colorNames) markNames($("view").querySelector("article.sec"), state.matcher);
   const db = $("doneBtn");
   if (db) db.onclick = () => toggleDone(s, db);
+  const ub = $("uptoBtn");
+  if (ub) ub.onclick = () => askMarkThrough(s);
   setPref("last", s.key);
   markTocCurrent();
   if (wide() && !$("toc").hidden) scrollTocToCurrent();
@@ -524,6 +527,51 @@ function toggleDone(s, btn) {
   }
   updateTocProgress();
 }
+
+/* ---------------- bulk mark done ---------------- */
+
+// Sections from the start of the guide through s (in reading order) that aren't marked done yet.
+// The title page has no done mark, so it's left out.
+const notDoneThrough = (s) => state.order.slice(0, state.order.indexOf(s) + 1).filter((x) => x.level > 1 && !state.done.has(x.key));
+const secLabel = (s) => (s.num ? s.num + " " : "") + s.title;
+
+const markDialog = $("markDialog");
+$("markNo").onclick = () => markDialog.close("no");
+$("markYes").onclick = () => markDialog.close("yes");
+markDialog.addEventListener("click", (e) => { if (e.target === markDialog) markDialog.close("no"); });
+
+// Asks, then marks every section up to and including s as done.
+async function askMarkThrough(s) {
+  const todo = notDoneThrough(s);
+  if (!todo.length) { toast(`Everything up to ${s.num || s.title} is already done`); return; }
+  $("markTitle").textContent = `Mark ${todo.length} section${todo.length === 1 ? "" : "s"} done?`;
+  $("markFrom").textContent = secLabel(state.order.find((x) => x.level > 1));
+  $("markTo").textContent = secLabel(s);
+  markDialog.returnValue = "";
+  markDialog.showModal();
+  $("markNo").focus();
+  const yes = await new Promise((resolve) => markDialog.addEventListener("close", () => resolve(markDialog.returnValue === "yes"), { once: true }));
+  if (!yes) return;
+  for (const x of todo) state.done.add(x.key);
+  setPref("done", [...state.done]);
+  buildToc();
+  updateGuideInfo();
+  if (state.current) {
+    const y = window.scrollY;
+    viewSection(state.current);
+    window.scrollTo(0, y);
+  } else markTocCurrent();
+  toast(`Marked ${todo.length} section${todo.length === 1 ? "" : "s"} done`);
+}
+
+$("uptoForm").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const v = $("uptoNum").value.trim().replace(/\.$/, "");
+  const s = state.byNum.get(v) || state.order.find((x) => x.num && x.num.replace(/\.0$/, "") === v.replace(/\.0$/, ""));
+  $("uptoErr").hidden = !!s;
+  if (!s) { $("uptoErr").textContent = v ? `There's no section ${v} in this guide.` : "Enter a section number, like 4.13.2."; return; }
+  askMarkThrough(s);
+});
 
 // Remember reading position per section.
 let posTimer = null;
@@ -872,6 +920,13 @@ function updateGuideInfo() {
     ? `${g.name}, imported ${new Date(g.importedAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}. ${state.order.length - 1} sections.`
     : "No guide imported yet.";
   for (const id of ["exportBtn", "resetBtn"]) $(id).disabled = !g;
+  const total = state.order.filter((s) => s.level > 1).length;
+  const done = state.order.filter((s) => s.level > 1 && state.done.has(s.key)).length;
+  $("progressInfo").textContent = g
+    ? `${done} of ${total} sections done. To catch up on a new device, mark everything up to the section you've reached.`
+    : "Import a guide to track your progress.";
+  for (const el of $("uptoForm").elements) el.disabled = !g;
+  $("uptoErr").hidden = true;
   const mc = mapCounts();
   $("mapInfo").textContent = hasMaps()
     ? `${mc.maps} map${mc.maps === 1 ? "" : "s"} and ${mc.links} link${mc.links === 1 ? "" : "s"} on this device. A map pack (.zip) holds just your maps, to share or add on another device.`

@@ -125,6 +125,7 @@ mark { background: var(--hit); color: inherit; border-radius: 2px; padding: 0 1p
 .done-btn svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; opacity: .35; }
 .done-btn.on { border-color: var(--ok); color: var(--ok); }
 .done-btn.on svg { opacity: 1; }
+.upto-btn { display: block; margin: .8em auto 0; font-size: 14px; font-weight: 500; }
 .pager { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 1.6em; font-family: var(--ui); }
 .pn { display: flex; flex-direction: column; gap: 3px; padding: 12px 14px; border-radius: 12px; background: var(--panel); color: var(--fg); text-decoration: none; min-width: 0; }
 .pn.next { text-align: right; }
@@ -208,6 +209,9 @@ mark { background: var(--hit); color: inherit; border-radius: 2px; padding: 0 1p
 .names input { font: 16px var(--ui); padding: 9px 10px; border-radius: 8px; border: 1.5px solid var(--rule); background: var(--panel); color: var(--fg); width: 100%; min-width: 0; }
 .nm-arrow { color: var(--mute); }
 #nameAdd, #tagAdd { width: 100%; }
+.upto-form { display: flex; gap: 8px; }
+.upto-form input { flex: 1; min-width: 0; font: 16px var(--ui); padding: 9px 10px; border-radius: 8px; border: 1.5px solid var(--rule); background: var(--panel); color: var(--fg); }
+.upto-form .btn { flex: none; }
 .tags li { grid-template-columns: minmax(0, 1fr) auto auto; }
 .tags select { font: 15px var(--ui); padding: 9px 8px; border-radius: 8px; border: 1.5px solid var(--rule); background: var(--panel); color: var(--fg); }
 .tag-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: .2em 0 .4em; font: 600 14px var(--ui); }

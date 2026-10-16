@@ -330,6 +330,54 @@ for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, heigh
   await ctx.close();
 }
 
+// Bulk mark done: from a section page and from Settings.
+{
+  const ctx = await browser.newContext({ viewport: { width: 1180, height: 820 } });
+  const page = await ctx.newPage();
+  page.on("pageerror", (e) => errors.push("pageerror: " + e.message));
+  page.on("console", (m) => { if (m.type() === "error") errors.push("console: " + m.text()); });
+  await page.goto(base);
+  await page.setInputFiles("#file", path.join(ROOT, "test/fixtures/ember-crown-guide.txt"));
+  await page.waitForSelector(".home");
+  // Sections up to and including a key, in contents order (which is reading order).
+  const upTo = (key) => page.evaluate((k) => { const keys = [...document.querySelectorAll(".toc-list a[data-key]")].map((a) => a.dataset.key).filter((x) => x !== "start"); return keys.slice(0, keys.indexOf(k) + 1); }, key);
+  const doneKeys = () => page.evaluate(() => [...document.querySelectorAll(".toc-list a.done")].map((a) => a.dataset.key));
+
+  await page.goto(base + "#/s/3.2.4");
+  await page.waitForSelector("#uptoBtn");
+  await page.click("#uptoBtn");
+  await page.waitForSelector("#markDialog[open]");
+  const want = await upTo("3.2.4");
+  check((await page.textContent("#markTitle")).includes(`Mark ${want.length} sections`), `[bulk] dialog counts ${want.length} sections`);
+  await page.screenshot({ path: path.join(SHOTS, "17-bulk-dialog.png") });
+  await page.click("#markNo");
+  check((await doneKeys()).length === 0, "[bulk] Cancel marks nothing");
+  await page.click("#uptoBtn");
+  await page.click("#markYes");
+  await page.waitForFunction((n) => document.querySelectorAll(".toc-list a.done").length === n, want.length);
+  check(JSON.stringify(await doneKeys()) === JSON.stringify(want), "[bulk] marks every section through 3.2.4 and nothing after");
+  check(await page.locator("#doneBtn.on").count() === 1 && await page.locator("#uptoBtn").count() === 0, "[bulk] page shows Done and hides the bulk link");
+
+  await page.click("#settingsBtn");
+  check(/\d+ of \d+ sections done/.test(await page.textContent("#progressInfo")), "[bulk] settings show progress");
+  await page.fill("#uptoNum", "9.9.9");
+  await page.click("#uptoForm button");
+  check(/no section 9\.9\.9/.test(await page.textContent("#uptoErr")), "[bulk] unknown section number explained");
+  await page.fill("#uptoNum", "3.4.1");
+  await page.click("#uptoForm button");
+  await page.waitForSelector("#markDialog[open]");
+  await page.screenshot({ path: path.join(SHOTS, "18-bulk-settings.png") });
+  await page.click("#markYes");
+  const want2 = await upTo("3.4.1");
+  await page.waitForFunction((n) => document.querySelectorAll(".toc-list a.done").length === n, want2.length);
+  const got = await doneKeys();
+  check(got.includes("3.4.1") && !got.includes("3.4.2") && got.length === want2.length, "[bulk] Settings marks through 3.4.1");
+  await page.reload();
+  await page.waitForSelector(".toc-list");
+  check((await doneKeys()).length === want2.length, "[bulk] marks kept after reload");
+  await ctx.close();
+}
+
 // Color coding: names found from the guide, corrections, and the on/off switch.
 {
   const ctx = await browser.newContext({ viewport: { width: 1180, height: 820 } });
