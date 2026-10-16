@@ -766,6 +766,76 @@ for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, heigh
   await ctx.close();
 }
 
+// Google Drive sync, against a stand-in for Google sign-in and the Drive API.
+{
+  const drive = { file: null, bytes: null, n: 0 };
+  const cors = { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "GET,POST,PATCH,PUT,OPTIONS", "access-control-expose-headers": "Location" };
+  const fakeGoogle = async (ctx, device) => {
+    await ctx.route("https://accounts.google.com/**", (route) => {
+      const u = new URL(route.request().url());
+      route.fulfill({ status: 302, headers: { location: `${u.searchParams.get("redirect_uri")}#access_token=tok&token_type=Bearer&expires_in=3600&state=${u.searchParams.get("state")}` } });
+    });
+    await ctx.route("https://www.googleapis.com/**", async (route) => {
+      const req = route.request(), u = new URL(req.url());
+      if (req.method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
+      const json = (o, extra = {}) => route.fulfill({ status: 200, headers: { ...cors, "content-type": "application/json", ...extra }, body: JSON.stringify(o) });
+      if (u.pathname === "/drive/v3/files" && req.method() === "GET") return json({ files: drive.file ? [drive.file] : [] });
+      if (u.pathname.startsWith("/upload/drive/v3/files") && (req.method() === "POST" || req.method() === "PATCH")) return json({}, { location: "https://www.googleapis.com/upload/session/1" });
+      if (u.pathname === "/upload/session/1" && req.method() === "PUT") {
+        drive.bytes = req.postDataBuffer();
+        drive.n++;
+        drive.file = { id: "f1", modifiedTime: new Date(Date.now() + drive.n * 1000).toISOString(), size: String(drive.bytes.length), appProperties: { device } };
+        return json(drive.file);
+      }
+      if (u.pathname === "/drive/v3/files/f1" && u.searchParams.get("alt") === "media") return route.fulfill({ status: 200, headers: { ...cors, "content-type": "application/zip" }, body: drive.bytes });
+      return route.fulfill({ status: 404, headers: cors });
+    });
+  };
+  const setup = async (device) => {
+    const ctx = await browser.newContext({ viewport: { width: 1180, height: 820 } });
+    await fakeGoogle(ctx, device);
+    const page = await ctx.newPage();
+    page.on("pageerror", (e) => errors.push("pageerror: " + e.message));
+    return { ctx, page };
+  };
+
+  const A = await setup("Chrome on Linux");
+  await A.page.goto(base);
+  await A.page.setInputFiles("#file", path.join(ROOT, "test/fixtures/ember-crown-guide.txt"));
+  await A.page.waitForSelector(".home");
+  await A.page.evaluate(() => localStorage.setItem("ff6g:names", JSON.stringify([{ from: "Corvin", to: "Prns Donut" }])));
+  await A.page.click("#settingsBtn");
+  await A.page.click("#gdSave");
+  check(await A.page.locator("#gdSetup[open]").count() === 1 && /client ID/.test(await A.page.textContent("#toast")), "[drive] without a client ID, Save explains the setup");
+  await A.page.fill("#gdClient", "test-client.apps.googleusercontent.com");
+  await A.page.press("#gdClient", "Tab");
+  await Promise.all([A.page.waitForURL(/ember|#\/|\/$/), A.page.click("#gdSave")]);
+  await A.page.waitForFunction(() => /Saved to Google Drive/.test(document.getElementById("toast").textContent), null, { timeout: 15000 });
+  check(drive.bytes && drive.bytes.length > 1000 && !/access_token/.test(A.page.url()), "[drive] signs in, saves the backup to Drive, and cleans up the address");
+
+  const B = await setup("Safari on iPad");
+  await B.page.goto(base);
+  await B.page.evaluate(() => localStorage.setItem("ff6g:gdriveClient", JSON.stringify("test-client.apps.googleusercontent.com")));
+  await B.page.reload();
+  await B.page.click("#settingsBtn");
+  await B.page.click("#gdRestore");
+  await B.page.waitForSelector(".home, article.sec", { timeout: 20000 });
+  check(await B.page.evaluate(() => (localStorage.getItem("ff6g:names") || "").includes("Prns Donut")), "[drive] a fresh browser restores everything from Drive");
+  await B.page.click("#settingsBtn");
+  await B.page.click("#gdSave");
+  await B.page.waitForFunction(() => /Saved to Google Drive/.test(document.getElementById("toast").textContent), null, { timeout: 15000 });
+
+  await A.page.click("#settingsBtn");
+  await A.page.click("#gdSave");
+  await A.page.waitForSelector("#cloudDialog[open]");
+  check(/Safari on iPad/.test(await A.page.textContent("#cloudFrom")), "[drive] warns before overwriting a newer copy saved elsewhere");
+  await A.page.screenshot({ path: path.join(SHOTS, "29-drive-conflict.png") });
+  await A.page.click("#cloudNo");
+  check(drive.file.appProperties.device === "Safari on iPad", "[drive] Cancel leaves the Drive copy alone");
+  await A.ctx.close();
+  await B.ctx.close();
+}
+
 await browser.close();
 server.close();
 console.log(errors.length ? `\n${errors.length} problem(s):\n` + errors.join("\n") : "\nAll checks passed.");

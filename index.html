@@ -130,6 +130,18 @@
       <button type="button" class="btn" id="backupBtn">Save a backup</button>
       <button type="button" class="btn" id="restoreBtn">Restore from a backup</button>
     </div>
+    <h3 class="sheet-h3">Google Drive</h3>
+    <p class="hint" id="gdStatus"></p>
+    <div class="stack">
+      <button type="button" class="btn" id="gdSave">Save to Google Drive</button>
+      <button type="button" class="btn" id="gdRestore">Restore from Google Drive</button>
+    </div>
+    <details class="gd-setup" id="gdSetup">
+      <summary>Google Drive setup</summary>
+      <p class="hint">Syncing needs an OAuth client ID from your Google Cloud project. Add this address as an authorized JavaScript origin and as a redirect URI: <code id="gdRedirect"></code></p>
+      <label class="hint" for="gdClient">OAuth client ID</label>
+      <input type="text" id="gdClient" placeholder="1234-abc.apps.googleusercontent.com" autocomplete="off" autocapitalize="off" spellcheck="false">
+    </details>
     <h2 class="sheet-sub">Start over</h2>
     <div class="stack">
       <button type="button" class="btn danger" id="resetBtn">Reset and remove guide</button>
@@ -162,6 +174,16 @@
   <div class="row2">
     <button type="button" class="btn" id="markNo" autofocus>Cancel</button>
     <button type="button" class="btn solid" id="markYes">Mark done</button>
+  </div>
+</dialog>
+
+<dialog id="cloudDialog" class="modal" aria-labelledby="cloudTitle" aria-describedby="cloudDesc">
+  <h2 id="cloudTitle">Replace the copy in Google Drive?</h2>
+  <p id="cloudDesc">The copy in Google Drive was saved from <strong id="cloudFrom"></strong> on <strong id="cloudWhen"></strong>, after this browser last synced. Saving now replaces it with what's on this device.</p>
+  <p class="modal-note">To keep it, choose Cancel and use Restore from Google Drive instead.</p>
+  <div class="row2">
+    <button type="button" class="btn solid" id="cloudNo" autofocus>Cancel</button>
+    <button type="button" class="btn danger" id="cloudYes">Replace</button>
   </div>
 </dialog>
 

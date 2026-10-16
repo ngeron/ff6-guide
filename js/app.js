@@ -6,11 +6,12 @@ import { renderRages, rageCounts } from "./rages.js";
 import { renderGear, gearCounts } from "./gear.js";
 import { renderMonsters, findMonster } from "./monsters.js";
 import { renderParty, partyCount } from "./party.js";
+import * as cloud from "./cloud.js";
 import { KINDS, KIND_LABEL, loadTags, saveTags, buildTerms, matcher, markNames } from "./tags.js";
 import { DEFAULT_NAMES, loadNames, saveNames, renameDoc } from "./names.js";
 import { initMaps, loadMaps, getMap, hasMaps, mapCounts, exportPack, removeAllMaps, itemsForSection, importFiles as importMapFiles, renderPanel as renderMapsPanel, bindPanel as bindMapsPanel, renderViewer as renderMapViewer } from "./maps.js";
 
-const VERSION = "0.16.0";
+const VERSION = "0.17.0";
 const $ = (id) => document.getElementById(id);
 const root = document.documentElement;
 
@@ -861,7 +862,7 @@ $("backupFile").addEventListener("change", (e) => {
 });
 
 // Reads a backup and, after asking if it would replace anything, restores it and restarts.
-async function startRestore(file, onError) {
+async function startRestore(file, onError, onRestored = () => {}) {
   let b;
   try {
     b = await readBackup(file);
@@ -889,6 +890,7 @@ async function startRestore(file, onError) {
     onError("The backup couldn't be restored. Try again.");
     return;
   }
+  onRestored();
   history.replaceState(null, "", location.pathname);
   location.reload();
 }
@@ -1073,9 +1075,77 @@ $("resetYes").onclick = async () => {
 $("file").setAttribute("accept", ACCEPT);
 $("appVersion").textContent = `Version ${VERSION}. The guide and your progress are stored only in this browser.`;
 
+/* ---------------- Google Drive sync ---------------- */
+
+const when = (iso) => new Date(iso).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+const cloudDialog = $("cloudDialog");
+$("cloudNo").onclick = () => cloudDialog.close("no");
+$("cloudYes").onclick = () => cloudDialog.close("yes");
+cloudDialog.addEventListener("click", (e) => { if (e.target === cloudDialog) cloudDialog.close("no"); });
+$("gdRedirect").textContent = cloud.redirectUri();
+$("gdClient").value = cloud.clientId();
+$("gdClient").addEventListener("change", (e) => { cloud.setClientId(e.target.value); updateCloudStatus(); });
+
+function updateCloudStatus(text) {
+  const last = cloud.lastSync();
+  $("gdStatus").textContent = text || (!cloud.clientId()
+    ? "Keep one backup in your Google Drive and sync it between browsers. Set it up below first."
+    : last ? `This browser last synced with Google Drive on ${when(last.modifiedTime)}.` : "Keep one backup in your Google Drive and sync it between browsers.");
+  $("gdSetup").open = !cloud.clientId();
+}
+updateCloudStatus();
+
+function cloudError(ex) {
+  console.error(ex);
+  const msg = String(ex && ex.message || ex);
+  if (msg === "noclient") { openSheet("settingsSheet"); $("gdSetup").open = true; $("gdClient").focus(); toast("Add your Google OAuth client ID first."); return; }
+  updateCloudStatus();
+  toast(/fetch|network/i.test(msg) ? "Couldn't reach Google Drive. Check your connection." : msg);
+}
+
+async function cloudSave() {
+  try {
+    await cloud.withDrive("save", async () => {
+      updateCloudStatus("Checking Google Drive…");
+      const existing = await cloud.findFile();
+      const last = cloud.lastSync();
+      if (existing && (!last || existing.modifiedTime !== last.modifiedTime)) {
+        $("cloudFrom").textContent = (existing.appProperties && existing.appProperties.device) || "another browser";
+        $("cloudWhen").textContent = when(existing.modifiedTime);
+        cloudDialog.returnValue = "";
+        cloudDialog.showModal();
+        const yes = await new Promise((resolve) => cloudDialog.addEventListener("close", () => resolve(cloudDialog.returnValue === "yes"), { once: true }));
+        if (!yes) { updateCloudStatus(); return; }
+      }
+      updateCloudStatus("Saving to Google Drive…");
+      const meta = await cloud.upload(await makeBackup(VERSION), existing && existing.id);
+      cloud.markSynced(meta);
+      updateCloudStatus();
+      toast("Saved to Google Drive");
+    });
+  } catch (ex) { cloudError(ex); }
+}
+
+async function cloudRestore() {
+  try {
+    await cloud.withDrive("restore", async () => {
+      updateCloudStatus("Checking Google Drive…");
+      const f = await cloud.findFile();
+      if (!f) { updateCloudStatus(); toast("There's no copy in Google Drive yet. Save one from a browser that has your data."); return; }
+      updateCloudStatus("Downloading from Google Drive…");
+      const file = await cloud.download(f.id);
+      updateCloudStatus();
+      await startRestore(file, toast, () => cloud.markSynced(f));
+    });
+  } catch (ex) { cloudError(ex); }
+}
+$("gdSave").onclick = () => cloudSave();
+$("gdRestore").onclick = () => cloudRestore();
+
 /* ---------------- start ---------------- */
 
 async function start() {
+  const signedIn = cloud.finishSignIn(); // back from Google sign-in?
   applyPrefs();
   updateWakeLock();
   $("view").innerHTML = `<p class="loading">Opening your guide…</p>`;
@@ -1096,6 +1166,9 @@ async function start() {
   setPanelTab(getPref("panelTab", "contents"));
   syncTocMode();
   route();
+  if (signedIn && signedIn.error) toast(signedIn.error);
+  else if (signedIn && signedIn.action === "save") cloudSave();
+  else if (signedIn && signedIn.action === "restore") cloudRestore();
 }
 start();
 

@@ -179,6 +179,11 @@ mark { background: var(--hit); color: inherit; border-radius: 2px; padding: 0 1p
 .sheet-head h2 { flex: 1; margin: 0; font-size: 1.15rem; }
 .sheet-sub { font-size: 1rem; margin: 1.4em 0 .3em; }
 .sheet-sub.first { margin-top: .6em; }
+.sheet-h3 { font-size: .95rem; margin: 1.1em 0 .2em; }
+.gd-setup { margin-top: 8px; border: 1px solid var(--rule); border-radius: 10px; padding: 0 12px; }
+.gd-setup summary { cursor: pointer; padding: 10px 0; font-weight: 600; font-size: 14px; color: var(--acc); }
+.gd-setup input { width: 100%; box-sizing: border-box; font: 15px var(--ui); padding: 9px 10px; border-radius: 8px; border: 1.5px solid var(--rule); background: var(--panel); color: var(--fg); margin: 4px 0 12px; }
+.gd-setup code { font: 12.5px var(--mono); overflow-wrap: anywhere; }
 #q { flex: 1; min-width: 0; font: 17px var(--ui); padding: 10px 12px; border-radius: 10px; border: 1.5px solid var(--rule); background: var(--panel); color: var(--fg); }
 .hint { color: var(--mute); font-size: 14px; margin: .3em 0 .6em; }
 .hint.small { font-size: 12.5px; margin-top: 1.4em; }
