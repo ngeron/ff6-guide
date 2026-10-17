@@ -15,14 +15,15 @@ A Final Fantasy VI companion web app, used on an iPad while playing on another d
 ## Layout
 
 ```
-index.html               shell: top bar with tool shortcuts, left panel (Contents / Maps tabs), search and settings sheets, dialogs
+index.html               shell: top bar with tool shortcuts, left panel (contents), search and settings sheets, dialogs
 css/app.css              all styles; theme tokens at the top
-js/app.js                routing (#/ and #/walk, #/walk/<n>, #/wiki, #/wiki/<kind>/<id>, #/party, #/monsters/<name>, #/rages, #/gear, #/map/<id>), contents, search, settings, bulk mark done, backup and Drive UI
+js/app.js                routing (#/ and #/walk, #/walk/<n>, #/wiki, #/wiki/<kind>/<id>, #/party, #/monsters/<name>, #/rages, #/gear, #/map, #/map/ch/<n>, #/map/<wob|wor>, #/map/place/<id>), contents, search, settings, bulk mark done, backup and Drive UI
 js/walkthrough.js        the walkthrough (read from walkthrough/ff6-pr.md; format notes at the top of that file): chapter list and pages, done marks ("walkDone"), last chapter ("walkLast"), search text, and which chapter a map belongs to
 walkthrough/ff6-pr.md    the walkthrough text: ORIGINAL, written for this app
 js/render.js             esc() for HTML strings
-js/store.js              IndexedDB (maps) and localStorage (settings, progress)
-js/maps.js, js/zip.js    maps panel, map packs (.zip + maps.json), map viewer; maps and links attach to a chapter by slug, or by an old guide section number
+js/store.js              localStorage (settings, progress); IndexedDB only to delete what older versions stored
+js/worldmap.js, worldmap-data.js  world map (#/map): drawn World of Balance / World of Ruin terrain (generated from the game's tile map; no game images), a pin per wiki place, a chapter's route and flying direction
+js/zip.js                .zip reading and writing for backups
 js/names.js              character renames, applied when the walkthrough is shown
 js/tags.js               color coding: characters, people, items and espers, monsters, bosses and places; marks them in the page and links them
 js/wiki.js, wiki-data.js  wiki (#/wiki): articles on characters, people and places (ORIGINAL text, spoilers after a chapter folded until you reach it), espers and items from the data files; where colored names link; the summary popup (hover, or first tap on touch)
@@ -31,9 +32,9 @@ js/gear.js, gear-data.js    inventory tracker (#/gear): counts, prices, sources 
 js/party.js, optimizer.js, party-data.js, espers-data.js  Party page (#/party): met characters, levels, load-outs, espers (acquired, equipped, spells learned) (equipping moves items out of the gear bag), and the load-out optimizer (FF6 damage formulas; see optimizer.js header)
 js/monsters.js, monsters-data.js  monster intel (#/monsters/<name>): search, 3-column picture grid, stats (CC BY-SA). Pictures are hotlinked from the wiki with no referrer and cached by sw.js; never commit them
 js/cloud.js              Google Drive sync of the backup .zip (OAuth token redirect, drive.file scope; client ID entered in Settings per browser, never committed)
-js/backup.js             backup .zip: progress, names, tags, party, gear, Rages, maps; save and restore (older backups' guide is ignored)
+js/backup.js             backup .zip: progress, names, tags, party, gear, Rages; save and restore (older backups' guide and maps are ignored)
 sw.js                    offline cache
-test/                    e2e smoke test and the map pack fixture generator
+test/                    e2e smoke test
 ```
 
 ## Testing
@@ -52,8 +53,6 @@ podman run --rm -v "$PWD":/app:Z -w /app mcr.microsoft.com/playwright:v1.55.0-no
 ```
 
 It should end with "All checks passed." Screenshots land in `test/output/` (git-ignored); look at them for visual changes. `node_modules/` is git-ignored too.
-
-`test/make_maps.py` generates the invented map pack in `test/fixtures/` (public domain).
 
 ## Working with the owner
 

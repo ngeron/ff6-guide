@@ -1,7 +1,6 @@
 // Backups: everything you've added to the app, in one .zip you can move to another device.
 //
 //   backup.json          the manifest (below)
-//   maps/<id>.<ext>      map images
 //
 // backup.json:
 //   {
@@ -12,20 +11,19 @@
 //     "gear":     { "Dagger": 2, "Potion": 14 },                   inventory counts (the bag)
 //     "party":    { "party": ["Terra"], "chars": { "Terra": { "met": true, "level": 12,
 //                   "goal": "balanced", "eq": { "rh": "Icebrand" }, "lock": {} } } }
-//     "progress": { "walkDone": ["the-raid-on-narshe"], "walkLast": "figaro-castle" },
-//     "maps":     [{ "id", "file": "maps/<id>.png", "title", "chapter", "section", "type", "width", "height", "order", "addedAt" }],
-//     "links":    [{ "id", "title", "url", "chapter", "section", "note" }]
+//     "progress": { "walkDone": ["the-raid-on-narshe"], "walkLast": "figaro-castle" }
 //   }
 //
 // Backups from before 0.20.0 also hold the imported guide ("guide" and guide/<name>) and its
-// progress ("done", "last", "pos"); restoring ignores them.
+// progress ("done", "last", "pos"), and ones from before 0.22.0 map images ("maps" and
+// maps/<id>.<ext>) and map links ("links"); restoring ignores them.
 //
 // Reading settings (text size, theme) are left out: they belong to each device.
 // When a feature stores something new that you'd want on another device, add it here as a new
 // key. Readers ignore keys they don't know, so older backups keep working; bump VERSION only
 // for changes an older app would misread.
 
-import { listMaps, putMap, clearMaps, loadLinks, saveLinks, getPref, setPref } from "./store.js";
+import { getPref, setPref } from "./store.js";
 import { loadNames, saveNames } from "./names.js";
 import { loadTags, saveTags } from "./tags.js";
 import { loadRages, saveRages } from "./rages.js";
@@ -36,24 +34,15 @@ import { zip, unzip } from "./zip.js";
 const FORMAT = "ff6-guide-backup";
 const VERSION = 1;
 const PROGRESS = ["walkDone", "walkLast"];
-const IMG_EXT = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp", "image/gif": "gif" };
 
 export async function makeBackup(appVersion) {
-  const files = [];
-  const maps = [];
-  for (const m of await listMaps()) {
-    const file = `maps/${m.id}.${IMG_EXT[m.type] || "png"}`;
-    files.push({ name: file, data: new Uint8Array(m.data) });
-    const { data, ...rest } = m;
-    maps.push({ ...rest, file });
-  }
   const progress = {};
   for (const k of PROGRESS) { const v = getPref(k, null); if (v !== null) progress[k] = v; }
   const manifest = {
     format: FORMAT, version: VERSION, app: appVersion, createdAt: new Date().toISOString(),
-    names: loadNames(), tags: loadTags(), rages: loadRages(), gear: loadGear(), party: getPref("party", null), progress, maps, links: await loadLinks(),
+    names: loadNames(), tags: loadTags(), rages: loadRages(), gear: loadGear(), party: getPref("party", null), progress,
   };
-  files.unshift({ name: "backup.json", data: JSON.stringify(manifest, null, 2) });
+  const files = [{ name: "backup.json", data: JSON.stringify(manifest, null, 2) }];
   const day = new Date().toISOString().slice(0, 10);
   return new File([zip(files)], `FF6 Guide backup ${day}.zip`, { type: "application/zip" });
 }
@@ -69,13 +58,6 @@ export async function readBackup(file) {
   try { m = JSON.parse(new TextDecoder().decode(byName.get("backup.json"))); } catch { throw new Error("That backup is damaged (its backup.json can't be read)."); }
   if (!m || m.format !== FORMAT) throw new Error("notbackup");
   if (!(m.version <= VERSION)) throw new Error("That backup was made by a newer version of the app. Reload the app to update it, then try again.");
-  const maps = [];
-  for (const rec of Array.isArray(m.maps) ? m.maps : []) {
-    const data = rec && byName.get(rec.file);
-    if (!data) continue;
-    const { file, ...rest } = rec;
-    maps.push({ ...rest, data: data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) });
-  }
   return {
     createdAt: m.createdAt,
     names: Array.isArray(m.names) ? m.names.filter((n) => n && typeof n.from === "string" && typeof n.to === "string") : [],
@@ -84,8 +66,6 @@ export async function readBackup(file) {
     party: m.party && typeof m.party === "object" ? m.party : null,
     rages: Array.isArray(m.rages) ? m.rages.filter((r) => typeof r === "string") : [],
     progress: m.progress && typeof m.progress === "object" ? m.progress : {},
-    maps,
-    links: Array.isArray(m.links) ? m.links.filter((l) => l && typeof l.url === "string") : [],
   };
 }
 
@@ -101,8 +81,6 @@ export function describeBackup(b) {
   if (kinds) parts.push(`${kinds} kind${kinds === 1 ? "" : "s"} of items`);
   if (b.rages.length) parts.push(`${b.rages.length} Rage${b.rages.length === 1 ? "" : "s"}`);
   if (b.names.length) parts.push(`${b.names.length} character name${b.names.length === 1 ? "" : "s"}`);
-  if (b.maps.length) parts.push(`${b.maps.length} map${b.maps.length === 1 ? "" : "s"}`);
-  if (b.links.length) parts.push(`${b.links.length} map link${b.links.length === 1 ? "" : "s"}`);
   return parts.join(" · ") || "Nothing";
 }
 
@@ -116,7 +94,4 @@ export async function restoreBackup(b) {
   saveGear(b.gear);
   setPref("party", b.party);
   saveParty(loadParty()); // drop anything this version doesn't recognise
-  await clearMaps();
-  for (const m of b.maps) await putMap(m);
-  await saveLinks(b.links);
 }

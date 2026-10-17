@@ -6,7 +6,7 @@
 const enc = new TextEncoder();
 
 async function inflateRaw(bytes) {
-  if (typeof DecompressionStream === "undefined") throw new Error("This browser can't unpack compressed zip files. Update iPadOS, or unzip the pack in Files and import the images and maps.json directly.");
+  if (typeof DecompressionStream === "undefined") throw new Error("This browser can't unpack compressed zip files. Update iPadOS and try again.");
   const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
   return new Uint8Array(await new Response(stream).arrayBuffer());
 }

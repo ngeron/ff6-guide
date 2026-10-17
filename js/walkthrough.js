@@ -82,25 +82,7 @@ const plain = (s) => s.replace(/\[\[([^\]|]+)(?:\|[^\]]+)?\]\]/g, "$1").replace(
 const blocksText = (blocks) => blocks.map((b) => (b.type === "ul" ? b.items.join("\n") : b.text)).join("\n");
 export const chapterText = (c) => [c.title, blocksText(c.intro), ...c.sections.map((s) => s.title + "\n" + blocksText(s.blocks))].map(plain).join("\n");
 
-// Maps and links are tied to a chapter by its slug ("chapter"), or by a section number of
-// Djibriel's guide ("section", from older map packs): that lands in the chapter with the
-// highest @guide number at or below it.
-const cmpNum = (a, b) => {
-  const x = a.split(".").map(Number), y = b.split(".").map(Number);
-  for (let i = 0; i < Math.max(x.length, y.length); i++) { const d = (x[i] || 0) - (y[i] || 0); if (d) return d; }
-  return 0;
-};
-export function chapterOf(w, rec) {
-  if (!w || !rec) return null;
-  if (rec.chapter) return w.chapters.find((c) => c.slug === rec.chapter) || null;
-  const num = String(rec.section || "").trim().replace(/\.$/, "");
-  if (!/^\d+(\.\d+)*$/.test(num)) return null;
-  let best = null;
-  for (const c of w.chapters) if (c.guide && cmpNum(c.guide, num) <= 0 && (!best || cmpNum(c.guide, best.guide) > 0)) best = c;
-  return best;
-}
-
-// ctx: { rename(html) -> html, decorate(bodyEl), mapsFor(chapter) -> html, onDone(), askUpto(chapter), toast }
+// ctx: { rename(html) -> html, decorate(bodyEl), mapsFor(chapter) -> html (chips under the title), onDone(), askUpto(chapter), toast }
 export async function renderWalkIndex(view, ctx) {
   view.innerHTML = `<p class="loading">Loading the walkthrough…</p>`;
   let w;

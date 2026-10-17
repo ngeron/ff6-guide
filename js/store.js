@@ -1,4 +1,5 @@
-// On-device storage. Map images and links live in IndexedDB; settings and progress in localStorage.
+// On-device storage: settings and progress in localStorage. IndexedDB held an imported guide and
+// map images in older versions; they're removed on start.
 
 const DB = "ff6-guide";
 const STORE = "kv";
@@ -31,14 +32,8 @@ export const idbGet = (key) => tx("readonly", (s) => s.get(key));
 export const idbSet = (key, value) => tx("readwrite", (s) => s.put(value, key));
 export const idbDel = (key) => tx("readwrite", (s) => s.delete(key));
 
-// Map images: { id, title, section, blob, type, width, height, order, addedAt }
-export const listMaps = async () => ((await tx("readonly", (s) => s.getAll(), MAPS)) || []).sort((a, b) => a.order - b.order || a.addedAt - b.addedAt);
-export const putMap = (m) => tx("readwrite", (s) => s.put(m), MAPS);
-export const deleteMap = (id) => tx("readwrite", (s) => s.delete(id), MAPS);
-export const clearMaps = () => tx("readwrite", (s) => s.clear(), MAPS);
-// Map links: [{ id, title, url, note }]
-export const loadLinks = async () => (await idbGet("mapLinks")) || [];
-export const saveLinks = (links) => idbSet("mapLinks", links);
+// Versions before 0.22.0 kept map images and links you added; app.js deletes them on start.
+export const removeMaps = async () => { await tx("readwrite", (s) => s.clear(), MAPS); await idbDel("mapLinks"); };
 
 // Earlier versions stored an imported guide here; app.js deletes it on start.
 export const removeGuide = () => idbDel("guide");

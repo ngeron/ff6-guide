@@ -1,4 +1,4 @@
-// Headless smoke test: serves the app and checks the walkthrough, tools, maps, backups and sync.
+// Headless smoke test: serves the app and checks the walkthrough, tools, world map, backups and sync.
 // Usage: node test/e2e.mjs [ignored] [screenshot-dir]
 // Requires Playwright (npm i -D playwright) and a Chromium build.
 import { chromium } from "playwright";
@@ -109,11 +109,23 @@ for (const scheme of ["light", "dark"]) {
     const m = await import("./js/store.js");
     await m.idbSet("guide", { text: "old guide", name: "old.txt", importedAt: 1 });
     for (const k of ["done", "last", "pos", "savedText"]) localStorage.setItem("ff6g:" + k, "[]");
+    // Map images and links from before 0.22.0.
+    const db = await new Promise((ok) => { const r = indexedDB.open("ff6-guide", 2); r.onsuccess = () => ok(r.result); });
+    await new Promise((ok) => { const t = db.transaction("maps", "readwrite"); t.objectStore("maps").put({ id: "old", title: "Old map" }); t.oncomplete = ok; });
+    db.close();
+    await m.idbSet("mapLinks", [{ id: "l", title: "Old link", url: "https://example.com" }]);
   });
   await page.reload();
   await page.waitForSelector(".walk");
   await page.waitForFunction(async () => !(await (await import("./js/store.js")).idbGet("guide")));
   check(await page.evaluate(() => ["done", "last", "pos", "savedText"].every((k) => localStorage.getItem("ff6g:" + k) === null)), "[upgrade] old guide and its progress removed");
+  await page.waitForFunction(async () => {
+    const db = await new Promise((ok) => { const r = indexedDB.open("ff6-guide", 2); r.onsuccess = () => ok(r.result); });
+    const n = await new Promise((ok) => { const q = db.transaction("maps").objectStore("maps").count(); q.onsuccess = () => ok(q.result); });
+    db.close();
+    return n === 0 && !(await (await import("./js/store.js")).idbGet("mapLinks"));
+  });
+  check(true, "[upgrade] old map images and links removed");
   await ctx.close();
 }
 
@@ -165,89 +177,48 @@ for (const scheme of ["light", "dark"]) {
   await ctx.close();
 }
 
-// Maps: import a map pack, view, zoom, chapter chips, links.
-for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, height: 844, tag: "phone" }]) {
-  const ctx = await browser.newContext({ viewport: { width: vp.width, height: vp.height }, deviceScaleFactor: vp.tag === "phone" ? 2 : 1 });
+// World map: chapter routes, pins, both worlds, zoom, and links from the walkthrough and wiki.
+for (const vp of [{ tag: "ipad", w: 1180, h: 820 }, { tag: "phone", w: 390, h: 844, touch: true }]) {
+  const ctx = await browser.newContext({ viewport: { width: vp.w, height: vp.h }, hasTouch: !!vp.touch, isMobile: !!vp.touch });
   const page = await ctx.newPage();
   watch(page);
-  await page.goto(base);
-  await page.waitForSelector(".walk");
-  if (vp.tag === "phone") await page.click("#tocBtn");
-  await page.click("#tabMaps");
-  check(await page.locator(".mp-empty").count() === 2, `[maps ${vp.tag}] empty states shown before import`);
-  await page.setInputFiles("#mapFile", path.join(ROOT, "test/fixtures/ember-crown-maps.zip"));
-  await page.waitForFunction(() => document.querySelectorAll(".mp-item").length === 4, null, { timeout: 15000 });
-  check(true, `[maps ${vp.tag}] map pack added 4 maps`);
-  check(await page.locator(".mp-link").count() === 3, `[maps ${vp.tag}] map pack added 3 links`);
-  const titles = await page.locator(".mp-item .mp-t").allTextContents();
-  check(/^World map/.test(titles[0]) && /Clockwork Vault/.test(titles[3]), `[maps ${vp.tag}] titles and order come from maps.json`);
-  check(JSON.stringify(await page.locator(".mp-item .mp-sec").allTextContents()) === '["1","3","4","17"]', `[maps ${vp.tag}] each map shows its chapter (a guide section number lands in the chapter covering it)`);
-  await page.screenshot({ path: path.join(SHOTS, `9-maps-panel-${vp.tag}.png`) });
-  await page.click(".mp-item >> nth=0");
-  await page.waitForSelector("#mapImg");
-  await page.waitForFunction(() => document.getElementById("mapImg").naturalWidth > 0);
-  check(await page.evaluate(() => document.getElementById("mapImg").naturalWidth) === 2400, `[maps ${vp.tag}] world map image loads at full size`);
-  if (vp.tag === "phone") check(await page.locator("#toc").isHidden(), "[maps phone] drawer closes when a map is opened");
-  check(await page.getAttribute(".map-back", "href") === "#/walk/1", `[maps ${vp.tag}] viewer links back to its chapter`);
-  const pct1 = await page.textContent("#zPct");
-  await page.click("#zIn");
-  const pct2 = await page.textContent("#zPct");
-  check(parseInt(pct2) > parseInt(pct1), `[maps ${vp.tag}] zoom in (${pct1} -> ${pct2})`);
-  await page.click("#zFit");
-  check(await page.evaluate(() => { const st = document.getElementById("stage"); return st.scrollWidth <= st.clientWidth + 2 && st.scrollHeight <= st.clientHeight + 2; }), `[maps ${vp.tag}] Fit shows the whole map`);
-  check(await noScroll(page), `[maps ${vp.tag}] no horizontal page scroll in viewer`);
-  await page.screenshot({ path: path.join(SHOTS, `10-map-viewer-${vp.tag}.png`) });
-
-  await page.goto(base + "#/walk/4");
-  await page.waitForSelector(".sec-maps");
-  check((await page.textContent(".sec-maps")).includes("Old Quarry"), `[maps ${vp.tag}] chapter 4 shows its map chip`);
-  await page.goto(base + "#/walk/17");
-  await page.waitForSelector(".sec-maps");
-  check(await page.locator(".sec-maps a.ext").count() === 1, `[maps ${vp.tag}] chapter 17 shows its external link chip`);
-
-  if (vp.tag === "ipad") {
-    // Move a map to another chapter, add and remove a link, delete a map.
-    await page.click(".mp-item >> nth=2");
-    await page.waitForSelector(".map-edit summary");
-    await page.click(".map-edit summary");
-    await page.selectOption("#mapSec", "kohlingen-jidoor-and-zozo");
-    await page.click('#mapForm button[type="submit"]');
-    await page.goto(base + "#/walk/13");
-    await page.waitForSelector(".sec-maps");
-    check((await page.textContent(".sec-maps")).includes("Old Quarry"), "[maps ipad] changing a map's chapter moves its chip");
-    const form = page.locator(".mp-form");
-    if (!(await form.evaluate((d) => d.open))) await page.click(".mp-form summary");
-    await page.fill("#linkTitle", "Fan wiki");
-    await page.fill("#linkUrl", "wiki.example.com/ember");
-    await page.selectOption("#linkSec", "kohlingen-jidoor-and-zozo");
-    await page.click('#linkForm button[type="submit"]');
-    await page.waitForFunction(() => document.querySelectorAll(".mp-link").length === 4);
-    check((await page.getAttribute(".mp-link >> nth=3", "href")) === "https://wiki.example.com/ember", "[maps ipad] link form adds https:// when missing");
-    await page.waitForFunction(() => /Fan wiki/.test(document.querySelector(".sec-maps")?.textContent || ""));
-    check(true, "[maps ipad] a new link shows on its chapter right away");
-    await page.click('[data-unlink] >> nth=3');
-    await page.click('[data-unlink] >> nth=3');
-    await page.waitForFunction(() => document.querySelectorAll(".mp-link").length === 3);
-    check(true, "[maps ipad] link removed after a second tap");
-    await page.click(".mp-item >> nth=3");
-    await page.waitForSelector(".map-edit summary");
-    await page.click(".map-edit summary");
-    await page.click("#mapDel");
-    await page.click("#mapDelYes");
-    await page.waitForFunction(() => document.querySelectorAll(".mp-item").length === 3);
-    check(true, "[maps ipad] map deleted after confirmation");
-    await page.reload();
-    await page.waitForSelector(".mp-item");
-    check(await page.locator(".mp-item").count() === 3 && await page.locator(".mp-link").count() === 3, "[maps ipad] maps and links persist across reloads");
-    check(await page.locator("#toc #mapClearBtn, #toc #mapExportBtn").count() === 0, "[maps ipad] maps panel has no pack or remove-all buttons");
-    await page.click("#settingsBtn");
-    check(/3 maps and 3 links/.test(await page.textContent("#mapInfo")) && await page.isEnabled("#mapExportBtn"), "[maps ipad] settings show map counts and Save map pack");
-    await page.click("#mapClearBtn");
-    await page.click("#mapClearYes");
-    await page.waitForFunction(() => /No maps/.test(document.getElementById("mapInfo").textContent));
-    const gone = await page.evaluate(async () => { const m = await import("./js/store.js"); return (await m.listMaps()).length + (await m.loadLinks()).length; });
-    check(gone === 0 && await page.isDisabled("#mapClearBtn"), "[maps ipad] Remove all maps and links in settings clears them");
-  }
+  await page.goto(base + "#/walk/19");
+  await page.waitForSelector(".walk-ch .sec-maps a[href='#/map/ch/19']");
+  check(true, `[map ${vp.tag}] a chapter links to its route on the map`);
+  await page.click(".walk-ch .sec-maps a");
+  await page.waitForSelector(".wm-stage .wm-pin");
+  check(await page.locator('.wm-w[aria-current="page"]', { hasText: "Balance" }).count() === 1, `[map ${vp.tag}] chapter 19 opens the World of Balance`);
+  check(/fly \w/.test(await page.textContent(".wm-dir")) && /Narshe/.test(await page.textContent(".wm-dir")), `[map ${vp.tag}] directions from the last chapter (${(await page.textContent(".wm-dir")).replace(/\s+/g, " ").trim()})`);
+  check(await page.locator(".wm-pin.on").count() >= 1 && await page.locator(".wm-pin.from").count() === 1 && await page.locator(".wm-route").count() === 1, `[map ${vp.tag}] destination, start and route drawn`);
+  check(await noScroll(page), `[map ${vp.tag}] no horizontal page scroll`);
+  await page.screenshot({ path: path.join(SHOTS, `9-worldmap-${vp.tag}.png`) });
+  // Zoom changes the drawing's scale.
+  const sc = () => page.evaluate(() => +document.getElementById("wmG").getAttribute("transform").match(/scale\(([\d.]+)\)/)[1]);
+  const s1 = await sc();
+  await page.click("#wmIn");
+  check(await sc() > s1, `[map ${vp.tag}] zoom in`);
+  await page.click("#wmFit");
+  check(await page.locator(".wm-stage.wm-labels").count() === 0 || vp.tag === "ipad", `[map ${vp.tag}] Fit shows the whole world`);
+  // The other world.
+  await page.click('.wm-w:has-text("Ruin")');
+  await page.waitForFunction(() => document.querySelector(".wmap.wm-ruin"));
+  check(await page.locator('.wm-pin[href="#/wiki/place/kefkas-tower"]').count() === 1, `[map ${vp.tag}] World of Ruin has its own pins`);
+  await page.emulateMedia({ colorScheme: "dark" });
+  await page.screenshot({ path: path.join(SHOTS, `10-worldmap-ruin-dark-${vp.tag}.png`) });
+  await page.emulateMedia({ colorScheme: "light" });
+  // A pin gives the place's summary; the summary of a place in the walkthrough offers the map.
+  await page.goto(base + "#/walk/22");
+  await page.waitForSelector(".walk-ch .body a.ent-place");
+  const place = page.locator('.walk-ch .body a[href="#/wiki/place/thamasa"]').first();
+  await place.scrollIntoViewIfNeeded();
+  if (vp.touch) await place.tap(); else await place.hover();
+  await page.waitForSelector("#peek:not([hidden]) .pk-map");
+  await page.click("#peek .pk-map");
+  await page.waitForSelector(".wm-pin.on");
+  check(await page.locator('.wm-pin.on[href="#/wiki/place/thamasa"]').count() === 1, `[map ${vp.tag}] "On the map" from a summary shows the place`);
+  await page.click(".wmap .wk-back");
+  await page.waitForSelector(".walk-ch");
+  check(/#\/walk\/22$/.test(page.url()), `[map ${vp.tag}] back to the chapter`);
   await ctx.close();
 }
 
@@ -486,9 +457,9 @@ for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, heigh
     await page.waitForFunction((t) => document.querySelector("main h1")?.textContent === t, title);
     check(await page.getAttribute(id, "aria-current") === "page", `[shortcuts] ${id} opens its page and is highlighted`);
   }
-  await page.click('.toc-tracker[href="#/party"]');
   await page.click("#mapsBtn");
-  check(await page.locator("#tocMaps").isVisible(), "[shortcuts] Maps opens the Maps tab");
+  await page.waitForSelector(".wmap");
+  check(await page.getAttribute("#mapsBtn", "aria-current") === "page", "[shortcuts] Map opens the world map");
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(base + "#/party");
   await page.waitForSelector(".party");
@@ -497,8 +468,9 @@ for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, heigh
   check(!(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), "[shortcuts] no horizontal scroll at phone width");
   await page.screenshot({ path: path.join(SHOTS, "30-tabbar-phone.png") });
   await page.click("#mapsBtn");
-  check(await page.locator("#tocMaps").isVisible(), "[shortcuts] Maps opens the drawer on phones");
-  await page.screenshot({ path: path.join(SHOTS, "31-tabbar-maps.png") });
+  await page.waitForSelector(".wmap");
+  check(await noScroll(page), "[shortcuts] world map fits a phone");
+  await page.screenshot({ path: path.join(SHOTS, "31-tabbar-map.png") });
   await ctx.close();
 }
 
@@ -766,8 +738,6 @@ for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, heigh
   watch(page);
   await page.goto(base);
   await page.waitForSelector(".walk");
-  await page.setInputFiles("#mapFile", path.join(ROOT, "test/fixtures/ember-crown-maps.zip"));
-  await page.waitForFunction(() => document.querySelectorAll(".mp-item").length === 4, null, { timeout: 15000 });
   await page.goto(base + "#/walk/2");
   await page.waitForSelector("#walkDone");
   await page.click("#walkDone");
@@ -788,13 +758,8 @@ for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, heigh
   await dl.saveAs(backup);
   check(/^FF6 Guide backup \d{4}-\d\d-\d\d\.zip$/.test(dl.suggestedFilename()), `[backup] saved as ${dl.suggestedFilename()}`);
   const manifest = await page.evaluate(async (bytes) => { const { unzip } = await import("./js/zip.js"); const e = await unzip(new Uint8Array(bytes).buffer); return JSON.parse(new TextDecoder().decode(e.find((x) => x.name === "backup.json").data)); }, [...fs.readFileSync(backup)]);
-  check(!("guide" in manifest) && JSON.stringify(manifest.progress.walkDone) === '["escape-from-narshe"]', "[backup] holds walkthrough progress and no guide");
+  check(!("guide" in manifest) && !("maps" in manifest) && JSON.stringify(manifest.progress.walkDone) === '["escape-from-narshe"]', "[backup] holds walkthrough progress, no guide or maps");
   await page.click("#settingsSheet [data-close]");
-
-  // A backup zip added as maps is turned away rather than imported as loose images.
-  await page.setInputFiles("#mapFile", backup);
-  await page.waitForFunction(() => /full backup/.test(document.getElementById("toast").textContent));
-  check(await page.locator(".mp-item").count() === 4, "[backup] maps picker refuses a backup");
 
   // Restore on a fresh device: nothing to replace, so no question.
   const ctx2 = await browser.newContext({ viewport: { width: 1180, height: 820 } });
@@ -806,7 +771,6 @@ for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, heigh
   await p2.waitForSelector(".walk-ch");
   check(/Escape from Narshe/.test(await p2.textContent(".walk-ch .sec-h")), "[backup] restore resumes at the last chapter read");
   check(JSON.stringify(await doneKeys(p2)) === "[2]", "[backup] restored done marks");
-  check(await p2.locator("#tocMaps .mp-item").count() === 4 && await p2.locator("#tocMaps .mp-link").count() === 3, "[backup] restored maps and links");
   check((await p2.textContent(".walk-ch")).includes("Prns Donut"), "[backup] restored character names");
   check(/Heal Force/.test(await p2.evaluate(() => localStorage.getItem("ff6g:tags"))), "[backup] restored color-coding fixes");
   check(JSON.stringify(await p2.evaluate(() => JSON.parse(localStorage.getItem("ff6g:rages")))) === '["Stray Cat","Leaf Bunny"]', "[backup] restored Gau's Rages");
@@ -830,10 +794,11 @@ for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, heigh
   await p2.waitForSelector(".walk-ch");
   check((await p2.textContent(".walk-ch")).includes("Prns Donut"), "[backup] Replace restores the backup");
 
-  // A map pack chosen as a backup is explained.
-  await p2.setInputFiles("#backupFile", path.join(ROOT, "test/fixtures/ember-crown-maps.zip"));
+  // Some other .zip chosen as a backup is explained.
+  const other = await p2.evaluate(async () => { const { zip } = await import("./js/zip.js"); return [...new Uint8Array(await zip([{ name: "maps.json", data: "{}" }]).arrayBuffer())]; });
+  await p2.setInputFiles("#backupFile", { name: "pack.zip", mimeType: "application/zip", buffer: Buffer.from(other) });
   await p2.waitForFunction(() => /isn't a backup/.test(document.getElementById("toast").textContent));
-  check(true, "[backup] map pack chosen as a backup is explained");
+  check(true, "[backup] another .zip chosen as a backup is explained");
 
   // A backup from before 0.20.0 (with the imported guide) still restores everything else.
   const old = await p2.evaluate(async () => {
@@ -841,8 +806,9 @@ for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, heigh
     const m = { format: "ff6-guide-backup", version: 1, app: "0.19.0", createdAt: new Date().toISOString(),
       guide: { file: "guide/guide.txt", format: "text", name: "guide.txt", source: "text", importedAt: 1 },
       names: [{ from: "Terra", to: "Old Name" }], tags: [], rages: ["Guard"], gear: {}, party: null,
-      progress: { done: ["4.1.1"], last: "4.1.1", walkDone: ["the-raid-on-narshe"] }, maps: [], links: [] };
-    return [...new Uint8Array(await zip([{ name: "backup.json", data: JSON.stringify(m) }, { name: "guide/guide.txt", data: "old guide text" }]).arrayBuffer())];
+      progress: { done: ["4.1.1"], last: "4.1.1", walkDone: ["the-raid-on-narshe"] },
+      maps: [{ id: "m1", file: "maps/m1.png", title: "Old map", type: "image/png" }], links: [{ id: "l1", title: "Old link", url: "https://example.com" }] };
+    return [...new Uint8Array(await zip([{ name: "backup.json", data: JSON.stringify(m) }, { name: "guide/guide.txt", data: "old guide text" }, { name: "maps/m1.png", data: "png" }]).arrayBuffer())];
   });
   await p2.click("#settingsBtn");
   await p2.setInputFiles("#backupFile", { name: "old.zip", mimeType: "application/zip", buffer: Buffer.from(old) });
@@ -850,7 +816,7 @@ for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, heigh
   await Promise.all([p2.waitForEvent("load"), p2.click("#restoreYes")]);
   await p2.waitForSelector(".walk");
   const left = await p2.evaluate(async () => ({ guide: await (await import("./js/store.js")).idbGet("guide"), done: localStorage.getItem("ff6g:done"), names: localStorage.getItem("ff6g:names"), walk: localStorage.getItem("ff6g:walkDone") }));
-  check(!left.guide && left.done === null && /Old Name/.test(left.names) && /raid-on-narshe/.test(left.walk), "[backup] an older backup restores without its guide");
+  check(!left.guide && left.done === null && /Old Name/.test(left.names) && /raid-on-narshe/.test(left.walk), "[backup] an older backup restores without its guide or maps");
   await ctx2.close();
   await ctx.close();
 }

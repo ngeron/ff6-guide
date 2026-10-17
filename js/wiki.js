@@ -18,6 +18,7 @@ import { MONSTERS } from "./monsters-data.js";
 import { findMonster } from "./monsters.js";
 import { inline, chapterText } from "./walkthrough.js";
 import { esc } from "./render.js";
+import { worldsOf } from "./worldmap.js";
 
 const GEAR = ALL_GEAR.filter((g) => !g.gba);
 const slug = (s) => s.toLowerCase().replace(/['’]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -103,7 +104,7 @@ export function peekFor(href) {
   let m = href.match(/^#\/wiki\/([a-z]+)\/(.+)$/);
   if (m) {
     const e = getEntry(m[1], decodeURIComponent(m[2]));
-    if (e) return { label: kindLabel(e), name: e.name, sum: e.sum, href: e.href, color: COLOR[e.kind] };
+    if (e) return { label: kindLabel(e), name: e.name, sum: e.sum, href: e.href, color: COLOR[e.kind], map: e.kind === "place" && worldsOf(e.id).length ? `#/map/place/${e.id}` : null };
   }
   m = href.match(/^#\/monsters\/(.+)$/);
   if (m) {
@@ -258,6 +259,7 @@ function renderArticle(view, e, ctx) {
   if (e.kind === "party" && CHARS.some((c) => c.name === e.name)) links.push(`<a class="chip" href="#/party">Party page</a>`);
   if (e.kind === "esper") links.push(`<a class="chip" href="#/party">Espers on the Party page</a>`);
   if (e.kind === "item") links.push(`<a class="chip" href="#/gear">Inventory</a>`);
+  if (e.kind === "place" && worldsOf(e.id).length) links.push(`<a class="chip" href="#/map/place/${e.id}">On the world map</a>`);
   const alt = e.kind === "item" && e.gear.alt ? [e.gear.alt] : e.aka;
   view.innerHTML = ctx.rename(`
   <article class="sec wk-art">
@@ -295,7 +297,7 @@ export function bindPeek(container, ctx) {
     const p = peekFor(a.getAttribute("href"));
     if (!p) return;
     target = a;
-    pop.innerHTML = ctx.rename(`<p class="eyebrow">${esc(p.label)}</p><p class="pk-name ent ent-${p.color}">${esc(p.name)}</p>${p.sum ? `<p class="pk-sum">${inline(p.sum)}</p>` : ""}<a class="pk-open" href="${esc(p.href)}">${p.more ? `Open ${esc(p.more)}` : "Read more"} ›</a>`);
+    pop.innerHTML = ctx.rename(`<p class="eyebrow">${esc(p.label)}</p><p class="pk-name ent ent-${p.color}">${esc(p.name)}</p>${p.sum ? `<p class="pk-sum">${inline(p.sum)}</p>` : ""}<a class="pk-open" href="${esc(p.href)}">${p.more ? `Open ${esc(p.more)}` : "Read more"} ›</a>${p.map && !location.hash.startsWith("#/map") ? `<a class="pk-open pk-map" href="${p.map}">On the map ›</a>` : ""}`);
     pop.hidden = false;
     const r = a.getBoundingClientRect(), w = pop.offsetWidth, h = pop.offsetHeight;
     const left = Math.max(8, Math.min(innerWidth - w - 8, r.left + r.width / 2 - w / 2));

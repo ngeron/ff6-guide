@@ -1,5 +1,5 @@
 import { esc } from "./render.js";
-import { removeGuide, askPersist, getPref, setPref } from "./store.js";
+import { removeGuide, removeMaps, getPref, setPref } from "./store.js";
 import { makeBackup, readBackup, describeBackup, restoreBackup } from "./backup.js";
 import { renderRages, rageCounts } from "./rages.js";
 import { renderGear, gearCounts } from "./gear.js";
@@ -9,22 +9,21 @@ import { renderParty, partyCount } from "./party.js";
 import * as cloud from "./cloud.js";
 import { KINDS, KIND_LABEL, loadTags, saveTags, buildTerms, matcher, markNames } from "./tags.js";
 import { DEFAULT_NAMES, loadNames, saveNames, renamer } from "./names.js";
-import { loadWalkthrough, renderWalkIndex, renderWalkChapter, chapterText, chapterOf, loadDone as loadWalkDone, saveDone as saveWalkDone } from "./walkthrough.js";
-import { renderWiki, wikiTerms, linkFor, bindPeek, searchWiki } from "./wiki.js";
-import { initMaps, loadMaps, getMap, hasMaps, mapCounts, exportPack, removeAllMaps, itemsForChapter, importFiles as importMapFiles, renderPanel as renderMapsPanel, bindPanel as bindMapsPanel, renderViewer as renderMapViewer } from "./maps.js";
+import { loadWalkthrough, renderWalkIndex, renderWalkChapter, chapterText, loadDone as loadWalkDone, saveDone as saveWalkDone } from "./walkthrough.js";
+import { renderWiki, wikiTerms, linkFor, bindPeek, searchWiki, getEntry } from "./wiki.js";
+import { renderWorldMap, worldsOf, pinName, pinHref } from "./worldmap.js";
 
-const VERSION = "0.21.0";
+const VERSION = "0.22.0";
 const $ = (id) => document.getElementById(id);
 const root = document.documentElement;
 
 const state = {
   walk: null,       // the walkthrough: { parts, chapters } (walkthrough.js)
   chapter: null,    // number of the chapter on screen
-  currentMap: null,
   terms: null,      // color coding: Map(term -> kind)
   matcher: null,
   unrename: null,   // your character names -> the guide's names, for links
-  back: null,       // { n, y }: the chapter you left for a wiki article or monster card, and where you were on it
+  back: null,       // { n, y }: the chapter you left for a wiki article, monster card or the map, and where you were on it
   pendingQuery: "",
   searchText: null,
   wakeLock: null,
@@ -225,14 +224,13 @@ function reachedChapter() {
 }
 
 const chapterHref = (c) => "#/walk/" + c.n;
-const chapterFor = (rec) => chapterOf(state.walk, rec);
 
 /* ---------------- contents ---------------- */
 
 function buildToc() {
   const w = state.walk;
   const done = loadWalkDone();
-  const html = [`<div class="toc-in"><a class="toc-tracker" href="#/walk"><span class="t">Walkthrough</span><span class="cnt" id="walkCnt">${walkLabel()}</span></a><a class="toc-tracker" href="#/party"><span class="t">Party</span><span class="cnt" id="partyCnt">${partyLabel()}</span></a><a class="toc-tracker" href="#/wiki"><span class="t">Wiki</span></a><a class="toc-tracker" href="#/monsters"><span class="t">Monster intel</span></a><a class="toc-tracker" href="#/rages"><span class="t">Gau's Rages</span><span class="cnt" id="rageCnt">${rageLabel()}</span></a><a class="toc-tracker" href="#/gear"><span class="t">Inventory</span><span class="cnt" id="gearCnt">${gearLabel()}</span></a>`];
+  const html = [`<div class="toc-in"><a class="toc-tracker" href="#/walk"><span class="t">Walkthrough</span><span class="cnt" id="walkCnt">${walkLabel()}</span></a><a class="toc-tracker" href="#/party"><span class="t">Party</span><span class="cnt" id="partyCnt">${partyLabel()}</span></a><a class="toc-tracker" href="#/wiki"><span class="t">Wiki</span></a><a class="toc-tracker" href="#/map"><span class="t">World map</span></a><a class="toc-tracker" href="#/monsters"><span class="t">Monster intel</span></a><a class="toc-tracker" href="#/rages"><span class="t">Gau's Rages</span><span class="cnt" id="rageCnt">${rageLabel()}</span></a><a class="toc-tracker" href="#/gear"><span class="t">Inventory</span><span class="cnt" id="gearCnt">${gearLabel()}</span></a>`];
   if (w) {
     const n = w.chapters.filter((c) => done.has(c.slug)).length;
     html.push(`<p class="toc-progress" id="tocProgress">${n ? `${n} of ${w.chapters.length} chapters done` : `${w.chapters.length} chapters`}</p><ol class="toc-list">`);
@@ -278,7 +276,7 @@ function rageLabel() {
 function markTocCurrent() {
   const toc = $("toc");
   for (const a of toc.querySelectorAll("a[aria-current]")) a.removeAttribute("aria-current");
-  const h = walkRoute() === 0 ? "#/walk" : location.hash.replace(/^(#\/(?:monsters|wiki))\/.*/, "$1");
+  const h = walkRoute() === 0 ? "#/walk" : location.hash.replace(/^(#\/(?:monsters|wiki|map))\/.*/, "$1");
   const a = state.chapter
     ? toc.querySelector(`a[data-key="${state.chapter}"]`)
     : [...toc.querySelectorAll(".toc-tracker")].find((t) => t.getAttribute("href") === h);
@@ -377,17 +375,6 @@ addEventListener("hashchange", markShortcut);
 $("shortcuts").addEventListener("click", (e) => {
   if (e.target.closest("a.sc")) { closeSheets(); if (!wide()) setTocOpen(false); }
 });
-$("mapsBtn").onclick = () => {
-  closeSheets();
-  const showing = !$("toc").hidden && !$("tocMaps").hidden;
-  setPanelTab("maps");
-  setTocOpen(!(showing && !wide()) || wide());
-};
-
-const chips = (items) => items.map((it) => it.kind === "map"
-  ? `<a class="chip" href="${it.href}">${esc(it.title)}</a>`
-  : `<a class="chip ext" href="${esc(it.href)}" target="_blank" rel="noopener noreferrer">${esc(it.title)} ↗</a>`).join("");
-
 function walkCtx() {
   return {
     rename: renameHtml,
@@ -399,7 +386,7 @@ function walkCtx() {
       decorateNames(el);
       if (first) requestAnimationFrame(() => first.scrollIntoView({ block: "center" }));
     },
-    mapsFor: (c) => chips(itemsForChapter(c.n)),
+    mapsFor: (c) => (mapRoute(c, chapterWorld(c)).to ? `<a class="chip" href="#/map/ch/${c.n}">Where this chapter goes</a>` : ""),
     onDone: () => { buildToc(); updateProgressInfo(); },
     askUpto: (c) => askMarkThrough(c),
     toast,
@@ -464,73 +451,51 @@ function viewGear() {
   window.scrollTo(0, 0);
 }
 
-function viewMap(m) {
-  startView(`<span class="bt">${esc(m.title)}</span>`);
-  state.currentMap = m.id;
-  renderMapViewer($("view"), m);
-  setPanelTab("maps");
-  refreshMapsPanel();
+/* ---------------- world map ---------------- */
+
+const chapterWorld = (c) => (/ruin/i.test(c.part) ? "wor" : "wob");
+// The wiki places a chapter's @where lines name.
+const placesOf = (c) => c.where.map((w) => (linkFor(w, "place") || "").match(/^#\/wiki\/place\/(.+)$/)).filter(Boolean).map((m) => m[1]);
+// Where a chapter goes in a world: { chapter, from, to, also }, from being where the last
+// chapter (in the same world) ended.
+function mapRoute(c, world) {
+  const here = [...new Set(placesOf(c).filter((id) => worldsOf(id).includes(world)))];
+  let from = null;
+  for (let k = c.n - 2; k >= 0 && !from; k--) {
+    const p = state.walk.chapters[k];
+    if (chapterWorld(p) !== world) break;
+    from = placesOf(p).filter((id) => worldsOf(id).includes(world)).pop() || null;
+  }
+  return { chapter: c, from, to: here[0] || null, also: here.slice(1) };
+}
+// The chapter the map is about: the one you came from, or else the last one you opened.
+const mapChapter = () => state.walk && (state.walk.chapters[(state.back ? state.back.n : 0) - 1] || state.walk.chapters.find((c) => c.slug === getPref("walkLast", "")) || state.walk.chapters[0]);
+
+// arg: "", "ch/<n>", "wob", "wor" or "place/<id>".
+function viewWorldMap(arg) {
+  startView(`<span class="bt">World map</span>`, "#/map");
+  const m = arg.match(/^(ch|place)\/(.+)$/);
+  let c = mapChapter();
+  if (m && m[1] === "ch") c = state.walk && state.walk.chapters[+m[2] - 1] || c;
+  const here = c ? chapterWorld(c) : "wob";
+  let world = /^wo[br]$/.test(arg) ? arg : here, focus = null;
+  if (m && m[1] === "place") {
+    focus = m[2];
+    const ws = worldsOf(focus);
+    if (ws.length && !ws.includes(world)) world = ws[0];
+  }
+  const back = state.back && state.walk && state.walk.chapters[state.back.n - 1];
+  const r = renamer(names);
+  renderWorldMap($("view"), {
+    world, focus,
+    route: c && !focus && chapterWorld(c) === world ? mapRoute(c, world) : null,
+    back: back ? { n: back.n, title: r ? r(back.title) : back.title } : null,
+  }, {
+    name: (id) => { const n = pinName(id) || getEntry("place", id)?.name || id; return r ? r(n) : n; },
+    href: (id) => pinHref(id) || "#/wiki/place/" + id,
+  });
   window.scrollTo(0, 0);
 }
-
-/* ---------------- panel tabs and maps ---------------- */
-
-function setPanelTab(tab) {
-  const maps = tab === "maps";
-  $("tabContents").setAttribute("aria-selected", String(!maps));
-  $("tabMaps").setAttribute("aria-selected", String(maps));
-  $("tocContents").hidden = maps;
-  $("tocMaps").hidden = !maps;
-  setPref("panelTab", tab);
-}
-$("tabContents").onclick = () => { setPanelTab("contents"); markTocCurrent(); scrollTocToCurrent(); };
-$("tabMaps").onclick = () => setPanelTab("maps");
-
-function refreshMapsPanel() {
-  const panel = $("tocMaps");
-  const scroll = $("toc").scrollTop;
-  const open = panel.querySelector(".mp-form")?.open;
-  renderMapsPanel(panel, state.currentMap);
-  if (open !== undefined) panel.querySelector(".mp-form").open = open;
-  $("toc").scrollTop = scroll;
-}
-
-initMaps({
-  toast: (m) => toast(m),
-  chapterOf: chapterFor,
-  chapterOptions: (slug) => (state.walk ? state.walk.chapters : []).map((c) => `<option value="${esc(c.slug)}"${c.slug === slug ? " selected" : ""}>${c.n}. ${esc(c.title)}</option>`).join(""),
-  onChange: () => {
-    refreshMapsPanel();
-    // Update the map chips on the chapter on screen.
-    if (state.chapter && state.walk) {
-      const box = $("view").querySelector(".sec-maps");
-      const html = chips(itemsForChapter(state.chapter));
-      if (box) box.outerHTML = html ? `<div class="sec-maps"><span class="eyebrow">Maps</span>${html}</div>` : "";
-      else if (html) $("view").querySelector(".sec-h")?.insertAdjacentHTML("afterend", `<div class="sec-maps"><span class="eyebrow">Maps</span>${html}</div>`);
-    }
-  },
-});
-bindMapsPanel($("tocMaps"), () => $("mapFile").click());
-
-$("mapFile").addEventListener("change", async (e) => {
-  const files = [...(e.target.files || [])];
-  e.target.value = "";
-  if (!files.length) return;
-  toast("Adding maps…");
-  try {
-    const r = await importMapFiles(files, (msg) => toast(msg));
-    const parts = [];
-    if (r.added) parts.push(`${r.added} map${r.added === 1 ? "" : "s"}`);
-    if (r.linksAdded) parts.push(`${r.linksAdded} link${r.linksAdded === 1 ? "" : "s"}`);
-    const msg = parts.length ? `Added ${parts.join(" and ")}` : "Nothing new was added";
-    toast(r.problems.length ? `${msg}. ${r.problems[0]}.` : msg);
-    setPanelTab("maps");
-    askPersist();
-  } catch (ex) {
-    console.error(ex);
-    toast(ex && ex.message ? ex.message : "Those files couldn't be added.");
-  }
-});
 
 /* ---------------- bulk mark done ---------------- */
 
@@ -590,14 +555,10 @@ function route() {
   // Leaving a chapter for an article or a monster card: remember where you were, so coming
   // back to the chapter puts you there again.
   const from = state.chapter ? { n: state.chapter, y: window.scrollY } : null;
-  const peek = /^#\/(?:wiki|monsters)(?:\/|$)/.test(h);
+  const peek = /^#\/(?:wiki|monsters|map)(?:\/|$)/.test(h);
   state.back = peek ? from || state.back : walkRoute() ? state.back : null;
-  state.currentMap = null;
-  const mm = h.match(/^#\/map\/(.+)$/);
-  if (mm) {
-    const map = getMap(decodeURIComponent(mm[1]));
-    if (map) return viewMap(map);
-  }
+  const mm = h.match(/^#\/map(?:\/(.+))?$/);
+  if (mm) return viewWorldMap(decodeURIComponent(mm[1] || ""));
   if (h === "#/rages") return viewRages();
   if (h === "#/gear") return viewGear();
   if (h === "#/party") return viewParty();
@@ -647,7 +608,7 @@ $("backupFile").addEventListener("change", (e) => {
 });
 
 // Whether this browser holds anything a restore would replace.
-const hasData = () => hasMaps() || ["names", "tags", "rages", "gear", "party", "walkDone", "walkLast"].some((k) => getPref(k, null) !== null);
+const hasData = () => ["names", "tags", "rages", "gear", "party", "walkDone", "walkLast"].some((k) => getPref(k, null) !== null);
 
 // Reads a backup and, after asking if it would replace anything, restores it and restarts.
 async function startRestore(file, onError, onRestored = () => {}) {
@@ -658,7 +619,7 @@ async function startRestore(file, onError, onRestored = () => {}) {
     const msg = String(ex && ex.message || ex);
     if (msg !== "notbackup") console.error(ex);
     onError(msg === "notbackup"
-      ? "That .zip isn't a backup from this app. To add a map pack, use the Maps tab."
+      ? "That .zip isn't a backup from this app."
       : msg.startsWith("That ") ? msg : `That backup couldn't be read (${msg}).`);
     return;
   }
@@ -800,7 +761,6 @@ function openSheet(id) {
 }
 function closeSheets() {
   for (const id of ["searchSheet", "settingsSheet"]) $(id).hidden = true;
-  $("mapClearConfirm").hidden = true;
   if ($("scrim").hidden) document.body.classList.remove("locked");
 }
 for (const b of document.querySelectorAll("[data-close]")) b.onclick = closeSheets;
@@ -823,21 +783,7 @@ $("settingsBtn").onclick = () => { updateSettingsInfo(); openSheet("settingsShee
 
 function updateSettingsInfo() {
   updateProgressInfo();
-  const mc = mapCounts();
-  $("mapInfo").textContent = hasMaps()
-    ? `${mc.maps} map${mc.maps === 1 ? "" : "s"} and ${mc.links} link${mc.links === 1 ? "" : "s"} on this device. A map pack (.zip) holds just your maps, to share or add on another device.`
-    : "No maps on this device yet. Add them from the Maps tab in the side panel.";
-  for (const id of ["mapExportBtn", "mapClearBtn"]) $(id).disabled = !hasMaps();
 }
-$("mapExportBtn").onclick = () => exportPack();
-$("mapClearBtn").onclick = () => { $("mapClearConfirm").hidden = false; $("mapClearNo").focus(); };
-$("mapClearNo").onclick = () => { $("mapClearConfirm").hidden = true; };
-$("mapClearYes").onclick = async () => {
-  await removeAllMaps();
-  $("mapClearConfirm").hidden = true;
-  updateSettingsInfo();
-  toast("Maps and links removed");
-};
 
 /* ---------------- reset ---------------- */
 
@@ -938,6 +884,9 @@ async function start() {
   // Versions before 0.20.0 read an imported copy of Djibriel's guide. Remove it and its
   // progress; backups made back then still hold the guide.
   removeGuide().catch(() => {});
+  // Versions before 0.22.0 kept map images and links you added; the drawn world map replaced them.
+  removeMaps().catch(() => {});
+  setPref("panelTab", null);
   for (const k of ["done", "last", "pos", "savedText"]) setPref(k, null);
   try {
     state.walk = await loadWalkthrough();
@@ -949,9 +898,6 @@ async function start() {
   // Opening the app picks up at the last chapter read.
   const last = state.walk && state.walk.chapters.find((c) => c.slug === getPref("walkLast", ""));
   if (last && (!location.hash || location.hash === "#" || location.hash === "#/")) history.replaceState(null, "", chapterHref(last));
-  await loadMaps();
-  refreshMapsPanel();
-  setPanelTab(getPref("panelTab", "contents"));
   syncTocMode();
   route();
   markShortcut();
