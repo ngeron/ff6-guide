@@ -112,7 +112,7 @@ export async function renderWalkIndex(view, ctx) {
   <section class="walk">
     <p class="eyebrow">Final Fantasy VI · Pixel Remaster</p>
     <h1>Walkthrough</h1>
-    <p class="hint">A short route from the opening to the credits: where to go, the bosses, what's worth doing on the way, and good places to level up. Monster names open their Monster intel cards. Written for the Pixel Remaster.</p>
+    <p class="hint">A short route from the opening to the credits: where to go, the bosses, what's worth doing on the way, and good places to level up. Colored names open their wiki article or Monster intel card; hover over one (or tap it) for a short summary. Written for the Pixel Remaster.</p>
     <a class="continue" href="#/walk/${last.n}"><span class="eyebrow">${n ? "Continue" : "Start"}</span><span class="ct"><span class="num">${last.n}</span>${esc(last.title)}</span></a>
     <p class="stat">${total} chapters${n ? ` · ${n} done` : ""}</p>
     ${w.parts.map((p) => `<h2 class="sheet-sub">${esc(p.title)}</h2><ol class="chapters wt-list">${p.chapters.map((i) => { const c = w.chapters[i - 1]; return `<li><a href="#/walk/${c.n}"${done.has(c.slug) ? ' class="done"' : ""}><span class="n">${c.n}</span><span class="t">${esc(c.title)}</span>${done.has(c.slug) ? `<span class="cnt">✓</span>` : ""}</a></li>`; }).join("")}</ol>`).join("")}

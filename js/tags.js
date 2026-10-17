@@ -1,21 +1,25 @@
-// Color coding: marks playable characters, monsters, bosses and places in the walkthrough so a
-// chapter is easier to scan.
+// Color coding: marks playable characters, other people, items and espers, monsters, bosses and
+// places in the walkthrough so a chapter is easier to scan. A name with a wiki article or a
+// Monster intel card becomes a link to it (see wiki.js).
 //
 // Names come from four places, most trusted first:
 //   1. Your own corrections ("tags" setting): [{ text, kind }], where kind is one of KINDS or
 //      "none" to stop a word being colored.
 //   2. Your character names (names.js): the names you chose count as playable characters.
 //   3. The app's own data: monsters and bosses from monsters-data.js, places from the
-//      walkthrough's @where lines (passed in by app.js).
+//      walkthrough's @where lines, and the wiki's characters, people, places, items and espers
+//      (passed in by app.js).
 //   4. Built-in lists of FF6 names below.
 // When a name lands in more than one group, the first match in PRIORITY wins.
 // Only capitalized words match (or all capitals), so "shadow" and "mog" in ordinary text don't.
 
 import { getPref, setPref } from "./store.js";
 
-export const KINDS = ["party", "boss", "enemy", "place"];
-export const KIND_LABEL = { party: "Characters", boss: "Bosses", enemy: "Monsters", place: "Places" };
-const PRIORITY = ["boss", "party", "enemy", "place"];
+export const KINDS = ["party", "npc", "boss", "enemy", "place", "item"];
+export const KIND_LABEL = { party: "Characters", npc: "People", boss: "Bosses", enemy: "Monsters", place: "Places", item: "Items & espers" };
+const PRIORITY = ["party", "npc", "item", "boss", "enemy", "place"];
+// Monster names that are also everyday words; they're colored only where the walkthrough links them.
+const COMMON = new Set(["Don", "Magic"]);
 
 const BUILTIN = {
   party: ["Terra", "Locke", "Edgar", "Sabin", "Celes", "Cyan", "Shadow", "Gau", "Setzer", "Mog", "Strago", "Relm",
@@ -43,7 +47,7 @@ const plausible = (s) => s.length >= 3 && s.length <= 40 && /^\p{Lu}/u.test(s) &
 // found: { boss: [...], enemy: [...], place: [...] } from the app's data.
 export function buildTerms(found = {}, names = [], tags = []) {
   const byKind = Object.fromEntries(KINDS.map((k) => [k, new Set()]));
-  for (const k of KINDS) for (const t of found[k] || []) { const c = clean(t); if (plausible(c)) byKind[k].add(c); }
+  for (const k of KINDS) for (const t of found[k] || []) { const c = clean(t); if (plausible(c) && !COMMON.has(c)) byKind[k].add(c); }
   for (const k of KINDS) for (const t of BUILTIN[k] || []) byKind[k].add(t);
   for (const n of names) { const to = (n.to || "").trim(); if (to) byKind.party.add(to); }
   const terms = new Map();
@@ -63,15 +67,17 @@ export function matcher(terms) {
   const lookup = new Map();
   for (const [t, k] of terms) { lookup.set(t, k); lookup.set(t.toUpperCase(), k); }
   const alts = [...lookup.keys()].sort((a, b) => b.length - a.length).map(reEsc).join("|");
-  const re = new RegExp(`(?<![\\p{L}\\p{N}])(?:${alts})(?:e?s)?(?![\\p{L}\\p{N}])`, "gu");
+  // Not followed by a letter, or by an apostrophe and letters other than a possessive 's ("Don't").
+  const re = new RegExp(`(?<![\\p{L}\\p{N}])(?:${alts})(?:e?s)?(?![\\p{L}\\p{N}])(?!['’](?!s(?![\\p{L}\\p{N}]))\\p{L})`, "gu");
   const kindOf = (m) => lookup.get(m) || lookup.get(m.replace(/e?s$/, "")) || lookup.get(m.replace(/s$/, ""));
   return { re, kindOf };
 }
 
-const SKIP = "a, button, .toc, .num, .sec-maps, .pager, mark, .ent, script, style";
+const SKIP = "a, button, summary, .toc, .num, .sec-maps, .pager, mark, .ent, script, style";
 
-// Wraps names in the container's text with <span class="ent ent-<kind>">.
-export function markNames(container, m) {
+// Wraps names in the container's text with <span class="ent ent-<kind>">, or with a link
+// <a class="ent ent-<kind>"> where linkOf(name, kind) gives one.
+export function markNames(container, m, linkOf = () => null) {
   if (!container || !m) return;
   const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, {
     acceptNode: (n) => (n.parentElement && n.parentElement.closest(SKIP) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT),
@@ -89,8 +95,10 @@ export function markNames(container, m) {
       const kind = m.kindOf(hit[0]);
       if (kind) {
         frag.appendChild(document.createTextNode(t.slice(pos, hit.index)));
-        const span = document.createElement("span");
+        const href = linkOf(hit[0], kind);
+        const span = document.createElement(href ? "a" : "span");
         span.className = "ent ent-" + kind;
+        if (href) span.href = href;
         span.textContent = hit[0];
         frag.appendChild(span);
         pos = hit.index + hit[0].length;

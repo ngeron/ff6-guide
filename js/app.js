@@ -10,9 +10,10 @@ import * as cloud from "./cloud.js";
 import { KINDS, KIND_LABEL, loadTags, saveTags, buildTerms, matcher, markNames } from "./tags.js";
 import { DEFAULT_NAMES, loadNames, saveNames, renamer } from "./names.js";
 import { loadWalkthrough, renderWalkIndex, renderWalkChapter, chapterText, chapterOf, loadDone as loadWalkDone, saveDone as saveWalkDone } from "./walkthrough.js";
+import { renderWiki, wikiTerms, linkFor, bindPeek, searchWiki } from "./wiki.js";
 import { initMaps, loadMaps, getMap, hasMaps, mapCounts, exportPack, removeAllMaps, itemsForChapter, importFiles as importMapFiles, renderPanel as renderMapsPanel, bindPanel as bindMapsPanel, renderViewer as renderMapViewer } from "./maps.js";
 
-const VERSION = "0.20.0";
+const VERSION = "0.21.0";
 const $ = (id) => document.getElementById(id);
 const root = document.documentElement;
 
@@ -22,6 +23,8 @@ const state = {
   currentMap: null,
   terms: null,      // color coding: Map(term -> kind)
   matcher: null,
+  unrename: null,   // your character names -> the guide's names, for links
+  back: null,       // { n, y }: the chapter you left for a wiki article or monster card, and where you were on it
   pendingQuery: "",
   searchText: null,
   wakeLock: null,
@@ -191,15 +194,34 @@ function toast(msg) {
 
 /* ---------------- walkthrough data ---------------- */
 
-// Names to color: monsters and bosses from the monster data, places from the walkthrough.
+// Names to color: monsters and bosses from the monster data, places from the walkthrough, and
+// everything with a wiki article.
 function indexTerms() {
-  const found = { boss: [], enemy: [], place: [] };
+  const found = { boss: [], enemy: [], ...wikiTerms() };
   for (const m of MONSTERS) found[m.boss ? "boss" : "enemy"].push(m.name);
   for (const c of state.walk ? state.walk.chapters : []) found.place.push(...c.where);
   state.terms = buildTerms(found, names, tags);
   state.matcher = matcher(state.terms);
+  state.unrename = new Map(names.filter((n) => n.from.trim() && n.to.trim()).map((n) => [n.to.trim().toLowerCase(), n.from.trim()]));
   state.searchText = null;
   renderLegend();
+}
+
+// Colors names in el and links them to their articles (except self, the article on screen).
+function decorateNames(el, self = null) {
+  if (!el || !prefs.colorNames) return;
+  markNames(el, state.matcher, (text, kind) => {
+    const href = linkFor(state.unrename.get(text.toLowerCase()) || text, kind);
+    return href === self ? null : href;
+  });
+}
+
+// The furthest chapter you've reached: the last one opened, or the last one marked done.
+function reachedChapter() {
+  const w = state.walk;
+  if (!w) return 0;
+  const done = loadWalkDone(), last = getPref("walkLast", "");
+  return Math.max(0, ...w.chapters.filter((c) => done.has(c.slug) || c.slug === last).map((c) => c.n));
 }
 
 const chapterHref = (c) => "#/walk/" + c.n;
@@ -210,7 +232,7 @@ const chapterFor = (rec) => chapterOf(state.walk, rec);
 function buildToc() {
   const w = state.walk;
   const done = loadWalkDone();
-  const html = [`<div class="toc-in"><a class="toc-tracker" href="#/walk"><span class="t">Walkthrough</span><span class="cnt" id="walkCnt">${walkLabel()}</span></a><a class="toc-tracker" href="#/party"><span class="t">Party</span><span class="cnt" id="partyCnt">${partyLabel()}</span></a><a class="toc-tracker" href="#/monsters"><span class="t">Monster intel</span></a><a class="toc-tracker" href="#/rages"><span class="t">Gau's Rages</span><span class="cnt" id="rageCnt">${rageLabel()}</span></a><a class="toc-tracker" href="#/gear"><span class="t">Inventory</span><span class="cnt" id="gearCnt">${gearLabel()}</span></a>`];
+  const html = [`<div class="toc-in"><a class="toc-tracker" href="#/walk"><span class="t">Walkthrough</span><span class="cnt" id="walkCnt">${walkLabel()}</span></a><a class="toc-tracker" href="#/party"><span class="t">Party</span><span class="cnt" id="partyCnt">${partyLabel()}</span></a><a class="toc-tracker" href="#/wiki"><span class="t">Wiki</span></a><a class="toc-tracker" href="#/monsters"><span class="t">Monster intel</span></a><a class="toc-tracker" href="#/rages"><span class="t">Gau's Rages</span><span class="cnt" id="rageCnt">${rageLabel()}</span></a><a class="toc-tracker" href="#/gear"><span class="t">Inventory</span><span class="cnt" id="gearCnt">${gearLabel()}</span></a>`];
   if (w) {
     const n = w.chapters.filter((c) => done.has(c.slug)).length;
     html.push(`<p class="toc-progress" id="tocProgress">${n ? `${n} of ${w.chapters.length} chapters done` : `${w.chapters.length} chapters`}</p><ol class="toc-list">`);
@@ -256,7 +278,7 @@ function rageLabel() {
 function markTocCurrent() {
   const toc = $("toc");
   for (const a of toc.querySelectorAll("a[aria-current]")) a.removeAttribute("aria-current");
-  const h = walkRoute() === 0 ? "#/walk" : location.hash.replace(/^(#\/monsters)\/.*/, "$1");
+  const h = walkRoute() === 0 ? "#/walk" : location.hash.replace(/^(#\/(?:monsters|wiki))\/.*/, "$1");
   const a = state.chapter
     ? toc.querySelector(`a[data-key="${state.chapter}"]`)
     : [...toc.querySelectorAll(".toc-tracker")].find((t) => t.getAttribute("href") === h);
@@ -374,7 +396,7 @@ function walkCtx() {
       const q = state.pendingQuery;
       state.pendingQuery = "";
       const first = q ? highlight(el, q) : null;
-      if (prefs.colorNames) markNames(el, state.matcher);
+      decorateNames(el);
       if (first) requestAnimationFrame(() => first.scrollIntoView({ block: "center" }));
     },
     mapsFor: (c) => chips(itemsForChapter(c.n)),
@@ -404,6 +426,20 @@ function viewWalk(n, opts = {}) {
     if (wide() && !$("toc").hidden) scrollTocToCurrent();
   });
   else renderWalkIndex($("view"), walkCtx()).then(() => { if (opts.y) window.scrollTo(0, opts.y); });
+}
+
+function viewWiki(kind, id) {
+  startView(`<span class="bt">Wiki</span>`, "#/wiki");
+  const back = state.back && state.walk && state.walk.chapters[state.back.n - 1];
+  const e = renderWiki($("view"), kind, id, {
+    rename: renameHtml,
+    decorate: decorateNames,
+    reached: reachedChapter,
+    chapters: () => (state.walk ? state.walk.chapters : []),
+    back: back ? { n: back.n, title: renamer(names)?.(back.title) || back.title } : null,
+  });
+  if (e) setBar(renameHtml(`<span class="bt">${esc(e.name)}</span>`), "#/wiki");
+  window.scrollTo(0, 0);
 }
 
 function viewParty() {
@@ -551,6 +587,11 @@ function updateProgressInfo() {
 function route() {
   closeSheets();
   const h = location.hash;
+  // Leaving a chapter for an article or a monster card: remember where you were, so coming
+  // back to the chapter puts you there again.
+  const from = state.chapter ? { n: state.chapter, y: window.scrollY } : null;
+  const peek = /^#\/(?:wiki|monsters)(?:\/|$)/.test(h);
+  state.back = peek ? from || state.back : walkRoute() ? state.back : null;
   state.currentMap = null;
   const mm = h.match(/^#\/map\/(.+)$/);
   if (mm) {
@@ -560,11 +601,15 @@ function route() {
   if (h === "#/rages") return viewRages();
   if (h === "#/gear") return viewGear();
   if (h === "#/party") return viewParty();
+  const wk = h.match(/^#\/wiki(?:\/([a-z]+)\/(.+))?$/);
+  if (wk) return viewWiki(wk[1], wk[2] && decodeURIComponent(wk[2]));
   const mn = h.match(/^#\/monsters(?:\/(.+))?$/);
   if (mn) return viewMonsters(mn[1] ? findMonster(decodeURIComponent(mn[1])) : null);
   const n = walkRoute();
   if (n === null) { history.replaceState(null, "", "#/"); return viewWalk(0); }
-  viewWalk(n);
+  const back = state.back;
+  state.back = null;
+  viewWalk(n, back && back.n === n ? { y: back.y } : {});
 }
 addEventListener("hashchange", route);
 
@@ -689,15 +734,25 @@ function runSearch() {
     .sort((a, b) => (b.name.toLowerCase().startsWith(ql) - a.name.toLowerCase().startsWith(ql)) || a.name.localeCompare(b.name));
   const seen = new Set();
   const monHits = mons.filter((m) => !seen.has(m.name) && seen.add(m.name)).slice(0, 6);
+  const wikiHits = searchWiki(ql, renamer(names));
   const parts = [];
   if (hits.length) parts.push(`${total} match${total === 1 ? "" : "es"} in ${hits.length} chapter${hits.length === 1 ? "" : "s"}`);
+  if (wikiHits.length) parts.push(`${wikiHits.length} wiki article${wikiHits.length === 1 ? "" : "s"}`);
   if (monHits.length) parts.push(`${seen.size} monster${seen.size === 1 ? "" : "s"}`);
   $("searchCount").textContent = parts.join(" · ") || "No matches.";
   const label = (c) => renameHtml(`<span class="num">${c.n}</span>${esc(c.title)}`);
   list.innerHTML = (numHit ? `<li><a href="${chapterHref(numHit)}" data-q=""><span class="r-h">${label(numHit)}</span><span class="r-s">Go to chapter</span></a></li>` : "") +
+    renameHtml(wikiHits.slice(0, 6).map((e) => `<li><a href="${e.href}" data-q=""><span class="r-h"><span class="ent ent-${e.color}">${esc(e.name)}</span></span><span class="r-s">Wiki · ${esc(e.label)}${e.sum ? " · " + esc(e.sum) : ""}</span></a></li>`).join("")) +
     monHits.map((m) => `<li><a href="#/monsters/${encodeURIComponent(m.name)}" data-q=""><span class="r-h"><span class="ent ent-${m.boss ? "boss" : "enemy"}">${esc(m.name)}</span></span><span class="r-s">Monster intel${m.boss ? " · boss" : ""}${m.alt && m.alt !== m.name ? ` · was ${esc(m.alt)}` : ""}</span></a></li>`).join("") +
     hits.slice(0, 100).map((h) => `<li><a href="${chapterHref(h.c)}" data-q="${esc(q)}"><span class="r-h">${label(h.c)}${h.n > 1 ? `<span class="cnt">${h.n}</span>` : ""}</span><span class="r-s">${snippet(texts[h.i], h.first, q.length)}</span></a></li>`).join("");
 }
+// Colored names in a page: a summary on hover (or first tap), and the article on click.
+bindPeek($("view"), { el: $("peek"), rename: renameHtml });
+// A chapter listed in a wiki article opens with the name highlighted.
+$("view").addEventListener("click", (e) => {
+  const a = e.target.closest(".wk-refs a[data-q]");
+  if (a) state.pendingQuery = renamer(names)?.(a.dataset.q) || a.dataset.q;
+});
 $("q").addEventListener("input", () => { clearTimeout(searchTimer); searchTimer = setTimeout(runSearch, 160); setPref("lastQuery", $("q").value); });
 $("results").addEventListener("click", (e) => {
   const a = e.target.closest("a");

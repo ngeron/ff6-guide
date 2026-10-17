@@ -30,6 +30,8 @@
       <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="m15.5 8.5-2.2 4.8-4.8 2.2 2.2-4.8z"/></svg><span class="sc-l">Route</span></a>
     <a class="ib sc" id="partyBtn" href="#/party" aria-label="Party" title="Party">
       <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 19.5c.5-3.6 3-5.6 6-5.6s5.5 2 6 5.6"/><circle cx="16.5" cy="9" r="2.6"/><path d="M15.6 14.1c2.9-.4 5 1.4 5.4 4.6"/></svg><span class="sc-l">Party</span></a>
+    <a class="ib sc" id="wikiBtn" href="#/wiki" aria-label="Wiki" title="Wiki">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5c2.8-1 5.5-.8 8 1 2.5-1.8 5.2-2 8-1v13c-2.8-1 -5.5-.8-8 1-2.5-1.8-5.2-2-8-1z"/><path d="M12 6.5v13"/></svg><span class="sc-l">Wiki</span></a>
     <a class="ib sc" id="monsterBtn" href="#/monsters" aria-label="Monster intel" title="Monster intel">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 10c0-4 3-6.5 7-6.5s7 2.5 7 6.5v9.5l-2.3-1.6-2.4 1.6-2.3-1.6-2.3 1.6-2.4-1.6L5 19.5z"/><circle cx="9.3" cy="10.5" r="1.2"/><circle cx="14.7" cy="10.5" r="1.2"/></svg><span class="sc-l">Monsters</span></a>
     <a class="ib sc" id="ragesBtn" href="#/rages" aria-label="Gau's Rages" title="Gau's Rages">
@@ -201,6 +203,7 @@
 
 <input type="file" id="backupFile" accept=".zip,application/zip" hidden>
 <input type="file" id="mapFile" accept="image/*,.zip,.json,application/zip,application/json" multiple hidden>
+<div id="peek" class="peek" role="tooltip" hidden></div>
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
 <script type="module" src="js/app.js"></script>

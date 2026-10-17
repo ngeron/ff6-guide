@@ -17,14 +17,15 @@ A Final Fantasy VI companion web app, used on an iPad while playing on another d
 ```
 index.html               shell: top bar with tool shortcuts, left panel (Contents / Maps tabs), search and settings sheets, dialogs
 css/app.css              all styles; theme tokens at the top
-js/app.js                routing (#/ and #/walk, #/walk/<n>, #/party, #/monsters/<name>, #/rages, #/gear, #/map/<id>), contents, search, settings, bulk mark done, backup and Drive UI
+js/app.js                routing (#/ and #/walk, #/walk/<n>, #/wiki, #/wiki/<kind>/<id>, #/party, #/monsters/<name>, #/rages, #/gear, #/map/<id>), contents, search, settings, bulk mark done, backup and Drive UI
 js/walkthrough.js        the walkthrough (read from walkthrough/ff6-pr.md; format notes at the top of that file): chapter list and pages, done marks ("walkDone"), last chapter ("walkLast"), search text, and which chapter a map belongs to
 walkthrough/ff6-pr.md    the walkthrough text: ORIGINAL, written for this app
 js/render.js             esc() for HTML strings
 js/store.js              IndexedDB (maps) and localStorage (settings, progress)
 js/maps.js, js/zip.js    maps panel, map packs (.zip + maps.json), map viewer; maps and links attach to a chapter by slug, or by an old guide section number
 js/names.js              character renames, applied when the walkthrough is shown
-js/tags.js               color coding: characters, monsters, bosses and places; marks them in the page
+js/tags.js               color coding: characters, people, items and espers, monsters, bosses and places; marks them in the page and links them
+js/wiki.js, wiki-data.js  wiki (#/wiki): articles on characters, people and places (ORIGINAL text, spoilers after a chapter folded until you reach it), espers and items from the data files; where colored names link; the summary popup (hover, or first tap on touch)
 js/rages.js, rages-data.js  Gau's Rages tracker (#/rages) and its data (credited, MIT)
 js/gear.js, gear-data.js    inventory tracker (#/gear): counts, prices, sources (data CC BY-SA, credited)
 js/party.js, optimizer.js, party-data.js, espers-data.js  Party page (#/party): met characters, levels, load-outs, espers (acquired, equipped, spells learned) (equipping moves items out of the gear bag), and the load-out optimizer (FF6 damage formulas; see optimizer.js header)

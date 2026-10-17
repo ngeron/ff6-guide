@@ -1,6 +1,6 @@
 // Offline support. App files are fetched fresh when online (so changes pushed to GitHub show up
 // on the next load) and served from the cache when offline.
-const CACHE = "ff6-guide-v17";
+const CACHE = "ff6-guide-v18";
 // Monster pictures from the Final Fantasy Wiki, kept across app updates.
 const IMG = "ff6-guide-img";
 const IMG_HOST = "static.wikia.nocookie.net";
@@ -27,6 +27,8 @@ const APP = [
   "js/espers-data.js",
   "js/cloud.js",
   "js/walkthrough.js",
+  "js/wiki.js",
+  "js/wiki-data.js",
   "walkthrough/ff6-pr.md",
   "js/zip.js",
   "manifest.webmanifest",

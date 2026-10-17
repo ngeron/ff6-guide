@@ -480,8 +480,8 @@ for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, heigh
   await page.goto(base);
   await page.waitForSelector(".walk");
   const inBar = await page.evaluate(() => document.getElementById("shortcuts").getBoundingClientRect().top < 60);
-  check(inBar && await page.locator("#shortcuts .sc").count() === 6, "[shortcuts] six shortcuts in the top bar on iPad");
-  for (const [id, title] of [["#partyBtn", "Party"], ["#ragesBtn", "Gau's Rages"], ["#gearBtn", "Inventory"], ["#monsterBtn", "Monster intel"]]) {
+  check(inBar && await page.locator("#shortcuts .sc").count() === 7, "[shortcuts] seven shortcuts in the top bar on iPad");
+  for (const [id, title] of [["#wikiBtn", "Wiki"], ["#partyBtn", "Party"], ["#ragesBtn", "Gau's Rages"], ["#gearBtn", "Inventory"], ["#monsterBtn", "Monster intel"]]) {
     await page.click(id);
     await page.waitForFunction((t) => document.querySelector("main h1")?.textContent === t, title);
     check(await page.getAttribute(id, "aria-current") === "page", `[shortcuts] ${id} opens its page and is highlighted`);
@@ -677,6 +677,85 @@ for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, heigh
   await page.click("#settingsSheet [data-close]");
   await page.waitForFunction(() => !document.querySelector(".walk-ch .body .ent:not(.wt-mon)"));
   check(true, "[colors] switch turns colors off");
+  await ctx.close();
+}
+
+// Wiki: colored names link to articles, summaries pop up, later story stays folded.
+{
+  const ctx = await browser.newContext({ viewport: { width: 1180, height: 820 } });
+  const page = await ctx.newPage();
+  watch(page);
+  await page.goto(base + "#/walk/19");
+  await page.waitForSelector(".walk-ch .body");
+  const mog = page.locator('.walk-ch .body a.ent-party[href="#/wiki/party/mog"]').first();
+  check(await mog.count() === 1, "[wiki] Mog in the walkthrough links to his article");
+  check(await page.locator('.walk-ch .body a.ent-item[href="#/wiki/item/gold-hairpin"]').count() >= 1, "[wiki] items are colored and linked");
+  check(!(await page.evaluate(() => [...document.querySelectorAll("#view .ent")].some((e) => e.textContent === "Don"))), "[wiki] \"Don't\" isn't colored as a monster");
+  await mog.scrollIntoViewIfNeeded();
+  await mog.hover();
+  await page.waitForSelector("#peek:not([hidden])");
+  check(/Mog/.test(await page.textContent("#peek .pk-name")) && (await page.textContent("#peek .pk-sum")).length > 20, "[wiki] hovering shows a summary");
+  await page.screenshot({ path: path.join(SHOTS, "40-wiki-peek.png") });
+  const y = await page.evaluate(() => scrollY);
+  await mog.click();
+  await page.waitForFunction(() => document.querySelector(".wk-art h1")?.textContent === "Mog");
+  check(await page.locator('.wk-refs a[href="#/walk/19"]').count() === 1, "[wiki] article lists the chapters that mention it");
+  check(await page.locator('.wk-body a.ent-party').count() > 0 && await page.locator('.wk-body a[href="#/wiki/party/mog"]').count() === 0, "[wiki] an article links others but not itself");
+  check(await page.locator(".wk-later").count() >= 1 && !(await page.locator(".wk-later").first().evaluate((d) => d.open)), "[wiki] later story is folded");
+  await page.screenshot({ path: path.join(SHOTS, "41-wiki-article.png"), fullPage: true });
+  await page.click(".wk-back");
+  await page.waitForSelector(".walk-ch .body");
+  await page.waitForFunction((y0) => Math.abs(scrollY - y0) < 40, y);
+  check(true, "[wiki] back to the chapter, at the same place");
+  // The monster links get a summary too.
+  await page.goto(base + "#/walk/1");
+  await page.waitForSelector(".walk-ch a.wt-mon");
+  await page.hover('.walk-ch a.wt-mon[href="#/monsters/Ymir"]');
+  await page.waitForSelector("#peek:not([hidden])");
+  check(/Ymir/.test(await page.textContent("#peek")) && /HP/.test(await page.textContent("#peek")), "[wiki] monster links show their stats");
+  // Index and filter.
+  await page.goto(base + "#/wiki");
+  await page.waitForSelector(".wk-group");
+  check(await page.locator(".wk-group").count() >= 8, "[wiki] index lists the groups");
+  await page.fill("#wkQ", "narshe");
+  check(await page.locator('.wk-list li:not([hidden]) a[href="#/wiki/place/narshe"]').count() === 1, "[wiki] filter finds a place");
+  await page.press("#wkQ", "Enter");
+  await page.waitForFunction(() => /#\/wiki\/place\//.test(location.hash));
+  check(true, "[wiki] Enter opens the first match");
+  // Reached the end: nothing folded.
+  await page.evaluate(() => localStorage.setItem("ff6g:walkLast", JSON.stringify("the-final-battle")));
+  await page.goto(base + "#/wiki/party/mog");
+  await page.reload();
+  await page.waitForSelector(".wk-art");
+  check(await page.locator(".wk-later").count() === 0, "[wiki] later story shows once you've reached it");
+  await page.emulateMedia({ colorScheme: "dark" });
+  await page.screenshot({ path: path.join(SHOTS, "42-wiki-article-dark.png"), fullPage: true });
+  // Search finds articles.
+  await page.click("#searchBtn");
+  await page.fill("#q", "gold hair");
+  await page.waitForSelector('.results a[href="#/wiki/item/gold-hairpin"]');
+  check(true, "[wiki] search finds wiki articles");
+  await ctx.close();
+}
+// Wiki on a phone with touch: the first tap shows the summary, its button opens the article.
+{
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+  const page = await ctx.newPage();
+  watch(page);
+  await page.goto(base + "#/walk/19");
+  await page.waitForSelector(".walk-ch .body");
+  const mog = page.locator('.walk-ch .body a[href="#/wiki/party/mog"]').first();
+  await mog.scrollIntoViewIfNeeded();
+  await mog.tap();
+  await page.waitForSelector("#peek:not([hidden])");
+  check(/#\/walk\/19$/.test(page.url()), "[wiki] a tap shows the summary and stays on the page");
+  await page.screenshot({ path: path.join(SHOTS, "43-wiki-peek-phone.png") });
+  await page.tap("#peek .pk-open");
+  await page.waitForSelector(".wk-art");
+  check(await noScroll(page), "[wiki] article fits a phone");
+  await page.goto(base + "#/wiki");
+  await page.waitForSelector(".wk-group");
+  check(await noScroll(page), "[wiki] index fits a phone");
   await ctx.close();
 }
 
