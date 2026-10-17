@@ -1,5 +1,5 @@
 // Walkthrough: a short, original route through the game (walkthrough/ff6-pr.md), shown as a
-// chapter index (#/walk) and chapter pages (#/walk/<n>). Format notes are at the top of the file.
+// chapter index (#/ and #/walk) and chapter pages (#/walk/<n>). Format notes are at the top of the file.
 // Done chapters are stored by slug in the "walkDone" setting; the last chapter opened in "walkLast".
 
 import { getPref, setPref } from "./store.js";
@@ -75,9 +75,32 @@ const blocksHtml = (blocks) => blocks.map((b) => (b.type === "ul" ? `<ul>${b.ite
 const SEC_CLASS = (t) => (/^boss/i.test(t) ? "wt-boss" : /^monsters/i.test(t) ? "wt-monsters" : /^don't miss/i.test(t) ? "wt-miss" : /grind/i.test(t) ? "wt-grind" : /side/i.test(t) ? "wt-side" : "");
 
 export const loadDone = () => new Set(getPref("walkDone", []));
-const saveDone = (set) => setPref("walkDone", set.size ? [...set] : null);
+export const saveDone = (set) => setPref("walkDone", set.size ? [...set] : null);
 
-// ctx: { rename(html) -> html, mark(el), guideHref(num) -> href|null, mapsFor(num) -> html, toast }
+// Plain text of a chapter, for search: markup dropped, monster links reduced to what's shown.
+const plain = (s) => s.replace(/\[\[([^\]|]+)(?:\|[^\]]+)?\]\]/g, "$1").replace(/\*\*([^*]+)\*\*/g, "$1").replace(/\*([^*]+)\*/g, "$1");
+const blocksText = (blocks) => blocks.map((b) => (b.type === "ul" ? b.items.join("\n") : b.text)).join("\n");
+export const chapterText = (c) => [c.title, blocksText(c.intro), ...c.sections.map((s) => s.title + "\n" + blocksText(s.blocks))].map(plain).join("\n");
+
+// Maps and links are tied to a chapter by its slug ("chapter"), or by a section number of
+// Djibriel's guide ("section", from older map packs): that lands in the chapter with the
+// highest @guide number at or below it.
+const cmpNum = (a, b) => {
+  const x = a.split(".").map(Number), y = b.split(".").map(Number);
+  for (let i = 0; i < Math.max(x.length, y.length); i++) { const d = (x[i] || 0) - (y[i] || 0); if (d) return d; }
+  return 0;
+};
+export function chapterOf(w, rec) {
+  if (!w || !rec) return null;
+  if (rec.chapter) return w.chapters.find((c) => c.slug === rec.chapter) || null;
+  const num = String(rec.section || "").trim().replace(/\.$/, "");
+  if (!/^\d+(\.\d+)*$/.test(num)) return null;
+  let best = null;
+  for (const c of w.chapters) if (c.guide && cmpNum(c.guide, num) <= 0 && (!best || cmpNum(c.guide, best.guide) > 0)) best = c;
+  return best;
+}
+
+// ctx: { rename(html) -> html, decorate(bodyEl), mapsFor(chapter) -> html, onDone(), askUpto(chapter), toast }
 export async function renderWalkIndex(view, ctx) {
   view.innerHTML = `<p class="loading">Loading the walkthrough…</p>`;
   let w;
@@ -87,7 +110,7 @@ export async function renderWalkIndex(view, ctx) {
   const total = w.chapters.length, n = w.chapters.filter((c) => done.has(c.slug)).length;
   view.innerHTML = ctx.rename(`
   <section class="walk">
-    <p class="eyebrow">Experimental</p>
+    <p class="eyebrow">Final Fantasy VI · Pixel Remaster</p>
     <h1>Walkthrough</h1>
     <p class="hint">A short route from the opening to the credits: where to go, the bosses, what's worth doing on the way, and good places to level up. Monster names open their Monster intel cards. Written for the Pixel Remaster.</p>
     <a class="continue" href="#/walk/${last.n}"><span class="eyebrow">${n ? "Continue" : "Start"}</span><span class="ct"><span class="num">${last.n}</span>${esc(last.title)}</span></a>
@@ -105,22 +128,24 @@ export async function renderWalkChapter(view, n, ctx) {
   setPref("walkLast", c.slug);
   const done = loadDone();
   const prev = w.chapters[n - 2], next = w.chapters[n];
-  const guide = c.guide && ctx.guideHref(c.guide);
+  const maps = ctx.mapsFor(c);
+  const before = w.chapters.slice(0, n).filter((x) => !done.has(x.slug)).length;
   const nav = (t, dir) => (t ? `<a class="pn ${dir}" href="#/walk/${t.n}" rel="${dir}"><span class="eyebrow">${dir === "prev" ? "Previous" : "Next"}</span><span class="pt"><span class="num">${t.n}</span>${esc(t.title)}</span></a>` : "<span></span>");
   view.innerHTML = ctx.rename(`
   <article class="sec walk-ch">
     <p class="eyebrow"><a href="#/walk">Walkthrough</a> · ${esc(c.part)}</p>
     <h1 class="sec-h"><span class="num">${c.n}</span><span>${esc(c.title)}</span></h1>
-    ${guide || (c.guide && ctx.mapsFor(c.guide)) ? `<div class="sec-maps">${guide ? `<a class="chip" href="${guide}">In your guide: ${esc(c.guide)}</a>` : ""}${c.guide ? ctx.mapsFor(c.guide) : ""}</div>` : ""}
+    ${maps ? `<div class="sec-maps"><span class="eyebrow">Maps</span>${maps}</div>` : ""}
     <div class="body">
       ${blocksHtml(c.intro)}
       ${c.sections.map((s) => `<section class="wt-sec ${SEC_CLASS(s.title)}"><h2>${inline(s.title)}</h2>${blocksHtml(s.blocks)}</section>`).join("")}
     </div>
     <button type="button" class="done-btn${done.has(c.slug) ? " on" : ""}" id="walkDone" aria-pressed="${done.has(c.slug)}">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span>${done.has(c.slug) ? "Done" : "Mark chapter done"}</span></button>
+    ${before > (done.has(c.slug) ? 0 : 1) ? `<button type="button" class="txt-btn upto-btn" id="walkUpto">Mark everything up to here done</button>` : ""}
     <nav class="pager" aria-label="Chapter navigation">${nav(prev, "prev")}${nav(next, "next")}</nav>
   </article>`);
-  ctx.mark(view.querySelector(".body"));
+  ctx.decorate(view.querySelector(".body"));
   const btn = view.querySelector("#walkDone");
   btn.onclick = () => {
     const d = loadDone();
@@ -130,6 +155,9 @@ export async function renderWalkChapter(view, n, ctx) {
     btn.classList.toggle("on", on);
     btn.setAttribute("aria-pressed", String(on));
     btn.querySelector("span").textContent = on ? "Done" : "Mark chapter done";
+    ctx.onDone();
   };
+  const upto = view.querySelector("#walkUpto");
+  if (upto) upto.onclick = () => ctx.askUpto(c);
   return c;
 }

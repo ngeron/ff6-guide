@@ -1,5 +1,5 @@
-# Never commit the walkthrough itself. It's someone else's copyrighted work and
-# lives only on your own devices.
+# Never commit Djibriel's guide (someone else's copyrighted work) or backups from
+# before 0.20.0, which contain it.
 *.txt
 *.pdf
 *.epub

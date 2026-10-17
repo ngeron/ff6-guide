@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""Generates an invented map pack for The Ember Crown test guide (public domain, CC0).
+"""Generates an invented map pack for testing (public domain, CC0): maps of a made-up land,
+"The Ember Crown", attached to chapters of the app's walkthrough.
 
 Writes test/fixtures/ember-crown-maps.zip containing:
-  maps.json            titles, order, guide sections and example links
-  world.png            overworld with the towns and dungeons from the test guide
-  old-quarry.png       dungeon floor plan (section 3.1.3)
-  clockwork-vault.png  dungeon floor plan with the four dials (section 3.9.3)
-  harrowgate.jpg       town plan (section 3.1.1), a JPEG to exercise that path
+  maps.json            titles, order, walkthrough chapters (one by an old guide section number) and example links
+  world.png            overworld (chapter 1)
+  old-quarry.png       dungeon floor plan (guide section 4.6.2, so chapter 4)
+  clockwork-vault.png  dungeon floor plan with the four dials (chapter 17)
+  harrowgate.jpg       town plan (chapter 3), a JPEG to exercise that path
 
 Usage: python3 test/make_maps.py [--out DIR]   (needs Pillow and numpy)
 """
@@ -273,15 +274,16 @@ def main():
     manifest = {
         "title": "Ember Crown maps (invented, public domain)",
         "maps": [
-            {"file": "world.png", "title": "World map", "section": "3.0"},
-            {"file": "harrowgate.jpg", "title": "Harrowgate town plan", "section": "3.1.1"},
-            {"file": "old-quarry.png", "title": "Old Quarry", "section": "3.1.3"},
-            {"file": "clockwork-vault.png", "title": "Clockwork Vault", "section": "3.9.3"},
+            {"file": "world.png", "title": "World map", "chapter": "the-raid-on-narshe"},
+            {"file": "harrowgate.jpg", "title": "Harrowgate town plan", "chapter": "figaro-castle"},
+            # An older pack's guide section number: lands in the chapter covering 4.6 (chapter 4).
+            {"file": "old-quarry.png", "title": "Old Quarry", "section": "4.6.2"},
+            {"file": "clockwork-vault.png", "title": "Clockwork Vault", "chapter": "the-magitek-research-facility"},
         ],
         "links": [
-            {"title": "Interactive world map", "url": "https://example.com/ember-crown/maps/world", "section": "3.0",
+            {"title": "Interactive world map", "url": "https://example.com/ember-crown/maps/world", "chapter": "the-raid-on-narshe",
              "note": "Example link; the site is fictional"},
-            {"title": "Clockwork Vault dial solver", "url": "https://example.org/ember-crown/vault-dials", "section": "3.7.4",
+            {"title": "Clockwork Vault dial solver", "url": "https://example.org/ember-crown/vault-dials", "chapter": "the-magitek-research-facility",
              "note": "Example link; the site is fictional"},
             {"title": "Treasure checklist (all chests)", "url": "https://example.net/ember-crown/chests"},
         ],

@@ -1,4 +1,4 @@
-// On-device storage. The guide text lives in IndexedDB; small settings and progress in localStorage.
+// On-device storage. Map images and links live in IndexedDB; settings and progress in localStorage.
 
 const DB = "ff6-guide";
 const STORE = "kv";
@@ -40,9 +40,7 @@ export const clearMaps = () => tx("readwrite", (s) => s.clear(), MAPS);
 export const loadLinks = async () => (await idbGet("mapLinks")) || [];
 export const saveLinks = (links) => idbSet("mapLinks", links);
 
-// Guide source: { text, name, importedAt }
-export const loadGuide = () => idbGet("guide");
-export const saveGuide = (g) => idbSet("guide", g);
+// Earlier versions stored an imported guide here; app.js deletes it on start.
 export const removeGuide = () => idbDel("guide");
 
 // Asks the browser not to clear this site's data under storage pressure.

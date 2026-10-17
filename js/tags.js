@@ -1,14 +1,13 @@
-// Color coding: marks playable characters, monsters, bosses and places in the text so a long
-// section is easier to scan.
+// Color coding: marks playable characters, monsters, bosses and places in the walkthrough so a
+// chapter is easier to scan.
 //
 // Names come from four places, most trusted first:
 //   1. Your own corrections ("tags" setting): [{ text, kind }], where kind is one of KINDS or
 //      "none" to stop a word being colored.
 //   2. Your character names (names.js): the names you chose count as playable characters.
-//   3. The guide itself: "The battle with X" headings (bosses), place-name headings and
-//      "Traveling to X" headings (places), "Opponents:" boxes, monster formation lines and stat
-//      blocks (monsters, or bosses in a boss section).
-//   4. Built-in lists of FF6 Advance names below.
+//   3. The app's own data: monsters and bosses from monsters-data.js, places from the
+//      walkthrough's @where lines (passed in by app.js).
+//   4. Built-in lists of FF6 names below.
 // When a name lands in more than one group, the first match in PRIORITY wins.
 // Only capitalized words match (or all capitals), so "shadow" and "mog" in ordinary text don't.
 
@@ -33,61 +32,18 @@ const BUILTIN = {
     "Umaro's Cave", "Cultists' Tower", "Fanatics' Tower"],
 };
 
-// Heading words that aren't places.
-const NOT_PLACES = new Set(["Introduction", "Contents", "Version History", "History", "Foreword", "Credits", "Index",
-  "Appendix", "Walkthrough", "The Walkthrough", "Overworld", "Overworld Map", "Shops", "Items", "Equipment",
-  "Weapons", "Armor", "Relics", "Bestiary", "Espers", "Magic", "Lores", "Rages", "Blitzes", "Tools", "Dances",
-  "Legal", "Contact", "Thanks", "Copyright", "Conclusion", "Notes", "Glossary", "FAQ", "Secrets", "Side Quests"]);
-const SMALL = new Set(["of", "the", "and", "on", "in", "to", "at"]);
-
 export const loadTags = () => getPref("tags", []);
 export const saveTags = (tags) => setPref("tags", tags.length ? tags : null);
 
 const reEsc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const clean = (s) => s.replace(/\s+/g, " ").replace(/^(?:the|a|an)\s+/i, "").replace(/(?:\s*\([^)]*\))+\s*$/, "").replace(/[\s.,;:!?]+$/, "").trim();
 const plausible = (s) => s.length >= 3 && s.length <= 40 && /^\p{Lu}/u.test(s) && s.split(" ").length <= 5;
-const titleCase = (s) => s.split(" ").every((w) => SMALL.has(w) || /^[\p{Lu}\d]/u.test(w));
-// Capitalized phrases in a string: "Veldt to Mobliz" -> ["Veldt", "Mobliz"].
-const capPhrases = (s) => (s.match(/\p{Lu}[\p{L}\d'.-]*(?:\s+(?:of\s+(?:the\s+)?)?\p{Lu}[\p{L}\d'.-]*)*/gu) || []);
-
-const BATTLE = /^(?:the\s+)?(?:(?:first|second|third|final|last|rematch)\s+)?(?:battle|fight|rematch|showdown|duel)\s+(?:with|against|versus|vs\.?)\s+(.+)$/i;
-const TRAVEL = /^(?:traveling|travelling|escaping|returning|heading|going|journeying|crossing|sailing|flying)\s+(?:back\s+)?(?:to|through|over|across|into|from|around|in|out of)\s+(.+)$/i;
-const FORMATION = /^\p{Lu}[^,()]*(?:,\s*\p{Lu}[^,()]*)*\s*\(\d+\/\d+\)$/u;
-const ENEMY_BOX = /^(?:opponents|enemies|monsters|bosses?)$/i;
-
-// What the guide itself says about names: { term: kind }.
-function fromGuide(doc) {
-  const found = { party: new Set(), boss: new Set(), enemy: new Set(), place: new Set() };
-  const add = (kind, s) => { s = clean(s); if (plausible(s)) found[kind].add(s); };
-  for (const s of doc.sections) {
-    const title = s.title.replace(/^[^:]{1,40}:\s+/, "").replace(/\s+(?:continued|revisited|again|\(.*\))$/i, "").trim();
-    const battle = title.match(BATTLE);
-    if (battle) for (const p of battle[1].split(/\s+and\s+/)) add("boss", p);
-    if (s.level === 3 && !battle) {
-      const travel = title.match(TRAVEL);
-      if (travel) for (const p of capPhrases(travel[1])) add("place", p);
-      else for (const p of clean(title).split(/\s+and\s+(?:the\s+)?/)) if (titleCase(p) && !NOT_PLACES.has(clean(p))) add("place", p);
-    }
-    const foe = battle ? "boss" : "enemy";
-    for (const b of s.blocks) {
-      if (b.type === "meta" && ENEMY_BOX.test(b.label)) {
-        for (const p of b.text.split(/,|\band\b/)) add(foe, p.replace(/\([^)]*\)/g, "").replace(/\s+x\s*\d+$/i, ""));
-      } else if (b.type === "lines") {
-        b.items.forEach((it, i) => {
-          const next = b.items[i + 1];
-          if (next && /^Level:/.test(next.text) && !it.text.includes(":")) add(foe, it.text);
-          if (FORMATION.test(it.text)) for (const p of it.text.replace(/\s*\(\d+\/\d+\)$/, "").split(",")) add("enemy", p.replace(/\s+x\s*\d+$/i, ""));
-        });
-      }
-    }
-  }
-  for (const n of NOT_PLACES) found.place.delete(n);
-  return found;
-}
 
 // Every name to color, with its group: Map(term -> kind).
-export function buildTerms(doc, names = [], tags = []) {
-  const byKind = fromGuide(doc);
+// found: { boss: [...], enemy: [...], place: [...] } from the app's data.
+export function buildTerms(found = {}, names = [], tags = []) {
+  const byKind = Object.fromEntries(KINDS.map((k) => [k, new Set()]));
+  for (const k of KINDS) for (const t of found[k] || []) { const c = clean(t); if (plausible(c)) byKind[k].add(c); }
   for (const k of KINDS) for (const t of BUILTIN[k] || []) byKind[k].add(t);
   for (const n of names) { const to = (n.to || "").trim(); if (to) byKind.party.add(to); }
   const terms = new Map();

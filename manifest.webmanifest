@@ -1,7 +1,7 @@
 {
   "name": "FF6 Guide",
   "short_name": "FF6 Guide",
-  "description": "A reader for your own copy of a Final Fantasy VI Advance walkthrough.",
+  "description": "A Final Fantasy VI Pixel Remaster companion: walkthrough, monster intel, Rages, inventory and party planning.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

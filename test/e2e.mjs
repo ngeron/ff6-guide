@@ -1,6 +1,5 @@
-// Headless smoke test: serves the app, imports a PDF and a text file, and checks the main views.
-// Usage: node test/e2e.mjs [path-to-pdf] [screenshot-dir]
-// Make a test PDF with: python3 test/make_fixture.py --pdf test/output/ember-crown.pdf
+// Headless smoke test: serves the app and checks the walkthrough, tools, maps, backups and sync.
+// Usage: node test/e2e.mjs [ignored] [screenshot-dir]
 // Requires Playwright (npm i -D playwright) and a Chromium build.
 import { chromium } from "playwright";
 import http from "node:http";
@@ -9,11 +8,10 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const PDF = process.argv[2];
 const SHOTS = process.argv[3] || path.join(ROOT, "test/output");
 fs.mkdirSync(SHOTS, { recursive: true });
 
-const TYPES = { ".html": "text/html", ".js": "text/javascript", ".mjs": "text/javascript", ".css": "text/css", ".png": "image/png", ".webmanifest": "application/manifest+json" };
+const TYPES = { ".html": "text/html", ".js": "text/javascript", ".mjs": "text/javascript", ".css": "text/css", ".png": "image/png", ".md": "text/markdown; charset=utf-8", ".webmanifest": "application/manifest+json" };
 const server = http.createServer((req, res) => {
   let p = decodeURIComponent(new URL(req.url, "http://x").pathname);
   if (p.endsWith("/")) p += "index.html";
@@ -26,50 +24,48 @@ const base = `http://localhost:${server.address().port}/`;
 
 const errors = [];
 const check = (cond, msg) => { if (!cond) errors.push(msg); console.log((cond ? "ok   " : "FAIL ") + msg); };
+const watch = (page) => {
+  page.on("pageerror", (e) => errors.push("pageerror: " + e.message));
+  page.on("console", (m) => { if (m.type() === "error") errors.push("console: " + m.text()); });
+};
+const noScroll = (page) => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1);
+const doneKeys = (page) => page.evaluate(() => [...document.querySelectorAll(".toc-list a.done")].map((a) => +a.dataset.key));
 
 const browser = await chromium.launch();
 for (const scheme of ["light", "dark"]) {
   const ctx = await browser.newContext({ viewport: { width: 1180, height: 820 }, colorScheme: scheme, deviceScaleFactor: 1 });
   const page = await ctx.newPage();
-  page.on("pageerror", (e) => errors.push("pageerror: " + e.message));
-  page.on("console", (m) => { if (m.type() === "error") errors.push("console: " + m.text()); });
+  watch(page);
   await page.goto(base);
-  await page.waitForSelector(".import");
-  check(true, `[${scheme}] import view shown with no guide`);
-  if (scheme === "light") await page.screenshot({ path: path.join(SHOTS, "1-import.png") });
-
-  const file = scheme === "light" && PDF ? PDF : path.join(ROOT, "test/fixtures/ember-crown-guide.txt");
-  await page.setInputFiles("#file", file);
-  await page.waitForSelector(".home", { timeout: 60000 });
-  check(true, `[${scheme}] imported ${path.basename(file)}`);
-  const secs = await page.locator(".toc-list a, .toc-list summary").count();
-  check(secs >= 4, `[${scheme}] contents sidebar lists sections (${secs})`);
+  await page.waitForSelector(".walk .wt-list");
+  check(await page.locator(".walk .continue").count() === 1, `[${scheme}] starts on the walkthrough, no import step`);
+  const chapters = await page.locator(".toc-list a.toc-sub").count();
+  check(chapters >= 40, `[${scheme}] contents lists the chapters (${chapters})`);
+  check(await page.locator('.toc-tracker[href="#/walk"][aria-current="page"]').count() === 1, `[${scheme}] contents highlights the walkthrough`);
   await page.screenshot({ path: path.join(SHOTS, `2-home-${scheme}.png`) });
 
-  await page.click('.chapters a[href="#/s/3.0"]');
-  await page.waitForSelector("article.sec .toc");
-  await page.click('.body .toc a[href="#/s/3.1.1"]');
-  await page.waitForFunction(() => /Harrowgate/.test(document.querySelector(".sec-h")?.textContent || ""));
-  const h = await page.textContent(".sec-h");
-  check(/Harrowgate/.test(h), `[${scheme}] section page renders heading (${h.trim()})`);
-  check(await page.locator(".body .pre pre").count() >= 1, `[${scheme}] shop table kept as monospace`);
-  check(await page.locator(".body .meta").count() >= 1, `[${scheme}] Opponents box rendered`);
-  await page.screenshot({ path: path.join(SHOTS, `3-section-${scheme}.png`), fullPage: true });
-
-  await page.click("#doneBtn");
-  check(await page.locator('.toc-list a.done[data-key="3.1.1"]').count() === 1, `[${scheme}] mark done updates contents`);
+  await page.click('.toc-list a[data-key="3"]');
+  await page.waitForFunction(() => /Figaro Castle/.test(document.querySelector(".walk-ch .sec-h")?.textContent || ""));
+  check(await page.locator('.toc-list a[data-key="3"][aria-current="page"]').count() === 1, `[${scheme}] contents opens a chapter and marks it current`);
+  await page.screenshot({ path: path.join(SHOTS, `3-chapter-${scheme}.png`), fullPage: true });
+  await page.click("#walkDone");
+  check(JSON.stringify(await doneKeys(page)) === "[3]", `[${scheme}] mark done updates contents`);
 
   await page.click("#searchBtn");
-  await page.fill("#q", "clockwork vault puzzle");
+  await page.fill("#q", "south figaro");
   await page.waitForSelector(".results li");
   if (scheme === "light") await page.screenshot({ path: path.join(SHOTS, "4-search.png") });
-  await page.click(".results li a");
-  await page.waitForSelector("mark.hit");
-  check((await page.textContent(".sec-h")).includes("Clockwork Vault puzzle"), `[${scheme}] search result opens section with highlight`);
+  await page.click('.results li a[href^="#/walk/"]');
+  await page.waitForSelector(".walk-ch mark.hit");
+  check(true, `[${scheme}] search result opens the chapter with highlights`);
+  const chap = await page.textContent(".walk-ch .sec-h");
 
   await page.reload();
-  await page.waitForSelector("article.sec");
-  check((await page.textContent(".sec-h")).includes("Clockwork Vault puzzle"), `[${scheme}] reload resumes last section from storage`);
+  await page.waitForSelector(".walk-ch");
+  check(await page.textContent(".walk-ch .sec-h") === chap, `[${scheme}] reload stays on the chapter`);
+  await page.goto(base);
+  await page.waitForSelector(".walk-ch");
+  check(await page.textContent(".walk-ch .sec-h") === chap, `[${scheme}] opening the app resumes the last chapter`);
 
   if (scheme === "light") {
     await page.click("#settingsBtn");
@@ -82,74 +78,100 @@ for (const scheme of ["light", "dark"]) {
   await ctx.close();
 }
 
-// Phone-width drawer behaviour.
-const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
-const page = await ctx.newPage();
-page.on("pageerror", (e) => errors.push("pageerror: " + e.message));
-await page.goto(base);
-await page.setInputFiles("#file", path.join(ROOT, "test/fixtures/ember-crown-guide.txt"));
-await page.waitForSelector(".home");
-check(await page.locator("#toc").isHidden(), "[phone] contents hidden by default");
-await page.click("#tocBtn");
-check(await page.locator("#toc").isVisible(), "[phone] contents drawer opens");
-await page.screenshot({ path: path.join(SHOTS, "6-phone-drawer.png") });
-await page.click('details[data-group="3.0"] summary');
-await page.click('.toc-list a[data-key="3.1.2"]');
-await page.waitForSelector("article.sec");
-check(await page.locator("#toc").isHidden(), "[phone] drawer closes after picking a section");
-const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1);
-check(!overflow, "[phone] no horizontal page scroll");
-await page.screenshot({ path: path.join(SHOTS, "7-phone-section.png"), fullPage: true });
-await ctx.close();
-
-// Reset from the contents panel.
+// Search: chapter numbers and monsters.
 {
   const ctx = await browser.newContext({ viewport: { width: 1180, height: 820 } });
   const page = await ctx.newPage();
-  page.on("pageerror", (e) => errors.push("pageerror: " + e.message));
+  watch(page);
   await page.goto(base);
-  await page.setInputFiles("#file", path.join(ROOT, "test/fixtures/ember-crown-guide.txt"));
-  await page.waitForSelector(".home");
-  await page.goto(base + "#/s/3.1.1");
-  await page.waitForSelector("#doneBtn");
-  await page.click("#doneBtn");
-  check(await page.locator(".toc-list").isVisible() && await page.locator("#toc #resetBtn").count() === 0, "[reset] contents panel has no reset button");
+  await page.waitForSelector(".walk");
+  await page.click("#searchBtn");
+  await page.fill("#q", "chapter 12");
+  await page.waitForSelector('.results a[href="#/walk/12"]');
+  check(/Go to chapter/.test(await page.textContent(".results li")), "[search] a chapter number jumps to it");
+  await page.fill("#q", "kefka");
+  await page.waitForSelector('.results a[href^="#/monsters/"]');
+  check(/monster/.test(await page.textContent("#searchCount")) && await page.locator('.results a[href^="#/walk/"]').count() >= 5, "[search] finds monsters and chapters");
+  await page.click('.results a[href^="#/monsters/"] >> nth=0');
+  await page.waitForSelector(".mn-card");
+  check(/Kefka/.test(await page.textContent("#mnName")), "[search] a monster result opens its card");
+  await ctx.close();
+}
+
+// Upgrading from a version that stored an imported guide: the guide and its progress are removed.
+{
+  const ctx = await browser.newContext();
+  const page = await ctx.newPage();
+  watch(page);
+  await page.goto(base);
+  await page.waitForSelector(".walk");
+  await page.evaluate(async () => {
+    const m = await import("./js/store.js");
+    await m.idbSet("guide", { text: "old guide", name: "old.txt", importedAt: 1 });
+    for (const k of ["done", "last", "pos", "savedText"]) localStorage.setItem("ff6g:" + k, "[]");
+  });
+  await page.reload();
+  await page.waitForSelector(".walk");
+  await page.waitForFunction(async () => !(await (await import("./js/store.js")).idbGet("guide")));
+  check(await page.evaluate(() => ["done", "last", "pos", "savedText"].every((k) => localStorage.getItem("ff6g:" + k) === null)), "[upgrade] old guide and its progress removed");
+  await ctx.close();
+}
+
+// Phone-width drawer behaviour.
+{
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
+  const page = await ctx.newPage();
+  watch(page);
+  await page.goto(base);
+  await page.waitForSelector(".walk");
+  check(await page.locator("#toc").isHidden(), "[phone] contents hidden by default");
+  await page.click("#tocBtn");
+  check(await page.locator("#toc").isVisible(), "[phone] contents drawer opens");
+  await page.screenshot({ path: path.join(SHOTS, "6-phone-drawer.png") });
+  await page.click('details[data-group="2"] summary');
+  await page.click('.toc-list a[data-key="30"]');
+  await page.waitForSelector(".walk-ch");
+  check(await page.locator("#toc").isHidden(), "[phone] drawer closes after picking a chapter");
+  check(await noScroll(page), "[phone] no horizontal page scroll");
+  await page.screenshot({ path: path.join(SHOTS, "7-phone-chapter.png"), fullPage: true });
+  await ctx.close();
+}
+
+// Reset walkthrough progress from Settings.
+{
+  const ctx = await browser.newContext({ viewport: { width: 1180, height: 820 } });
+  const page = await ctx.newPage();
+  watch(page);
+  await page.goto(base + "#/walk/2");
+  await page.waitForSelector("#walkDone");
+  await page.click("#walkDone");
+  check(await page.locator("#toc #resetBtn").count() === 0, "[reset] contents panel has no reset button");
   await page.click("#settingsBtn");
-  check(await page.locator("#settingsSheet #resetBtn").isVisible(), "[reset] reset button shown in settings");
+  check(await page.locator("#settingsSheet #resetBtn").isEnabled(), "[reset] reset button shown in settings");
   await page.click("#resetBtn");
   check(await page.locator("#resetDialog").isVisible(), "[reset] confirmation dialog opens");
   check(await page.evaluate(() => document.activeElement && document.activeElement.id) === "resetNo", "[reset] 'No' is focused by default");
   await page.screenshot({ path: path.join(SHOTS, "8-reset-dialog.png") });
   await page.keyboard.press("Enter");
-  check(await page.locator("#resetDialog").isHidden(), "[reset] pressing Enter chooses No and closes");
-  check(await page.locator("article.sec").count() === 1, "[reset] guide still loaded after No");
+  check(await page.locator("#resetDialog").isHidden() && (await doneKeys(page)).length === 1, "[reset] pressing Enter chooses No and keeps progress");
   await page.click("#resetBtn");
   await page.keyboard.press("Escape");
-  check(await page.locator("#resetDialog").isHidden(), "[reset] Escape cancels");
-  check(await page.locator("#settingsSheet").isVisible(), "[reset] Escape leaves settings open");
+  check(await page.locator("#resetDialog").isHidden() && await page.locator("#settingsSheet").isVisible(), "[reset] Escape cancels and leaves settings open");
   await page.click("#resetBtn");
-  await Promise.all([page.waitForEvent("load"), page.click("#resetYes")]);
-  await page.waitForSelector(".import");
-  check(true, "[reset] Yes reloads to the import page");
-  check(await page.evaluate(() => location.hash) === "", "[reset] URL reset to the start page");
-  const left = await page.evaluate(async () => {
-    const m = await import("./js/store.js");
-    return { guide: await m.loadGuide(), done: localStorage.getItem("ff6g:done"), last: localStorage.getItem("ff6g:last") };
-  });
-  check(!left.guide && left.done === null && left.last === null, "[reset] guide, done marks and last section purged");
-  check(await page.locator("#tocBtn").isHidden(), "[reset] contents button hidden with no guide");
+  await page.click("#resetYes");
+  await page.waitForFunction(() => !document.querySelector(".toc-list a.done"));
+  check(await page.evaluate(() => localStorage.getItem("ff6g:walkDone") === null), "[reset] done marks cleared");
+  check(await page.locator("#walkDone.on").count() === 0, "[reset] chapter page shows it's not done");
   await ctx.close();
 }
 
-// Maps: import a map pack, view, zoom, section chips, links.
+// Maps: import a map pack, view, zoom, chapter chips, links.
 for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, height: 844, tag: "phone" }]) {
   const ctx = await browser.newContext({ viewport: { width: vp.width, height: vp.height }, deviceScaleFactor: vp.tag === "phone" ? 2 : 1 });
   const page = await ctx.newPage();
-  page.on("pageerror", (e) => errors.push("pageerror: " + e.message));
-  page.on("console", (m) => { if (m.type() === "error") errors.push("console: " + m.text()); });
+  watch(page);
   await page.goto(base);
-  await page.setInputFiles("#file", path.join(ROOT, "test/fixtures/ember-crown-guide.txt"));
-  await page.waitForSelector(".home");
+  await page.waitForSelector(".walk");
   if (vp.tag === "phone") await page.click("#tocBtn");
   await page.click("#tabMaps");
   check(await page.locator(".mp-empty").count() === 2, `[maps ${vp.tag}] empty states shown before import`);
@@ -159,45 +181,50 @@ for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, heigh
   check(await page.locator(".mp-link").count() === 3, `[maps ${vp.tag}] map pack added 3 links`);
   const titles = await page.locator(".mp-item .mp-t").allTextContents();
   check(/^World map/.test(titles[0]) && /Clockwork Vault/.test(titles[3]), `[maps ${vp.tag}] titles and order come from maps.json`);
+  check(JSON.stringify(await page.locator(".mp-item .mp-sec").allTextContents()) === '["1","3","4","17"]', `[maps ${vp.tag}] each map shows its chapter (a guide section number lands in the chapter covering it)`);
   await page.screenshot({ path: path.join(SHOTS, `9-maps-panel-${vp.tag}.png`) });
   await page.click(".mp-item >> nth=0");
   await page.waitForSelector("#mapImg");
   await page.waitForFunction(() => document.getElementById("mapImg").naturalWidth > 0);
   check(await page.evaluate(() => document.getElementById("mapImg").naturalWidth) === 2400, `[maps ${vp.tag}] world map image loads at full size`);
   if (vp.tag === "phone") check(await page.locator("#toc").isHidden(), "[maps phone] drawer closes when a map is opened");
+  check(await page.getAttribute(".map-back", "href") === "#/walk/1", `[maps ${vp.tag}] viewer links back to its chapter`);
   const pct1 = await page.textContent("#zPct");
   await page.click("#zIn");
   const pct2 = await page.textContent("#zPct");
   check(parseInt(pct2) > parseInt(pct1), `[maps ${vp.tag}] zoom in (${pct1} -> ${pct2})`);
   await page.click("#zFit");
   check(await page.evaluate(() => { const st = document.getElementById("stage"); return st.scrollWidth <= st.clientWidth + 2 && st.scrollHeight <= st.clientHeight + 2; }), `[maps ${vp.tag}] Fit shows the whole map`);
-  check(!(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), `[maps ${vp.tag}] no horizontal page scroll in viewer`);
+  check(await noScroll(page), `[maps ${vp.tag}] no horizontal page scroll in viewer`);
   await page.screenshot({ path: path.join(SHOTS, `10-map-viewer-${vp.tag}.png`) });
 
-  await page.goto(base + "#/s/3.1.3");
+  await page.goto(base + "#/walk/4");
   await page.waitForSelector(".sec-maps");
-  check((await page.textContent(".sec-maps")).includes("Old Quarry"), `[maps ${vp.tag}] section 3.1.3 shows its map chip`);
-  await page.goto(base + "#/s/3.7.4");
+  check((await page.textContent(".sec-maps")).includes("Old Quarry"), `[maps ${vp.tag}] chapter 4 shows its map chip`);
+  await page.goto(base + "#/walk/17");
   await page.waitForSelector(".sec-maps");
-  check(await page.locator(".sec-maps a.ext").count() === 1, `[maps ${vp.tag}] section 3.7.4 shows its external link chip`);
+  check(await page.locator(".sec-maps a.ext").count() === 1, `[maps ${vp.tag}] chapter 17 shows its external link chip`);
 
   if (vp.tag === "ipad") {
-    // Edit a map's section, add and remove a link, delete a map.
+    // Move a map to another chapter, add and remove a link, delete a map.
     await page.click(".mp-item >> nth=2");
     await page.waitForSelector(".map-edit summary");
     await page.click(".map-edit summary");
-    await page.fill("#mapSec", "3.1.2");
+    await page.selectOption("#mapSec", "kohlingen-jidoor-and-zozo");
     await page.click('#mapForm button[type="submit"]');
-    await page.goto(base + "#/s/3.1.2");
+    await page.goto(base + "#/walk/13");
     await page.waitForSelector(".sec-maps");
-    check((await page.textContent(".sec-maps")).includes("Old Quarry"), "[maps ipad] changing a map's section moves its chip");
+    check((await page.textContent(".sec-maps")).includes("Old Quarry"), "[maps ipad] changing a map's chapter moves its chip");
     const form = page.locator(".mp-form");
     if (!(await form.evaluate((d) => d.open))) await page.click(".mp-form summary");
     await page.fill("#linkTitle", "Fan wiki");
     await page.fill("#linkUrl", "wiki.example.com/ember");
+    await page.selectOption("#linkSec", "kohlingen-jidoor-and-zozo");
     await page.click('#linkForm button[type="submit"]');
     await page.waitForFunction(() => document.querySelectorAll(".mp-link").length === 4);
     check((await page.getAttribute(".mp-link >> nth=3", "href")) === "https://wiki.example.com/ember", "[maps ipad] link form adds https:// when missing");
+    await page.waitForFunction(() => /Fan wiki/.test(document.querySelector(".sec-maps")?.textContent || ""));
+    check(true, "[maps ipad] a new link shows on its chapter right away");
     await page.click('[data-unlink] >> nth=3');
     await page.click('[data-unlink] >> nth=3');
     await page.waitForFunction(() => document.querySelectorAll(".mp-link").length === 3);
@@ -212,13 +239,6 @@ for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, heigh
     await page.reload();
     await page.waitForSelector(".mp-item");
     check(await page.locator(".mp-item").count() === 3 && await page.locator(".mp-link").count() === 3, "[maps ipad] maps and links persist across reloads");
-    // Reset removes the guide but keeps maps.
-    await page.click("#settingsBtn");
-    await page.click("#resetBtn");
-    await Promise.all([page.waitForEvent("load"), page.click("#resetYes")]);
-    await page.waitForSelector(".import");
-    const left = await page.evaluate(async () => { const m = await import("./js/store.js"); return (await m.listMaps()).length; });
-    check(left === 3, "[maps ipad] reset keeps maps");
     check(await page.locator("#toc #mapClearBtn, #toc #mapExportBtn").count() === 0, "[maps ipad] maps panel has no pack or remove-all buttons");
     await page.click("#settingsBtn");
     check(/3 maps and 3 links/.test(await page.textContent("#mapInfo")) && await page.isEnabled("#mapExportBtn"), "[maps ipad] settings show map counts and Save map pack");
@@ -231,93 +251,37 @@ for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, heigh
   await ctx.close();
 }
 
-// Every importer: the same guide as text, PDF-free web page, web archive, Markdown and a
-// text guide wrapped in <pre> should give the same sections and working links.
-{
-  const V = path.join(ROOT, "test/fixtures/variants");
-  // An old-style guide saved in Windows-1252 (curly quotes as single bytes).
-  const cp = path.join(SHOTS, "cp1252-guide.txt");
-  const body = "Old Guide\n\n 1.0  Start\n**********\n\nIt\u2019s \u201cquoted\u201d text from 1999, caf\u00e9 included.\n\n 2.0  End\n**********\n\nDone.\n" + "filler line\n".repeat(20);
-  fs.writeFileSync(cp, Buffer.from(body.replace(/\u2019/g, "\x92").replace(/\u201c/g, "\x93").replace(/\u201d/g, "\x94"), "latin1"));
-  const cases = [
-    ["ember-crown-formatted.html", "html"],
-    ["ember-crown.webarchive", "html"],
-    ["ember-crown.md", "markdown"],
-    ["ember-crown-pre.html", "text"],
-  ];
-  for (const [name, format] of cases) {
-    const ctx = await browser.newContext({ viewport: { width: 1180, height: 820 } });
-    const page = await ctx.newPage();
-    page.on("pageerror", (e) => errors.push(`pageerror (${name}): ` + e.message));
-    page.on("console", (m) => { if (m.type() === "error") errors.push(`console (${name}): ` + m.text()); });
-    await page.goto(base);
-    await page.setInputFiles("#file", path.join(V, name));
-    await page.waitForSelector(".home", { timeout: 15000 }).catch(() => {});
-    const stored = await page.evaluate(async () => { const m = await import("./js/store.js"); const g = await m.loadGuide(); return g ? { format: g.format, text: g.text } : null; });
-    check(stored && stored.format === format, `[${name}] imported as ${format}`);
-    check(await page.locator(".toc-list a").count() === 44, `[${name}] same 44 contents entries as the text guide`);
-    if (format === "html") check(!/GuideSite|Advertisement|More guides/.test(stored.text), `[${name}] clean copy leaves out the site's menus and sidebar`);
-    await page.goto(base + "#/s/3.0");
-    await page.waitForSelector("article.sec");
-    await page.click('.body a[href="#/s/3.9.3"]');
-    await page.waitForFunction(() => /Clockwork Vault/.test(document.querySelector(".sec-h")?.textContent || ""));
-    check(true, `[${name}] in-guide contents link opens the right section`);
-    await page.goto(base + "#/s/3.1.1");
-    await page.waitForFunction(() => /Harrowgate/.test(document.querySelector(".sec-h")?.textContent || ""));
-    const shop = await page.locator(".body table, .body pre").count();
-    check(shop >= 2, `[${name}] shop tables kept (${shop})`);
-    await page.click("#searchBtn");
-    await page.fill("#q", "porridge");
-    await page.waitForSelector(".results li");
-    check(await page.locator(".results li").count() >= 1, `[${name}] search finds text`);
-    await ctx.close();
-  }
-  const ctx = await browser.newContext();
-  const page = await ctx.newPage();
-  await page.goto(base);
-  await page.setInputFiles("#file", cp);
-  await page.waitForSelector(".home");
-  await page.goto(base + "#/s/1.0");
-  await page.waitForSelector("article.sec");
-  const txt = await page.textContent(".body");
-  check(txt.includes("It\u2019s \u201cquoted\u201d text from 1999, caf\u00e9 included."), "[cp1252] Windows-1252 text decoded with curly quotes intact");
-  await ctx.close();
-}
-
 // Character names: rename on display, persist, search, and undo.
 {
   const ctx = await browser.newContext({ viewport: { width: 1180, height: 820 } });
   const page = await ctx.newPage();
-  page.on("pageerror", (e) => errors.push("pageerror: " + e.message));
-  page.on("console", (m) => { if (m.type() === "error") errors.push("console: " + m.text()); });
+  watch(page);
   await page.goto(base);
   const unit = await page.evaluate(async () => {
     const { renamer } = await import("./js/names.js");
     const r = renamer([{ from: "terra", to: "Prns Donut" }, { from: "Celes", to: "Terra" }]);
-    return [r("Terra's TERRA terrapin Celes"), r.html('<a href="#terra">Terra</a> &amp; Celes'), r.pre("Terra      120  Celes   9")];
+    return [r("Terra's TERRA terrapin Celes"), r.html('<a href="#terra">Terra</a> &amp; Celes')];
   });
   check(unit[0] === "Prns Donut's PRNS DONUT terrapin Terra", `[names] whole words, capitals and swaps (${unit[0]})`);
   check(unit[1] === '<a href="#terra">Prns Donut</a> &amp; Terra', `[names] HTML attributes untouched (${unit[1]})`);
-  check(unit[2] === "Prns Donut  120  Terra   9", `[names] monospace column gap kept (${unit[2]})`);
 
-  await page.setInputFiles("#file", path.join(ROOT, "test/fixtures/ember-crown-guide.txt"));
-  await page.waitForSelector(".home");
-  await page.goto(base + "#/s/3.1.1");
-  await page.waitForSelector("article.sec");
+  await page.goto(base + "#/walk/1");
+  await page.waitForSelector(".walk-ch");
   await page.click("#settingsBtn");
   await page.click("#nameAdd");
-  await page.fill("#nameList li:last-child .nm-from", "corvin");
+  await page.fill("#nameList li:last-child .nm-from", "terra");
   await page.fill("#nameList li:last-child .nm-to", "Prns Donut");
   await page.press("#nameList li:last-child .nm-to", "Tab");
+  await page.waitForFunction(() => /Prns Donut/.test(document.querySelector(".walk-ch")?.textContent || ""));
   await page.screenshot({ path: path.join(SHOTS, "11-names.png") });
-  const body = await page.textContent("article.sec");
-  check(body.includes("Prns Donut") && !/corvin/i.test(body), "[names] section re-rendered with the new name");
+  const body = await page.textContent(".walk-ch");
+  check(body.includes("Prns Donut") && !/\bTerra\b/.test(body), "[names] chapter re-rendered with the new name");
   check(await page.locator("#settingsSheet").isVisible(), "[names] settings stay open while renaming");
   await page.click("#settingsSheet [data-close]");
 
   await page.reload();
-  await page.waitForSelector("article.sec");
-  check((await page.textContent("article.sec")).includes("Prns Donut"), "[names] names kept after reload");
+  await page.waitForSelector(".walk-ch");
+  check((await page.textContent(".walk-ch")).includes("Prns Donut"), "[names] names kept after reload");
   await page.click("#searchBtn");
   await page.fill("#q", "prns donut");
   await page.waitForSelector(".results li");
@@ -326,55 +290,43 @@ for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, heigh
 
   await page.click("#settingsBtn");
   await page.click("#nameList .nm-x");
-  check(/Corvin/.test(await page.textContent("article.sec")), "[names] removing a name restores the guide's name");
+  await page.waitForFunction(() => /\bTerra\b/.test(document.querySelector(".walk-ch")?.textContent || ""));
+  check(true, "[names] removing a name restores the default name");
   await ctx.close();
 }
 
-// Bulk mark done: from a section page and from Settings.
+// Bulk mark done: from a chapter page and from Settings.
 {
   const ctx = await browser.newContext({ viewport: { width: 1180, height: 820 } });
   const page = await ctx.newPage();
-  page.on("pageerror", (e) => errors.push("pageerror: " + e.message));
-  page.on("console", (m) => { if (m.type() === "error") errors.push("console: " + m.text()); });
-  await page.goto(base);
-  await page.setInputFiles("#file", path.join(ROOT, "test/fixtures/ember-crown-guide.txt"));
-  await page.waitForSelector(".home");
-  // Sections up to and including a key, in contents order (which is reading order).
-  const upTo = (key) => page.evaluate((k) => { const keys = [...document.querySelectorAll(".toc-list a[data-key]")].map((a) => a.dataset.key).filter((x) => x !== "start"); return keys.slice(0, keys.indexOf(k) + 1); }, key);
-  const doneKeys = () => page.evaluate(() => [...document.querySelectorAll(".toc-list a.done")].map((a) => a.dataset.key));
-
-  await page.goto(base + "#/s/3.2.4");
-  await page.waitForSelector("#uptoBtn");
-  await page.click("#uptoBtn");
+  watch(page);
+  await page.goto(base + "#/walk/5");
+  await page.waitForSelector("#walkUpto");
+  await page.click("#walkUpto");
   await page.waitForSelector("#markDialog[open]");
-  const want = await upTo("3.2.4");
-  check((await page.textContent("#markTitle")).includes(`Mark ${want.length} sections`), `[bulk] dialog counts ${want.length} sections`);
+  check((await page.textContent("#markTitle")).includes("Mark 5 chapters"), "[bulk] dialog counts 5 chapters");
   await page.screenshot({ path: path.join(SHOTS, "17-bulk-dialog.png") });
   await page.click("#markNo");
-  check((await doneKeys()).length === 0, "[bulk] Cancel marks nothing");
-  await page.click("#uptoBtn");
+  check((await doneKeys(page)).length === 0, "[bulk] Cancel marks nothing");
+  await page.click("#walkUpto");
   await page.click("#markYes");
-  await page.waitForFunction((n) => document.querySelectorAll(".toc-list a.done").length === n, want.length);
-  check(JSON.stringify(await doneKeys()) === JSON.stringify(want), "[bulk] marks every section through 3.2.4 and nothing after");
-  check(await page.locator("#doneBtn.on").count() === 1 && await page.locator("#uptoBtn").count() === 0, "[bulk] page shows Done and hides the bulk link");
+  await page.waitForFunction(() => document.querySelectorAll(".toc-list a.done").length === 5);
+  check(JSON.stringify(await doneKeys(page)) === "[1,2,3,4,5]", "[bulk] marks every chapter through 5 and nothing after");
+  await page.waitForSelector("#walkDone.on");
+  check(await page.locator("#walkUpto").count() === 0, "[bulk] page shows Done and hides the bulk link");
 
   await page.click("#settingsBtn");
-  check(/\d+ of \d+ sections done/.test(await page.textContent("#progressInfo")), "[bulk] settings show progress");
-  await page.fill("#uptoNum", "9.9.9");
-  await page.click("#uptoForm button");
-  check(/no section 9\.9\.9/.test(await page.textContent("#uptoErr")), "[bulk] unknown section number explained");
-  await page.fill("#uptoNum", "3.4.1");
+  check(/5 of \d+ chapters done/.test(await page.textContent("#progressInfo")), "[bulk] settings show progress");
+  await page.selectOption("#uptoCh", "9");
   await page.click("#uptoForm button");
   await page.waitForSelector("#markDialog[open]");
+  check((await page.textContent("#markTitle")).includes("Mark 4 chapters"), "[bulk] only chapters not yet done are counted");
   await page.screenshot({ path: path.join(SHOTS, "18-bulk-settings.png") });
   await page.click("#markYes");
-  const want2 = await upTo("3.4.1");
-  await page.waitForFunction((n) => document.querySelectorAll(".toc-list a.done").length === n, want2.length);
-  const got = await doneKeys();
-  check(got.includes("3.4.1") && !got.includes("3.4.2") && got.length === want2.length, "[bulk] Settings marks through 3.4.1");
+  await page.waitForFunction(() => document.querySelectorAll(".toc-list a.done").length === 9);
   await page.reload();
   await page.waitForSelector(".toc-list");
-  check((await doneKeys()).length === want2.length, "[bulk] marks kept after reload");
+  check(JSON.stringify(await doneKeys(page)) === "[1,2,3,4,5,6,7,8,9]", "[bulk] marks kept after reload");
   await ctx.close();
 }
 
@@ -385,9 +337,7 @@ for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, heigh
   page.on("pageerror", (e) => errors.push("pageerror: " + e.message));
   page.on("console", (m) => { if (m.type() === "error") errors.push("console: " + m.text()); });
   await page.goto(base);
-  await page.setInputFiles("#file", path.join(ROOT, "test/fixtures/ember-crown-guide.txt"));
-  await page.waitForSelector(".home");
-  check(await page.locator('.home a[href="#/rages"]').count() === 1, "[rages] home page links to the tracker");
+  await page.waitForSelector(".walk");
   await page.click('.toc-tracker[href="#/rages"]');
   await page.waitForSelector(".rages");
   check(await page.locator(".rg").count() === 256 && (await page.textContent(".rg-stat")).includes("0 of 252"), "[rages] lists 256 Rages, 252 learnable");
@@ -420,7 +370,7 @@ for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, heigh
   await page.selectOption("#rgEl", "any");
   await page.selectOption("#rgSort", "menu");
   await page.click('.rg:has-text("Stray Cat") .rg-find');
-  check(await page.locator("#searchSheet").isVisible() && await page.inputValue("#q") === "Stray Cat", "[rages] find button searches the guide");
+  check(await page.locator("#searchSheet").isVisible() && await page.inputValue("#q") === "Stray Cat", "[rages] find button searches the walkthrough");
   await page.click("#searchSheet [data-close]");
   await page.reload();
   await page.waitForSelector(".rages");
@@ -439,8 +389,7 @@ for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, heigh
   page.on("pageerror", (e) => errors.push("pageerror: " + e.message));
   page.on("console", (m) => { if (m.type() === "error") errors.push("console: " + m.text()); });
   await page.goto(base);
-  await page.setInputFiles("#file", path.join(ROOT, "test/fixtures/ember-crown-guide.txt"));
-  await page.waitForSelector(".home");
+  await page.waitForSelector(".walk");
   const BAG = { "Mythril Knife": 2, "Icebrand": 1, "Rune Blade": 1, "Bastard Sword": 2, "Mythril Shield": 7, "Heavy Shield": 1, "Bandana": 1, "Plumed Hat": 1, "Twist Headband": 1,
     "Mythril Vest": 2, "Ninja Gear": 3, "White Dress": 1, "Genji Glove": 1, "Gigas Glove": 1, "Hero's Ring": 1, "Earring": 2, "Hyper Wrist": 1, "Black Belt": 1, "Hermes Sandals": 2, "Sprint Shoes": 1, "Potion": 9 };
   await page.evaluate((b) => { localStorage.setItem("ff6g:gear", JSON.stringify(b)); localStorage.setItem("ff6g:names", JSON.stringify([{ from: "Terra", to: "Prns Donut" }])); }, BAG);
@@ -529,10 +478,7 @@ for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, heigh
   const page = await ctx.newPage();
   page.on("pageerror", (e) => errors.push("pageerror: " + e.message));
   await page.goto(base);
-  await page.waitForSelector(".import");
-  check(await page.locator("#shortcuts").isHidden(), "[shortcuts] hidden before a guide is imported");
-  await page.setInputFiles("#file", path.join(ROOT, "test/fixtures/ember-crown-guide.txt"));
-  await page.waitForSelector(".home");
+  await page.waitForSelector(".walk");
   const inBar = await page.evaluate(() => document.getElementById("shortcuts").getBoundingClientRect().top < 60);
   check(inBar && await page.locator("#shortcuts .sc").count() === 6, "[shortcuts] six shortcuts in the top bar on iPad");
   for (const [id, title] of [["#partyBtn", "Party"], ["#ragesBtn", "Gau's Rages"], ["#gearBtn", "Inventory"], ["#monsterBtn", "Monster intel"]]) {
@@ -563,8 +509,7 @@ for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, heigh
   page.on("pageerror", (e) => errors.push("pageerror: " + e.message));
   page.on("console", (m) => { if (m.type() === "error") errors.push("console: " + m.text()); });
   await page.goto(base);
-  await page.setInputFiles("#file", path.join(ROOT, "test/fixtures/ember-crown-guide.txt"));
-  await page.waitForSelector(".home");
+  await page.waitForSelector(".walk");
   await page.evaluate(() => localStorage.setItem("ff6g:names", JSON.stringify([{ from: "Terra", to: "Prns Donut" }])));
   await page.reload();
   await page.click("#walkBtn");
@@ -595,8 +540,7 @@ for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, heigh
   const page = await ctx.newPage();
   page.on("pageerror", (e) => errors.push("pageerror: " + e.message));
   await page.goto(base);
-  await page.setInputFiles("#file", path.join(ROOT, "test/fixtures/ember-crown-guide.txt"));
-  await page.waitForSelector(".home");
+  await page.waitForSelector(".walk");
   await page.click("#monsterBtn");
   await page.waitForSelector(".monsters");
   const cols = await page.evaluate(() => getComputedStyle(document.getElementById("mnGrid")).gridTemplateColumns.split(" ").length);
@@ -654,8 +598,7 @@ for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, heigh
   page.on("pageerror", (e) => errors.push("pageerror: " + e.message));
   page.on("console", (m) => { if (m.type() === "error") errors.push("console: " + m.text()); });
   await page.goto(base);
-  await page.setInputFiles("#file", path.join(ROOT, "test/fixtures/ember-crown-guide.txt"));
-  await page.waitForSelector(".home");
+  await page.waitForSelector(".walk");
   await page.click('.toc-tracker[href="#/gear"]');
   await page.waitForSelector(".gear");
   const total = await page.locator(".gr").count();
@@ -693,82 +636,69 @@ for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, heigh
   await ctx.close();
 }
 
-// Color coding: names found from the guide, corrections, and the on/off switch.
+// Color coding: names from the app's data, corrections, and the on/off switch.
 {
   const ctx = await browser.newContext({ viewport: { width: 1180, height: 820 } });
   const page = await ctx.newPage();
-  page.on("pageerror", (e) => errors.push("pageerror: " + e.message));
-  page.on("console", (m) => { if (m.type() === "error") errors.push("console: " + m.text()); });
+  watch(page);
   await page.goto(base);
   const unit = await page.evaluate(async () => {
     const { buildTerms, matcher } = await import("./js/tags.js");
-    const doc = { sections: [{ title: "Scenario Sabin: The battle with the Phantom Train", level: 3, blocks: [] },
-      { title: "Traveling over the Veldt to Mobliz", level: 3, blocks: [] }, { title: "Version History", level: 2, blocks: [] }] };
-    const terms = buildTerms(doc, [{ from: "Terra", to: "Prns Donut" }], [{ text: "Mobliz", kind: "none" }]);
+    const terms = buildTerms({ boss: ["Phantom Train"], enemy: ["Leaf Bunny (2)"], place: ["Veldt", "Mobliz"] }, [{ from: "Terra", to: "Prns Donut" }], [{ text: "Mobliz", kind: "none" }]);
     const m = matcher(terms);
-    const hits = ("Shadow and shadow, SHADOW, Prns Donut, Kefka's, Veldt, Mobliz, the Phantom Train".match(m.re) || []).map((h) => h + "=" + m.kindOf(h));
+    const hits = ("Shadow and shadow, SHADOW, Prns Donut, Kefka's, Veldt, Mobliz, the Phantom Train, Leaf Bunny".match(m.re) || []).map((h) => h + "=" + m.kindOf(h));
     return hits.join(" ");
   });
-  check(unit === "Shadow=party SHADOW=party Prns Donut=party Kefka=boss Veldt=place Phantom Train=boss", `[colors] matching rules (${unit})`);
+  check(unit === "Shadow=party SHADOW=party Prns Donut=party Kefka=boss Veldt=place Phantom Train=boss Leaf Bunny=enemy", `[colors] matching rules (${unit})`);
 
-  await page.setInputFiles("#file", path.join(ROOT, "test/fixtures/ember-crown-guide.txt"));
-  await page.waitForSelector(".home");
-  await page.goto(base + "#/s/3.1.1");
-  await page.waitForSelector("article.sec");
-  const kinds = await page.evaluate(() => Object.fromEntries(["party", "enemy", "boss", "place"].map((k) => [k, [...new Set([...document.querySelectorAll("article .ent-" + k)].map((e) => e.textContent))]])));
-  check(kinds.enemy.includes("Hollowlurker") && kinds.enemy.includes("Wispgolem") && !kinds.enemy.some((t) => t.includes("(")), `[colors] monsters from opponents and formations (${kinds.enemy.join(", ")})`);
-  check(kinds.place.includes("Harrowgate"), `[colors] places from headings (${kinds.place.join(", ")})`);
-  await page.goto(base + "#/s/3.2.4");
-  await page.waitForSelector("article.sec");
-  check(await page.locator(".sec-h .ent-boss").textContent() === "Gloomlurker Queen", "[colors] boss from 'The battle with' heading");
-
-  await page.goto(base + "#/s/3.1.1");
-  await page.waitForSelector("article.sec");
+  await page.goto(base + "#/walk/1");
+  await page.waitForSelector(".walk-ch");
+  const kinds = await page.evaluate(() => Object.fromEntries(["party", "enemy", "boss", "place"].map((k) => [k, [...new Set([...document.querySelectorAll(".walk-ch .ent-" + k)].map((e) => e.textContent))]])));
+  check(kinds.place.includes("Narshe") && kinds.party.includes("Terra"), `[colors] places and characters colored (${kinds.place.join(", ")}; ${kinds.party.join(", ")})`);
+  check(kinds.boss.includes("Ymir") && kinds.enemy.includes("Guard"), "[colors] monster links colored as boss or monster");
   await page.click("#settingsBtn");
+  check(/Bosses\s*\d+/.test(await page.textContent("#tagLegend")), "[colors] legend counts the names");
   await page.click("#tagAdd");
-  await page.fill("#tagList li:last-child .tg-text", "Isolde");
+  await page.fill("#tagList li:last-child .tg-text", "Heal Force");
   await page.selectOption("#tagList li:last-child .tg-kind", "party");
   await page.click("#tagAdd");
-  await page.fill("#tagList li:last-child .tg-text", "Harrowgate");
+  await page.fill("#tagList li:last-child .tg-text", "Narshe");
   await page.selectOption("#tagList li:last-child .tg-kind", "none");
   await page.screenshot({ path: path.join(SHOTS, "14-colors-settings.png") });
   await page.click("#settingsSheet [data-close]");
-  check(await page.locator(".ent-party", { hasText: "Isolde" }).count() >= 1, "[colors] word added as a character");
-  check(await page.locator(".ent", { hasText: "Harrowgate" }).count() === 0, "[colors] word set to Not colored");
+  await page.waitForFunction(() => document.querySelectorAll(".walk-ch .ent-party").length && [...document.querySelectorAll(".walk-ch .ent-party")].some((e) => e.textContent === "Heal Force"));
+  check(true, "[colors] word added as a character");
+  check(await page.locator(".walk-ch .ent", { hasText: "Narshe" }).count() === 0, "[colors] word set to Not colored");
   await page.screenshot({ path: path.join(SHOTS, "15-colors-light.png") });
   await page.emulateMedia({ colorScheme: "dark" });
   await page.screenshot({ path: path.join(SHOTS, "16-colors-dark.png") });
   await page.click("#settingsBtn");
   await page.click("#colorNames");
   await page.click("#settingsSheet [data-close]");
-  check(await page.locator("article.sec .ent").count() === 0, "[colors] switch turns colors off");
+  await page.waitForFunction(() => !document.querySelector(".walk-ch .body .ent:not(.wt-mon)"));
+  check(true, "[colors] switch turns colors off");
   await ctx.close();
 }
 
 // Backup: save on one device, restore on a fresh one, and restore over existing data.
 {
-  const watch = (page) => {
-    page.on("pageerror", (e) => errors.push("pageerror: " + e.message));
-    page.on("console", (m) => { if (m.type() === "error") errors.push("console: " + m.text()); });
-  };
   const ctx = await browser.newContext({ viewport: { width: 1180, height: 820 }, acceptDownloads: true });
   const page = await ctx.newPage();
   watch(page);
   await page.goto(base);
-  await page.setInputFiles("#file", path.join(ROOT, "test/fixtures/ember-crown-guide.txt"));
-  await page.waitForSelector(".home");
+  await page.waitForSelector(".walk");
   await page.setInputFiles("#mapFile", path.join(ROOT, "test/fixtures/ember-crown-maps.zip"));
   await page.waitForFunction(() => document.querySelectorAll(".mp-item").length === 4, null, { timeout: 15000 });
-  await page.goto(base + "#/s/3.1.1");
-  await page.waitForSelector("#doneBtn");
-  await page.click("#doneBtn");
+  await page.goto(base + "#/walk/2");
+  await page.waitForSelector("#walkDone");
+  await page.click("#walkDone");
   await page.click("#settingsBtn");
   await page.click("#nameAdd");
-  await page.fill("#nameList li:last-child .nm-from", "Corvin");
+  await page.fill("#nameList li:last-child .nm-from", "Terra");
   await page.fill("#nameList li:last-child .nm-to", "Prns Donut");
   await page.press("#nameList li:last-child .nm-to", "Tab");
   await page.click("#tagAdd");
-  await page.fill("#tagList li:last-child .tg-text", "Isolde");
+  await page.fill("#tagList li:last-child .tg-text", "Heal Force");
   await page.press("#tagList li:last-child .tg-text", "Tab");
   await page.evaluate(() => localStorage.setItem("ff6g:rages", JSON.stringify(["Stray Cat", "Leaf Bunny"])));
   await page.evaluate(() => localStorage.setItem("ff6g:gear", JSON.stringify({ Dagger: 3, Potion: 14 })));
@@ -778,6 +708,8 @@ for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, heigh
   const backup = path.join(SHOTS, "backup.zip");
   await dl.saveAs(backup);
   check(/^FF6 Guide backup \d{4}-\d\d-\d\d\.zip$/.test(dl.suggestedFilename()), `[backup] saved as ${dl.suggestedFilename()}`);
+  const manifest = await page.evaluate(async (bytes) => { const { unzip } = await import("./js/zip.js"); const e = await unzip(new Uint8Array(bytes).buffer); return JSON.parse(new TextDecoder().decode(e.find((x) => x.name === "backup.json").data)); }, [...fs.readFileSync(backup)]);
+  check(!("guide" in manifest) && JSON.stringify(manifest.progress.walkDone) === '["escape-from-narshe"]', "[backup] holds walkthrough progress and no guide");
   await page.click("#settingsSheet [data-close]");
 
   // A backup zip added as maps is turned away rather than imported as loose images.
@@ -785,21 +717,19 @@ for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, heigh
   await page.waitForFunction(() => /full backup/.test(document.getElementById("toast").textContent));
   check(await page.locator(".mp-item").count() === 4, "[backup] maps picker refuses a backup");
 
-  // Restore on a fresh device from the import page.
+  // Restore on a fresh device: nothing to replace, so no question.
   const ctx2 = await browser.newContext({ viewport: { width: 1180, height: 820 } });
   const p2 = await ctx2.newPage();
   watch(p2);
   await p2.goto(base);
-  await p2.waitForSelector(".import");
-  await Promise.all([p2.waitForEvent("load"), p2.setInputFiles("#file", backup)]);
-  await p2.waitForSelector("article.sec");
-  check((await p2.textContent(".sec-h")).includes("Harrowgate"), "[backup] restore resumes at the last section read");
-  check(await p2.locator('.toc-list a.done[data-key="3.1.1"]').count() === 1, "[backup] restored done marks");
+  await p2.waitForSelector(".walk");
+  await Promise.all([p2.waitForEvent("load"), p2.setInputFiles("#backupFile", backup)]);
+  await p2.waitForSelector(".walk-ch");
+  check(/Escape from Narshe/.test(await p2.textContent(".walk-ch .sec-h")), "[backup] restore resumes at the last chapter read");
+  check(JSON.stringify(await doneKeys(p2)) === "[2]", "[backup] restored done marks");
   check(await p2.locator("#tocMaps .mp-item").count() === 4 && await p2.locator("#tocMaps .mp-link").count() === 3, "[backup] restored maps and links");
-  await p2.goto(base + "#/s/3.1.1");
-  await p2.waitForSelector("article.sec");
-  check((await p2.textContent("article.sec")).includes("Prns Donut"), "[backup] restored character names");
-  check(await p2.locator(".ent-party", { hasText: "Isolde" }).count() >= 1, "[backup] restored color-coding fixes");
+  check((await p2.textContent(".walk-ch")).includes("Prns Donut"), "[backup] restored character names");
+  check(/Heal Force/.test(await p2.evaluate(() => localStorage.getItem("ff6g:tags"))), "[backup] restored color-coding fixes");
   check(JSON.stringify(await p2.evaluate(() => JSON.parse(localStorage.getItem("ff6g:rages")))) === '["Stray Cat","Leaf Bunny"]', "[backup] restored Gau's Rages");
   check(JSON.stringify(await p2.evaluate(() => JSON.parse(localStorage.getItem("ff6g:gear")))) === '{"Dagger":3,"Potion":14}', "[backup] restored inventory counts");
   check(await p2.evaluate(() => { const p = JSON.parse(localStorage.getItem("ff6g:party")); return p.party[0] === "Terra" && p.chars.Terra.level === 12 && p.chars.Terra.eq.rh === "Mythril Knife"; }), "[backup] restored party, levels and load-outs");
@@ -810,24 +740,38 @@ for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, heigh
   await p2.press("#nameList .nm-to", "Tab");
   await p2.setInputFiles("#backupFile", backup);
   await p2.waitForSelector("#restoreDialog[open]");
-  check(/Corvin|guide/.test(await p2.textContent("#restoreWhat")), `[backup] dialog lists the contents (${await p2.textContent("#restoreWhat")})`);
+  check(/1 chapter done/.test(await p2.textContent("#restoreWhat")), `[backup] dialog lists the contents (${await p2.textContent("#restoreWhat")})`);
   await p2.screenshot({ path: path.join(SHOTS, "13-restore-dialog.png") });
   await p2.click("#restoreNo");
-  check((await p2.textContent("article.sec")).includes("Someone Else"), "[backup] Cancel keeps current data");
+  check((await p2.textContent(".walk-ch")).includes("Someone Else"), "[backup] Cancel keeps current data");
   await p2.click("#settingsBtn");
   await p2.setInputFiles("#backupFile", backup);
   await p2.waitForSelector("#restoreDialog[open]");
   await Promise.all([p2.waitForEvent("load"), p2.click("#restoreYes")]);
-  await p2.waitForSelector("article.sec");
-  await p2.goto(base + "#/s/3.1.1");
-  await p2.waitForSelector("article.sec");
-  check((await p2.textContent("article.sec")).includes("Prns Donut"), "[backup] Replace restores the backup");
+  await p2.waitForSelector(".walk-ch");
+  check((await p2.textContent(".walk-ch")).includes("Prns Donut"), "[backup] Replace restores the backup");
 
   // A map pack chosen as a backup is explained.
-  await p2.goto(base + "#/import");
-  await p2.setInputFiles("#file", path.join(ROOT, "test/fixtures/ember-crown-maps.zip"));
-  await p2.waitForSelector("#importErr:not([hidden])");
-  check(/isn't a backup/.test(await p2.textContent("#importErr")), "[backup] map pack on the import page is explained");
+  await p2.setInputFiles("#backupFile", path.join(ROOT, "test/fixtures/ember-crown-maps.zip"));
+  await p2.waitForFunction(() => /isn't a backup/.test(document.getElementById("toast").textContent));
+  check(true, "[backup] map pack chosen as a backup is explained");
+
+  // A backup from before 0.20.0 (with the imported guide) still restores everything else.
+  const old = await p2.evaluate(async () => {
+    const { zip } = await import("./js/zip.js");
+    const m = { format: "ff6-guide-backup", version: 1, app: "0.19.0", createdAt: new Date().toISOString(),
+      guide: { file: "guide/guide.txt", format: "text", name: "guide.txt", source: "text", importedAt: 1 },
+      names: [{ from: "Terra", to: "Old Name" }], tags: [], rages: ["Guard"], gear: {}, party: null,
+      progress: { done: ["4.1.1"], last: "4.1.1", walkDone: ["the-raid-on-narshe"] }, maps: [], links: [] };
+    return [...new Uint8Array(await zip([{ name: "backup.json", data: JSON.stringify(m) }, { name: "guide/guide.txt", data: "old guide text" }]).arrayBuffer())];
+  });
+  await p2.click("#settingsBtn");
+  await p2.setInputFiles("#backupFile", { name: "old.zip", mimeType: "application/zip", buffer: Buffer.from(old) });
+  await p2.waitForSelector("#restoreDialog[open]");
+  await Promise.all([p2.waitForEvent("load"), p2.click("#restoreYes")]);
+  await p2.waitForSelector(".walk");
+  const left = await p2.evaluate(async () => ({ guide: await (await import("./js/store.js")).idbGet("guide"), done: localStorage.getItem("ff6g:done"), names: localStorage.getItem("ff6g:names"), walk: localStorage.getItem("ff6g:walkDone") }));
+  check(!left.guide && left.done === null && /Old Name/.test(left.names) && /raid-on-narshe/.test(left.walk), "[backup] an older backup restores without its guide");
   await ctx2.close();
   await ctx.close();
 }
@@ -867,9 +811,8 @@ for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, heigh
 
   const A = await setup("Chrome on Linux");
   await A.page.goto(base);
-  await A.page.setInputFiles("#file", path.join(ROOT, "test/fixtures/ember-crown-guide.txt"));
-  await A.page.waitForSelector(".home");
-  await A.page.evaluate(() => localStorage.setItem("ff6g:names", JSON.stringify([{ from: "Corvin", to: "Prns Donut" }])));
+  await A.page.waitForSelector(".walk");
+  await A.page.evaluate(() => localStorage.setItem("ff6g:names", JSON.stringify([{ from: "Terra", to: "Prns Donut" }])));
   await A.page.click("#settingsBtn");
   await A.page.click("#gdSave");
   check(await A.page.locator("#gdSetup[open]").count() === 1 && /client ID/.test(await A.page.textContent("#toast")), "[drive] without a client ID, Save explains the setup");
@@ -877,7 +820,7 @@ for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, heigh
   await A.page.press("#gdClient", "Tab");
   await Promise.all([A.page.waitForURL(/ember|#\/|\/$/), A.page.click("#gdSave")]);
   await A.page.waitForFunction(() => /Saved to Google Drive/.test(document.getElementById("toast").textContent), null, { timeout: 15000 });
-  check(drive.bytes && drive.bytes.length > 1000 && !/access_token/.test(A.page.url()), "[drive] signs in, saves the backup to Drive, and cleans up the address");
+  check(drive.bytes && drive.bytes.length > 200 && !/access_token/.test(A.page.url()), "[drive] signs in, saves the backup to Drive, and cleans up the address");
 
   const B = await setup("Safari on iPad");
   await B.page.goto(base);
@@ -885,8 +828,15 @@ for (const vp of [{ width: 1180, height: 820, tag: "ipad" }, { width: 390, heigh
   await B.page.reload();
   await B.page.click("#settingsBtn");
   await B.page.click("#gdRestore");
-  await B.page.waitForSelector(".home, article.sec", { timeout: 20000 });
-  check(await B.page.evaluate(() => (localStorage.getItem("ff6g:names") || "").includes("Prns Donut")), "[drive] a fresh browser restores everything from Drive");
+  // The page signs in, comes back, restores and reloads: poll through the navigations.
+  let restored = false;
+  for (let t = Date.now(); !restored && Date.now() - t < 20000;) {
+    restored = await B.page.evaluate(() => (localStorage.getItem("ff6g:names") || "").includes("Prns Donut")).catch(() => false);
+    if (!restored) await new Promise((r) => setTimeout(r, 200));
+  }
+  await B.page.waitForLoadState();
+  await B.page.waitForSelector(".walk, .walk-ch");
+  check(restored, "[drive] a fresh browser restores everything from Drive");
   await B.page.click("#settingsBtn");
   await B.page.click("#gdSave");
   await B.page.waitForFunction(() => /Saved to Google Drive/.test(document.getElementById("toast").textContent), null, { timeout: 15000 });

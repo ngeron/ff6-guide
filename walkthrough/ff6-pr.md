@@ -8,8 +8,9 @@ Fantasy Wiki) and the owner's own guide for chapter order. No guide text is copi
 Format, read by js/walkthrough.js:
   # Part title
   ## Chapter title
-  @guide 4.1.1            section of the imported guide to link to (optional)
-  @where Narshe            area names, used to link maps (optional, comma-separated)
+  @guide 4.1.1            matching section of Djibriel's FF6 Advance guide; maps tagged with a
+                           guide section number show on the chapter that covers it (optional)
+  @where Narshe            area names, colored as places (optional, comma-separated)
   ### Where to go | ### Boss: [[Name]] | ### Monsters here | ### Don't miss | ### Side trips | ### Good time to grind
   - bullet lines; plain paragraphs are fine too
   [[Monster]] or [[Shown text|Monster]] links to the Monster intel card.

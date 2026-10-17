@@ -1,13 +1,16 @@
 // Maps: your own map images (stored on this device) and a list of links to maps hosted elsewhere.
 //
 // Images can be imported one by one, or as a map pack: a .zip holding the images plus an
-// optional maps.json that gives titles, order, the guide section each map belongs to, and links:
+// optional maps.json that gives titles, order, the walkthrough chapter each map belongs to, and links:
 //
 //   {
-//     "title": "Ember Crown maps",
-//     "maps":  [{ "file": "world.png", "title": "World map", "section": "3.0" }],
-//     "links": [{ "title": "Interactive world map", "url": "https://…", "section": "3.0", "note": "…" }]
+//     "title": "My maps",
+//     "maps":  [{ "file": "narshe.png", "title": "Narshe", "chapter": "the-raid-on-narshe" }],
+//     "links": [{ "title": "Interactive world map", "url": "https://…", "section": "4.54.1", "note": "…" }]
 //   }
+//
+// "chapter" is a chapter's slug (its title in lower case, words joined by "-"). Older packs use
+// "section", a section number of Djibriel's guide; walkthrough.js finds the chapter covering it.
 
 import { listMaps, putMap, deleteMap, clearMaps, loadLinks, saveLinks } from "./store.js";
 import { unzip, zip } from "./zip.js";
@@ -19,7 +22,8 @@ const $ = (id) => document.getElementById(id);
 let maps = [];
 let links = [];
 const urls = new Map(); // map id -> object URL
-let ctx = { toast: () => {}, onChange: () => {}, sectionTitle: () => null, sectionHref: () => null, sectionNums: () => [] };
+// chapterOf(rec) -> { n, title, slug } | null; chapterOptions(slug) -> <option> HTML for a chapter picker.
+let ctx = { toast: () => {}, onChange: () => {}, chapterOf: () => null, chapterOptions: () => "" };
 
 const uid = () => {
   try { return crypto.randomUUID(); } catch { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
@@ -53,13 +57,16 @@ function dropUrl(id) {
   if (urls.has(id)) { URL.revokeObjectURL(urls.get(id)); urls.delete(id); }
 }
 
-export function itemsForSection(num) {
-  if (!num) return [];
+// Maps and links for a walkthrough chapter.
+export function itemsForChapter(n) {
+  const here = (rec) => ctx.chapterOf(rec)?.n === n;
   return [
-    ...maps.filter((m) => m.section === num).map((m) => ({ kind: "map", title: m.title, href: `#/map/${m.id}` })),
-    ...links.filter((l) => l.section === num).map((l) => ({ kind: "link", title: l.title, href: l.url })),
+    ...maps.filter(here).map((m) => ({ kind: "map", title: m.title, href: `#/map/${m.id}` })),
+    ...links.filter(here).map((l) => ({ kind: "link", title: l.title, href: l.url })),
   ];
 }
+
+const place = (r) => ({ ...(r && r.chapter ? { chapter: String(r.chapter).trim() } : {}), section: r && r.section ? String(r.section).trim() : "" });
 
 /* ---------------- import ---------------- */
 
@@ -91,7 +98,7 @@ function cleanLink(l) {
   let url;
   try { url = new URL(l.url.trim()); } catch { return null; }
   if (!/^https?:$/.test(url.protocol)) return null;
-  return { id: uid(), title: String(l.title || url.hostname).trim().slice(0, 120), url: url.href, section: l.section ? String(l.section).trim() : "", note: l.note ? String(l.note).trim().slice(0, 300) : "" };
+  return { id: uid(), title: String(l.title || url.hostname).trim().slice(0, 120), url: url.href, ...place(l), note: l.note ? String(l.note).trim().slice(0, 300) : "" };
 }
 
 // Accepts images, map pack .zip files and maps.json files. Returns a summary.
@@ -133,7 +140,7 @@ export async function importFiles(files, onProgress = () => {}) {
     const rec = {
       id: uid(),
       title: (m && m.title ? String(m.title) : titleFromFile(im.name)).slice(0, 120),
-      section: m && m.section ? String(m.section).trim() : "",
+      ...place(m),
       data: im.data.buffer.slice(im.data.byteOffset, im.data.byteOffset + im.data.byteLength),
       type,
       width: size.width,
@@ -182,8 +189,8 @@ export async function exportPack() {
   });
   const manifest = {
     title: "My maps",
-    maps: entries.map(({ m, name }) => ({ file: name, title: m.title, ...(m.section ? { section: m.section } : {}) })),
-    links: links.map(({ title, url, section, note }) => ({ title, url, ...(section ? { section } : {}), ...(note ? { note } : {}) })),
+    maps: entries.map(({ m, name }) => ({ file: name, title: m.title, ...(m.chapter ? { chapter: m.chapter } : {}), ...(m.section ? { section: m.section } : {}) })),
+    links: links.map(({ title, url, chapter, section, note }) => ({ title, url, ...(chapter ? { chapter } : {}), ...(section ? { section } : {}), ...(note ? { note } : {}) })),
   };
   const blob = zip([{ name: "maps.json", data: JSON.stringify(manifest, null, 2) }, ...entries.map(({ m, name }) => ({ name, data: new Uint8Array(m.data) }))]);
   const file = new File([blob], "maps.zip", { type: "application/zip" });
@@ -248,9 +255,9 @@ export async function removeAllMaps() {
 const linkIcon = `<svg class="ext" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>`;
 
 export function renderPanel(container, currentMapId) {
-  const sec = (num) => {
-    if (!num) return "";
-    return `<span class="mp-sec">${esc(num)}</span>`;
+  const sec = (rec) => {
+    const c = ctx.chapterOf(rec);
+    return c ? `<span class="mp-sec" title="${esc(c.title)}">${c.n}</span>` : "";
   };
   container.innerHTML = `
   <div class="toc-in maps-in">
@@ -258,14 +265,14 @@ export function renderPanel(container, currentMapId) {
     ${maps.length ? `<ol class="mp-list">${maps.map((m) => `
       <li><a class="mp-item" href="#/map/${m.id}"${m.id === currentMapId ? ' aria-current="page"' : ""}>
         <img class="mp-thumb" src="${urlFor(m)}" alt="" loading="lazy" width="56" height="42">
-        <span class="mp-t">${esc(m.title)}${sec(m.section)}</span></a></li>`).join("")}</ol>`
+        <span class="mp-t">${esc(m.title)}${sec(m)}</span></a></li>`).join("")}</ol>`
       : `<p class="mp-empty">No maps yet. Add your own images from Files, or a map pack (.zip).</p>`}
     <button type="button" class="btn mp-add" id="mapAddBtn">Add map images</button>
 
     <h3 class="mp-h">Map links <span class="cnt">${links.length || ""}</span></h3>
     ${links.length ? `<ol class="mp-links">${links.map((l) => `
       <li><a class="mp-link" href="${esc(l.url)}" target="_blank" rel="noopener noreferrer">
-        <span class="mp-t">${esc(l.title)}${linkIcon}${sec(l.section)}</span>
+        <span class="mp-t">${esc(l.title)}${linkIcon}${sec(l)}</span>
         <span class="mp-host">${esc(l.note || new URL(l.url).hostname)}</span></a>
         <button type="button" class="mp-x" data-unlink="${l.id}" aria-label="Remove link ${esc(l.title)}">×</button></li>`).join("")}</ol>`
       : `<p class="mp-empty">Bookmark maps hosted on other sites. They open in a new tab.</p>`}
@@ -276,8 +283,8 @@ export function renderPanel(container, currentMapId) {
         <input id="linkTitle" type="text" placeholder="World map (interactive)" maxlength="120" autocomplete="off">
         <label for="linkUrl">Address</label>
         <input id="linkUrl" type="url" inputmode="url" placeholder="https://" autocapitalize="off" autocomplete="off" spellcheck="false">
-        <label for="linkSec">Guide section <span class="opt">(optional)</span></label>
-        <input id="linkSec" type="text" inputmode="decimal" placeholder="4.31" list="secNums" autocomplete="off">
+        <label for="linkSec">Walkthrough chapter <span class="opt">(optional)</span></label>
+        <select id="linkSec"><option value="">None</option>${ctx.chapterOptions("")}</select>
         <p class="mp-err" id="linkErr" hidden></p>
         <button type="submit" class="btn solid">Add link</button>
       </form>
@@ -304,7 +311,7 @@ export function bindPanel(container, pickFiles) {
     const err = $("linkErr");
     let url = $("linkUrl").value.trim();
     if (url && !/^[a-z]+:\/\//i.test(url)) url = "https://" + url;
-    const ok = await addLink({ title: $("linkTitle").value.trim(), url, section: $("linkSec").value.trim() });
+    const ok = await addLink({ title: $("linkTitle").value.trim(), url, chapter: $("linkSec").value });
     if (!ok) { err.textContent = "Enter a web address starting with https://"; err.hidden = false; $("linkUrl").focus(); return; }
     ctx.toast("Link added");
   });
@@ -312,7 +319,8 @@ export function bindPanel(container, pickFiles) {
 
 /* ---------------- viewer ---------------- */
 
-export function renderViewer(view, m, { sectionLabel }) {
+export function renderViewer(view, m) {
+  const c = ctx.chapterOf(m);
   view.innerHTML = `
   <section class="mapview">
     <div class="map-tools" role="toolbar" aria-label="Zoom">
@@ -321,7 +329,7 @@ export function renderViewer(view, m, { sectionLabel }) {
       <output id="zPct" class="zpct">100%</output>
       <button type="button" class="btn" id="zIn" aria-label="Zoom in">+</button>
       <button type="button" class="btn" id="z100">Actual size</button>
-      ${m.section && sectionLabel ? `<a class="map-back" href="${sectionLabel.href}">${esc(m.section)} ${esc(sectionLabel.title)}</a>` : ""}
+      ${c ? `<a class="map-back" href="#/walk/${c.n}">${c.n} ${esc(c.title)}</a>` : ""}
     </div>
     <div class="map-stage" id="stage" tabindex="0" aria-label="${esc(m.title)}, double-tap to zoom">
       <img id="mapImg" src="${urlFor(m)}" alt="${esc(m.title)}" width="${m.width}" height="${m.height}" draggable="false">
@@ -331,8 +339,8 @@ export function renderViewer(view, m, { sectionLabel }) {
       <form id="mapForm" novalidate>
         <label for="mapTitle">Name</label>
         <input id="mapTitle" type="text" value="${esc(m.title)}" maxlength="120" autocomplete="off">
-        <label for="mapSec">Show with guide section <span class="opt">(optional)</span></label>
-        <input id="mapSec" type="text" inputmode="decimal" value="${esc(m.section || "")}" placeholder="3.1.3" list="secNums" autocomplete="off">
+        <label for="mapSec">Show with walkthrough chapter <span class="opt">(optional)</span></label>
+        <select id="mapSec"><option value="">None</option>${ctx.chapterOptions(c ? c.slug : "")}</select>
         <p class="hint">${m.width} × ${m.height} pixels${m.file ? ` · ${esc(m.file)}` : ""}</p>
         <div class="row2">
           <button type="submit" class="btn solid">Save</button>
@@ -348,7 +356,10 @@ export function renderViewer(view, m, { sectionLabel }) {
   setupZoom(m);
   $("mapForm").addEventListener("submit", async (e) => {
     e.preventDefault();
-    await updateMap(m.id, { title: $("mapTitle").value.trim() || m.title, section: $("mapSec").value.trim() });
+    const slug = $("mapSec").value;
+    // Keep an older guide section number as long as it still lands in the chosen chapter.
+    const where = slug === (c ? c.slug : "") ? {} : { chapter: slug, section: "" };
+    await updateMap(m.id, { title: $("mapTitle").value.trim() || m.title, ...where });
     ctx.toast("Map saved");
   });
   $("mapDel").onclick = () => { $("mapDelConfirm").hidden = false; $("mapDelNo").focus(); };
