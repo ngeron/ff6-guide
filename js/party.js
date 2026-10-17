@@ -5,7 +5,7 @@
 
 import { CHARS, EQUIP } from "./party-data.js";
 import { SLOTS, SLOT_LABEL, GOALS, evaluate, canEquip, slotFits, optimizeParty, canEquipEsper, assignEspers } from "./optimizer.js";
-import { ESPERS } from "./espers-data.js";
+import { ESPERS, SPELL_GROUPS } from "./espers-data.js";
 import { loadGear, saveGear } from "./gear.js";
 import { loadNames } from "./names.js";
 import { getPref, setPref } from "./store.js";
@@ -14,6 +14,9 @@ import { esc } from "./render.js";
 const MAX_PARTY = 4;
 const blank = () => ({ met: false, level: 1, goal: "balanced", eq: {}, lock: {}, esper: "", spells: [] });
 const ESPER = new Map(ESPERS.map((e) => [e.name, e]));
+const TAUGHT_BY = new Map();
+for (const e of ESPERS) for (const [sp] of e.spells) TAUGHT_BY.set(sp, [...(TAUGHT_BY.get(sp) || []), e.name]);
+const SPELL_COUNT = SPELL_GROUPS.reduce((n, [, l]) => n + l.length, 0);
 const STAT_NAME = { str: "Strength", agi: "Agility", sta: "Stamina", mag: "Magic", hp: "HP", mp: "MP" };
 const bonusText = (b) => (b ? `${STAT_NAME[b.stat]} +${b.amt}${b.pct ? "%" : ""}` : "No level-up bonus");
 
@@ -74,6 +77,7 @@ export function renderParty(outer, ctx) {
     return n ? n.to.trim() : c.name;
   };
   let pending = null; // optimizer result waiting for Apply
+  const magicOpen = new Set(); // characters whose Magic list is open, kept across re-renders
   let clearArmed = false; // Clear all gear asks for a second tap
   const unlockedGear = () => CHARS.some((c) => { const r = rec(c.name); return SLOTS.some((s) => r.eq[s] && !r.lock[s]); });
 
@@ -102,6 +106,16 @@ export function renderParty(outer, ctx) {
       <ul>${e.spells.map(([sp, rate]) => `<li><label><input type="checkbox" class="pc-spell" data-s="${esc(sp)}"${known.has(sp) ? " checked" : ""}> ${esc(sp)} <span class="mn-odds">×${rate}</span></label></li>`).join("")}</ul></div>`;
   };
 
+  // Every spell, ticked when this character knows it, whichever esper taught it.
+  const magicList = (c, r) => {
+    if (!canEquipEsper(c)) return "";
+    const known = new Set(r.spells);
+    return `<details class="pc-magic"${magicOpen.has(c.name) ? " open" : ""}><summary>Magic <span class="mn-odds">${known.size} of ${SPELL_COUNT} known</span></summary>
+      <p class="pc-fx">Everything ${esc(shown(c))} has learned, from any esper${c.name === "Terra" || c.name === "Celes" ? " or by leveling up" : ""}. Tick spells as they're learned.</p>
+      ${SPELL_GROUPS.map(([g, list]) => `<div class="pc-spells"><p class="pc-fx"><strong>${g}</strong></p><ul>${list.map((sp) => `<li><label title="Taught by ${esc(TAUGHT_BY.get(sp).join(", "))}"><input type="checkbox" class="pc-spell" data-s="${esc(sp)}"${known.has(sp) ? " checked" : ""}> ${esc(sp)}</label></li>`).join("")}</ul></div>`).join("")}
+    </details>`;
+  };
+
   const card = (c, inParty) => {
     const r = rec(c.name);
     const bag = loadGear();
@@ -126,6 +140,7 @@ export function renderParty(outer, ctx) {
         <td><button type="button" class="pc-lock" aria-pressed="${!!r.lock[slot]}" aria-label="Keep ${SLOT_LABEL[slot]} when optimizing" title="Keep when optimizing">${r.lock[slot] ? "🔒" : "🔓"}</button></td>
       </tr>`).join("")}${esperRow(c, r)}</tbody></table>
       ${esperSpells(c, r)}
+      ${magicList(c, r)}
       <dl class="mn-stats pc-stats">${stat("HP", s.hp)}${stat("MP", s.mp)}${stat("Strength", s.vig)}${stat("Agility", s.spd)}${stat("Stamina", s.sta)}${stat("Magic", s.mag)}${stat("Attack", s.attack)}${stat("Defense", s.def)}${stat("Evasion", s.ev)}${stat("Magic Def.", s.mdef)}${stat("Magic Eva.", s.mb)}</dl>
       <p class="pc-est">Estimates at level ${r.level}: Fight ≈ <strong>${ev.fight}</strong> · Magic ≈ <strong>${ev.magic}</strong> · Toughness <strong>${ev.tough}</strong></p>`;
     if (inParty) {
@@ -165,7 +180,7 @@ export function renderParty(outer, ctx) {
           <li><strong>A common plan:</strong> early on, spread healing (Kirin, Seraph, Lakshmi) and Haste (Carbuncle, Quetzalli) across the party; later, level up with Bismarck or Alexander for Strength, Zona Seeker or Valigarmanda for Magic, and Bahamut or Midgardsormr for HP.</li>
         </ul>
       </details>
-      <p class="hint">Tick each esper you have. Then pick one for each character above, and tick the spells they've already learned (the game's Magic screen shows them), so the optimizer knows what's left.</p>
+      <p class="hint">Tick each esper you have. Then pick one for each character above, and tick the spells they've already learned (the game's Magic screen shows them), so the optimizer knows what's left. Each character's <strong>Magic</strong> list shows everything they know, from every esper they've held.</p>
       <ul class="pt-espers">${ESPERS.map((e) => { const h = holder(e.name); const have = st.espers.includes(e.name); return `<li class="${have ? "on" : ""}"><label><input type="checkbox" class="pt-esper" data-e="${esc(e.name)}"${have ? " checked" : ""}> <span><strong>${esc(e.name)}</strong>${e.alt ? ` <span class="rg-alt">${esc(e.alt)}</span>` : ""}${have && h ? ` <span class="badge">${esc(shown(h))}</span>` : ""}<span class="pc-fx">${esc(bonusText(e.bonus))} · ${e.spells.map(([sp, r]) => `${esc(sp)} ×${r}`).join(", ")}</span><span class="pc-fx">${have ? esc(e.summon) : "Where: " + esc(e.found)}</span></span></label></li>`; }).join("")}</ul>
       ${unmet.length ? `<h2 class="sheet-sub">Not met yet</h2><p class="hint">Tick a character when they join you.</p><ul class="pt-unmet">${unmet.map((c) => `<li><label><input type="checkbox" class="pc-met" data-c="${esc(c.name)}"> ${esc(shown(c))}${shown(c) !== c.name ? ` <span class="rg-alt">${esc(c.name)}</span>` : ""}</label></li>`).join("")}</ul>` : ""}
       <p class="hint small">Base stats, HP and MP per level, and equipment stats from <a href="https://gamercorner.net/ffvi/" target="_blank" rel="noopener noreferrer">Gamer Corner</a>; relic effects from the <a href="https://finalfantasy.fandom.com/wiki/Relic_(Final_Fantasy_VI)" target="_blank" rel="noopener noreferrer">Final Fantasy Wiki</a>. Stat boosts from espers at level-up aren't included, so HP, MP and stats in the game may be higher. Estimates are for comparing load-outs, not exact damage.</p>
@@ -198,6 +213,12 @@ export function renderParty(outer, ctx) {
     if (e.target.closest("#ptApply")) return applyResult();
     if (e.target.closest("#ptDiscard")) { pending = null; view.querySelector("#ptResult").innerHTML = ""; }
   });
+
+  view.addEventListener("toggle", (e) => {
+    if (!e.target.classList?.contains("pc-magic")) return;
+    const name = nameOf(e.target);
+    if (e.target.open) magicOpen.add(name); else magicOpen.delete(name);
+  }, true);
 
   view.addEventListener("change", (e) => {
     const t = e.target;

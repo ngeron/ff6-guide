@@ -37,3 +37,10 @@ export const ESPERS = [
   {"name": "Crusader", "spells": [["Meltdown", 1], ["Meteor", 10]], "bonus": {"stat": "mp", "amt": 50, "pct": 1}, "summon": "Cleansing: Greatly damages all enemies and allies.", "found": "Defeat the eight legendary dragons, received automatically when the eighth is defeated."},
   {"name": "Raiden", "spells": [["Quick", 1]], "bonus": {"stat": "agi", "amt": 2}, "summon": "Shin-Zantetsuken: Cleaves all enemies in two.", "found": "Ancient Castle, touch the petrified Queen while in possession of Odin's magicite."},
 ];
+
+// Every spell espers teach, grouped as the game's Magic menu groups them.
+export const SPELL_GROUPS = [
+  ["Attack", ["Fire", "Blizzard", "Thunder", "Poison", "Drain", "Fira", "Blizzara", "Thundara", "Bio", "Firaga", "Blizzaga", "Thundaga", "Break", "Death", "Holy", "Flare", "Gravity", "Graviga", "Banish", "Meteor", "Ultima", "Quake", "Tornado", "Meltdown"]],
+  ["Healing", ["Cure", "Cura", "Curaga", "Raise", "Arise", "Poisona", "Esuna", "Regen", "Reraise"]],
+  ["Support", ["Libra", "Slow", "Rasp", "Silence", "Protect", "Sleep", "Confuse", "Haste", "Stop", "Berserk", "Float", "Imp", "Reflect", "Shell", "Vanish", "Hastega", "Slowga", "Osmose", "Teleport", "Quick", "Dispel"]],
+];

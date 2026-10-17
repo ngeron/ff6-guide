@@ -431,9 +431,15 @@ for (const vp of [{ tag: "ipad", w: 1180, h: 820 }, { tag: "phone", w: 390, h: 8
   for (const n of ["Ramuh", "Kirin", "Siren", "Bismarck", "Golem"]) await page.click(`.pt-esper[data-e="${n}"]`);
   await page.selectOption('article[data-c="Terra"] .pc-esper', "Ramuh");
   await page.click('article[data-c="Terra"] .pc-spell[data-s="Thunder"]');
-  check(await page.locator('article[data-c="Terra"] .pc-spell:checked').count() === 1 && /teaches 2 spells/.test(await page.textContent('article[data-c="Terra"] .pc-spells')), "[espers] equipped esper shows its spells; learned ones tick off");
+  check(await page.locator('article[data-c="Terra"] > .pc-spells .pc-spell:checked').count() === 1 && /teaches 2 spells/.test(await page.textContent('article[data-c="Terra"] > .pc-spells')), "[espers] equipped esper shows its spells; learned ones tick off");
   await page.selectOption('article[data-c="Locke"] .pc-esper', "Ramuh");
   check(await page.inputValue('article[data-c="Terra"] .pc-esper') === "" && await page.inputValue('article[data-c="Locke"] .pc-esper') === "Ramuh", "[espers] an esper moves from one character to another");
+  check(await page.locator('article[data-c="Terra"] .pc-magic .pc-spell[data-s="Thunder"]:checked').count() === 1 && /1 of 54 known/.test(await page.textContent('article[data-c="Terra"] .pc-magic summary')), "[magic] a spell stays in the character's Magic list after the esper moves on");
+  await page.click('article[data-c="Terra"] .pc-magic summary');
+  await page.click('article[data-c="Terra"] .pc-magic .pc-spell[data-s="Cure"]');
+  check(await page.evaluate(() => JSON.parse(localStorage.getItem("ff6g:party")).chars.Terra.spells.includes("Cure")) && await page.locator('article[data-c="Terra"] .pc-magic[open]').count() === 1, "[magic] ticking a spell in the Magic list saves it; the list stays open");
+  await page.screenshot({ path: path.join(SHOTS, "27b-party-magic.png") });
+  await page.click('article[data-c="Terra"] .pc-magic summary');
   check(await page.locator('article[data-c="Gau"] .pc-esper').count() === 1, "[espers] Gau can hold an esper");
   await page.selectOption("#ptEsperMode", "bonus");
   await page.click("#ptOpt");
