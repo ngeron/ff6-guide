@@ -1,9 +1,12 @@
 // Inventory tracker: how many of each weapon, armor, relic and item you have, with shop prices
-// and where to get each one. Counts are stored by name in the "gear" setting: { name: count }.
+// and where to get each one. Counts in the bag are stored by name in the "gear" setting:
+// { name: count }. What characters wear is in the "party" setting; the page shows both together
+// as what you own, so an equipped item isn't counted twice.
 
 import { GEAR as ALL } from "./gear-data.js";
 import { getPref, setPref } from "./store.js";
 import { esc } from "./render.js";
+import { loadNames } from "./names.js";
 
 // GBA-only gear (from the GBA bonus dungeons) isn't in the Pixel Remaster, so it's left out.
 const GEAR = ALL.filter((x) => !x.gba);
@@ -21,9 +24,31 @@ export function saveGear(g) {
   setPref("gear", Object.keys(out).length ? out : null);
 }
 
+// Who wears what: { item: [character, ...] }, benched characters first, so they're the first to
+// give an item up when you lower its count.
+function worn() {
+  const p = getPref("party", null);
+  const out = {};
+  if (!p || !p.chars) return out;
+  const party = p.party || [];
+  const order = Object.keys(p.chars).sort((a, b) => party.includes(a) - party.includes(b));
+  for (const c of order) for (const n of Object.values(p.chars[c].eq || {})) if (n) (out[n] ||= []).push(c);
+  return out;
+}
+// Takes one of an item off a character (benched characters first).
+function unequip(item) {
+  const p = getPref("party", null);
+  const c = worn()[item]?.[0];
+  if (!c) return "";
+  const eq = p.chars[c].eq;
+  delete eq[Object.keys(eq).find((s) => eq[s] === item)];
+  setPref("party", p);
+  return c;
+}
+
 export function gearCounts() {
-  const g = loadGear();
-  return { kinds: GEAR.filter((x) => g[x.name] > 0).length, total: GEAR.length };
+  const g = loadGear(), w = worn();
+  return { kinds: GEAR.filter((x) => (g[x.name] || 0) + (w[x.name] || []).length > 0).length, total: GEAR.length };
 }
 
 const gil = (n) => n.toLocaleString() + " gil";
@@ -43,6 +68,10 @@ function details(x) {
 // ctx: { onFind(name), onChange(), toast(msg) }
 export function renderGear(view, ctx) {
   const have = loadGear();
+  let wearing = worn();
+  const names = loadNames();
+  const shown = (c) => names.find((x) => x.from.trim().toLowerCase() === c.toLowerCase() && x.to.trim())?.to.trim() || c;
+  const owned = (name) => (have[name] || 0) + (wearing[name] || []).length;
   let cat = getPref("gearCat", "all");
   let show = getPref("gearShow", "all");
   if (!CATS.some(([v]) => v === cat)) cat = "all";
@@ -53,7 +82,7 @@ export function renderGear(view, ctx) {
     <p class="eyebrow">Tracker</p>
     <h1>Inventory</h1>
     <p class="rg-stat"><strong id="grKinds"></strong> of ${GEAR.length} kinds · <span id="grValue"></span></p>
-    <p class="hint">Count what's in your bag (the game's Items screen); what your characters wear is set on the Party page. Check what you have and set how many. Tap a name for its prices and where to get it. In FF6 every shop charges the same for an item and pays the same for it, so you can sell anywhere.</p>
+    <p class="hint">Count everything you own, including what your characters are wearing (set on the Party page). The game's Items screen leaves out equipped items, so add those in. Check what you have and set how many. Tap a name for its prices and where to get it. In FF6 every shop charges the same for an item and pays the same for it, so you can sell anywhere.</p>
     <div class="rg-tools">
       <input type="search" id="grQ" placeholder="Find an item" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Find an item">
       <select id="grCat" aria-label="Kind">${CATS.map(([v, t]) => `<option value="${v}"${v === cat ? " selected" : ""}>${t}</option>`).join("")}</select>
@@ -66,7 +95,7 @@ export function renderGear(view, ctx) {
           <input type="checkbox" aria-label="Have ${esc(x.name)}">
           <button type="button" class="gr-open" aria-expanded="false" aria-controls="gr${i}">
             <span class="rg-name">${esc(x.name)}${x.alt ? ` <span class="rg-alt">${esc(x.alt)}</span>` : ""}</span>
-            <span class="rg-ab">${esc(x.type)}${x.sell ? ` · sells for ${gil(x.sell)}` : ""}</span>
+            <span class="rg-ab">${esc(x.type)}${x.sell ? ` · sells for ${gil(x.sell)}` : ""}<span class="gr-worn"></span></span>
           </button>
           <span class="gr-step">
             <button type="button" class="gr-dec" aria-label="One fewer ${esc(x.name)}">−</button>
@@ -88,7 +117,9 @@ export function renderGear(view, ctx) {
 
   const paintRow = (li) => {
     const x = GEAR[+li.dataset.i];
-    const n = have[x.name] || 0;
+    const n = owned(x.name);
+    const w = wearing[x.name] || [];
+    li.querySelector(".gr-worn").textContent = w.length ? ` · worn by ${w.map(shown).join(", ")}` : "";
     li.classList.toggle("on", n > 0);
     li.querySelector('input[type="checkbox"]').checked = n > 0;
     li.querySelector(".gr-n").value = n ? String(n) : "";
@@ -99,7 +130,7 @@ export function renderGear(view, ctx) {
   };
   const totals = () => {
     let kinds = 0, value = 0;
-    for (const x of GEAR) { const n = have[x.name] || 0; if (n) { kinds++; value += n * (x.sell || 0); } }
+    for (const x of GEAR) { const n = owned(x.name); if (n) { kinds++; value += n * (x.sell || 0); } }
     view.querySelector("#grKinds").textContent = kinds;
     view.querySelector("#grValue").textContent = `worth ${gil(value)} if sold`;
   };
@@ -108,7 +139,7 @@ export function renderGear(view, ctx) {
     let shown = 0;
     rows.forEach((li, i) => {
       const x = GEAR[i];
-      const n = have[x.name] || 0;
+      const n = owned(x.name);
       const match = !q || [x.name, x.alt, x.type].some((s) => s && s.toLowerCase().includes(q));
       const pass = (cat === "all" || x.cat === cat) && (show === "all" || (show === "owned" ? n > 0 : n === 0));
       li.hidden = !(match && pass);
@@ -120,7 +151,12 @@ export function renderGear(view, ctx) {
   const set = (li, n) => {
     const x = GEAR[+li.dataset.i];
     n = Math.max(0, Math.min(MAX, n | 0));
-    if (n) have[x.name] = n; else delete have[x.name];
+    // Lowering the count below what's worn takes the extra copies off characters.
+    const off = [];
+    while ((wearing[x.name] || []).length > n) { off.push(unequip(x.name)); wearing = worn(); }
+    if (off.length) ctx.toast(`Took ${x.name} off ${off.map(shown).join(" and ")}`);
+    const bag = n - (wearing[x.name] || []).length;
+    if (bag) have[x.name] = bag; else delete have[x.name];
     saveGear(have);
     paintRow(li);
     totals();
@@ -130,7 +166,7 @@ export function renderGear(view, ctx) {
   list.addEventListener("click", (e) => {
     const li = e.target.closest("li");
     if (!li) return;
-    const n = have[GEAR[+li.dataset.i].name] || 0;
+    const n = owned(GEAR[+li.dataset.i].name);
     if (e.target.closest(".gr-inc")) return set(li, n + 1);
     if (e.target.closest(".gr-dec")) return set(li, n - 1);
     if (e.target.closest(".gr-find")) return ctx.onFind(GEAR[+li.dataset.i].name);
@@ -144,7 +180,7 @@ export function renderGear(view, ctx) {
   list.addEventListener("change", (e) => {
     const li = e.target.closest("li");
     if (!li) return;
-    if (e.target.type === "checkbox") set(li, e.target.checked ? Math.max(1, have[GEAR[+li.dataset.i].name] || 0) : 0);
+    if (e.target.type === "checkbox") set(li, e.target.checked ? Math.max(1, owned(GEAR[+li.dataset.i].name)) : 0);
     else if (e.target.classList.contains("gr-n")) set(li, parseInt(e.target.value.replace(/\D/g, ""), 10) || 0);
   });
   view.querySelector("#grQ").addEventListener("input", filter);

@@ -644,6 +644,20 @@ for (const vp of [{ tag: "ipad", w: 1180, h: 820 }, { tag: "phone", w: 390, h: 8
   await page.setViewportSize({ width: 390, height: 844 });
   await page.screenshot({ path: path.join(SHOTS, "22-gear-phone-dark.png") });
   check(!(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), "[gear] no horizontal scroll at phone width");
+  await page.evaluate(() => {
+    localStorage.setItem("ff6g:gear", JSON.stringify({ "Hero's Ring": 1 }));
+    localStorage.setItem("ff6g:party", JSON.stringify({ party: ["Terra"], espers: [], chars: { Terra: { met: true, level: 20, eq: { r1: "Hero's Ring" } } } }));
+  });
+  await page.reload();
+  await page.waitForSelector(".gear");
+  const ring = page.locator(".gr", { has: page.locator(".rg-name", { hasText: /^Hero's Ring/ }) }).first();
+  check(await ring.locator(".gr-n").inputValue() === "2" && /worn by Terra/.test(await ring.textContent()), "[gear] counts include what characters wear, and say who");
+  await ring.locator(".gr-dec").click();
+  const one = await page.evaluate(() => [JSON.parse(localStorage.getItem("ff6g:gear") || "{}")["Hero's Ring"] || 0, JSON.parse(localStorage.getItem("ff6g:party")).chars.Terra.eq.r1]);
+  check(one[0] === 0 && one[1] === "Hero's Ring", "[gear] lowering the count takes from the bag first");
+  await ring.locator(".gr-dec").click();
+  const none = await page.evaluate(() => JSON.parse(localStorage.getItem("ff6g:party")).chars.Terra.eq.r1);
+  check(!none && await ring.locator(".gr-n").inputValue() === "" && /Took Hero's Ring off Terra/.test(await page.textContent("#toast")), "[gear] lowering below what's worn takes it off the character");
   await ctx.close();
 }
 
