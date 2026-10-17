@@ -13,7 +13,7 @@ import { loadWalkthrough, renderWalkIndex, renderWalkChapter, chapterText, loadD
 import { renderWiki, wikiTerms, linkFor, bindPeek, searchWiki, getEntry } from "./wiki.js";
 import { renderWorldMap, worldsOf, pinName, pinHref } from "./worldmap.js";
 
-const VERSION = "0.27.0";
+const VERSION = "0.27.1";
 const $ = (id) => document.getElementById(id);
 const root = document.documentElement;
 
@@ -779,7 +779,7 @@ function openSearch(query) {
   q.select();
 }
 $("searchBtn").onclick = () => openSearch();
-$("settingsBtn").onclick = () => { updateSettingsInfo(); openSheet("settingsSheet"); };
+$("settingsBtn").onclick = () => { updateSettingsInfo(); updateCloudStatus(); updateAutoStatus(); openSheet("settingsSheet"); };
 
 function updateSettingsInfo() {
   updateProgressInfo();
@@ -884,6 +884,7 @@ async function autoSave() {
     if (auto.state === "error") scheduleAuto(60000);
   } finally {
     auto.busy = false;
+    updateCloudStatus();
     updateAutoStatus();
     if (isDirty() && !auto.state) scheduleAuto();
   }

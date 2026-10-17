@@ -974,6 +974,9 @@ for (const vp of [{ tag: "ipad", w: 1180, h: 820 }, { tag: "phone", w: 390, h: 8
   await C.page.clock.fastForward(6000);
   check(await uploaded(n0 + 1) && drive.n === n0 + 1 && drive.bytes.includes("Quick Two"), "[autosave] one upload 30 seconds after the last edit");
   await C.page.waitForFunction(() => /On\./.test(document.getElementById("gdAutoStatus").textContent));
+  const synced = await C.page.evaluate(() => { const t = new Date(JSON.parse(localStorage.getItem("ff6g:gdriveSync")).modifiedTime).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }); return [t, document.getElementById("gdStatus").textContent, document.getElementById("gdAutoStatus").textContent]; });
+  check(synced[1].includes(synced[0]) && synced[2].includes(synced[0]), `[autosave] both Drive status lines show the auto-save time (${synced[0]})`);
+  await C.page.waitForFunction(() => /On\./.test(document.getElementById("gdAutoStatus").textContent));
   for (let i = 0; i < 12; i++) { await edit("Busy " + i); await C.page.clock.fastForward(25000); }
   check(await uploaded(n0 + 2) && drive.n === n0 + 2, "[autosave] steady edits still save within 5 minutes");
   await C.page.waitForFunction(() => !/Waiting/.test(document.getElementById("gdAutoStatus").textContent));
