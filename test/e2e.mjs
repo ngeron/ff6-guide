@@ -414,6 +414,18 @@ for (const vp of [{ tag: "ipad", w: 1180, h: 820 }, { tag: "phone", w: 390, h: 8
   check(ms < 5000, `[party] optimizer runs quickly (${ms} ms)`);
   const CODE = { Terra: "Te", Locke: "Lo", Sabin: "Sa", Gau: "Ga" };
   check(Object.entries(after.p.chars).every(([n, c]) => Object.values(c.eq).every((it) => EQ[it].who === "all" || EQ[it].who.split(" ").includes(CODE[n]))), "[party] only items each character can equip");
+  await page.click("#ptClear");
+  const cleared0 = await page.evaluate(() => Object.values(JSON.parse(localStorage.getItem("ff6g:party")).chars).reduce((k, c) => k + Object.keys(c.eq).length, 0));
+  await page.click("#ptClear");
+  const cl = await page.evaluate(() => ({ g: JSON.parse(localStorage.getItem("ff6g:gear")), p: JSON.parse(localStorage.getItem("ff6g:party")) }));
+  const clTotal = { ...cl.g };
+  for (const c of Object.values(cl.p.chars)) for (const n of Object.values(c.eq)) clTotal[n] = (clTotal[n] || 0) + 1;
+  check(cleared0 > 1 && Object.entries(cl.p.chars).every(([n, c]) => Object.keys(c.eq).length === (n === "Sabin" ? 1 : 0)) && cl.p.chars.Sabin.eq.r2 === "Sprint Shoes", "[party] Clear all gear needs a second tap, then empties every unlocked slot");
+  check(Object.keys({ ...before, ...clTotal }).every((n) => (before[n] || 0) === (clTotal[n] || 0)), "[party] cleared gear goes back to the bag");
+  await page.click("#ptOpt");
+  await page.waitForSelector("#ptApply");
+  await page.click("#ptApply");
+  await page.waitForSelector(".party");
   // Espers
   check(await page.locator(".pt-howto").count() === 1 && await page.locator(".pt-esper").count() === 27, "[espers] explainer and all 27 Pixel Remaster espers listed");
   for (const n of ["Ramuh", "Kirin", "Siren", "Bismarck", "Golem"]) await page.click(`.pt-esper[data-e="${n}"]`);

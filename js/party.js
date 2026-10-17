@@ -74,6 +74,8 @@ export function renderParty(outer, ctx) {
     return n ? n.to.trim() : c.name;
   };
   let pending = null; // optimizer result waiting for Apply
+  let clearArmed = false; // Clear all gear asks for a second tap
+  const unlockedGear = () => CHARS.some((c) => { const r = rec(c.name); return SLOTS.some((s) => r.eq[s] && !r.lock[s]); });
 
   const options = (c, slot, cur, bag) => {
     const fit = Object.keys(EQUIP).filter((n) => canEquip(c, n) && slotFits(slot, n));
@@ -140,13 +142,15 @@ export function renderParty(outer, ctx) {
     const party = st.party.map((n) => CHARS.find((c) => c.name === n)).filter(Boolean);
     const others = met.filter((c) => !st.party.includes(c.name));
     const unmet = CHARS.filter((c) => !rec(c.name).met);
+    clearArmed = false;
     view.innerHTML = `
     <section class="rages party">
       <p class="eyebrow">Characters</p>
       <h1>Party</h1>
-      <p class="hint">Tick the characters you've met and put up to four in your party. Set their levels and what they're wearing: equipping here takes the item out of your Inventory, as the game does. <strong>Optimize</strong> picks the best weapons, armor and relics you own for each party member at their level. Lock a slot to keep it.</p>
+      <p class="hint">Tick the characters you've met and put up to four in your party. Set their levels and what they're wearing: equipping here takes the item out of your Inventory, as the game does. <strong>Optimize</strong> picks the best weapons, armor and relics you own for each party member at their level. Lock a slot to keep it. <strong>Clear all gear</strong> puts everyone's unlocked equipment back in your bag, so Optimize can hand it out again.</p>
       <div class="pt-actions"><button type="button" class="btn solid" id="ptOpt"${party.length ? "" : " disabled"}>Optimize party</button>
         <label class="pc-goal">Espers for <select id="ptEsperMode"><option value="spells"${st.esperMode === "spells" ? " selected" : ""}>learning spells</option><option value="bonus"${st.esperMode === "bonus" ? " selected" : ""}>level-up bonuses</option></select></label>
+        <button type="button" class="btn" id="ptClear"${unlockedGear() ? "" : " disabled"}>Clear all gear</button>
         <span class="hint" id="ptNote">${party.length ? "" : "Put someone in your party first."}</span></div>
       <div id="ptResult"></div>
       ${party.length ? `<h2 class="sheet-sub">In your party</h2>${party.map((c) => card(c, true)).join("")}` : ""}
@@ -186,6 +190,11 @@ export function renderParty(outer, ctx) {
       return keepScroll(() => { rec(name).met = false; st.party = st.party.filter((n) => n !== name); save(); });
     }
     if (e.target.closest("#ptOpt")) return runOptimizer();
+    const clear = e.target.closest("#ptClear");
+    if (clear) {
+      if (!clearArmed) { clearArmed = true; clear.textContent = "Tap again to clear"; clear.classList.add("danger"); return; }
+      return clearGear();
+    }
     if (e.target.closest("#ptApply")) return applyResult();
     if (e.target.closest("#ptDiscard")) { pending = null; view.querySelector("#ptResult").innerHTML = ""; }
   });
@@ -268,6 +277,21 @@ export function renderParty(outer, ctx) {
       btn.textContent = "Optimize party";
       view.querySelector("#ptResult").scrollIntoView({ block: "start" });
     }, 30);
+  }
+
+  // Unequip every unlocked slot on every character and put the items back in the bag. Espers stay.
+  function clearGear() {
+    const bag = loadGear();
+    let n = 0;
+    for (const c of CHARS) {
+      const r = rec(c.name);
+      for (const s of SLOTS) if (r.eq[s] && !r.lock[s]) { bag[r.eq[s]] = (bag[r.eq[s]] || 0) + 1; delete r.eq[s]; n++; }
+    }
+    saveGear(bag);
+    pending = null;
+    save();
+    keepScroll(() => {});
+    ctx.toast(`${n} item${n === 1 ? "" : "s"} back in your bag`);
   }
 
   function applyResult() {
