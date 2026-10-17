@@ -452,7 +452,8 @@ for (const vp of [{ tag: "ipad", w: 1180, h: 820 }, { tag: "phone", w: 390, h: 8
   await page.screenshot({ path: path.join(SHOTS, "27b-party-magic.png") });
   await page.click('article[data-c="Terra"] .pc-magic summary');
   check(await page.locator('article[data-c="Gau"] .pc-esper').count() === 1, "[espers] Gau can hold an esper");
-  await page.selectOption("#ptEsperMode", "bonus");
+  check(await page.locator('article[data-c="Gau"] .pc-esperfor').count() === 1, "[espers] each character has their own Espers for setting");
+  for (const n of ["Terra", "Locke", "Sabin", "Gau"]) await page.selectOption(`article[data-c="${n}"] .pc-esperfor`, "bonus");
   await page.click("#ptOpt");
   await page.waitForSelector("#ptApply");
   await page.click("#ptApply");
@@ -461,6 +462,15 @@ for (const vp of [{ tag: "ipad", w: 1180, h: 820 }, { tag: "phone", w: 390, h: 8
   const held = st => Object.values(ep.chars).map((c) => c.esper).filter(Boolean);
   check(new Set(held()).size === held().length && held().length === 4, `[espers] optimizer gives each party member a different esper (${held().join(", ")})`);
   check(["Locke", "Sabin"].some((n) => ep.chars[n].esper === "Bismarck"), "[espers] level-up mode gives Bismarck (Strength +2) to a fighter");
+  const migrated = await page.evaluate(async () => {
+    const keep = localStorage.getItem("ff6g:party");
+    localStorage.setItem("ff6g:party", JSON.stringify({ party: ["Mog"], esperMode: "bonus", chars: { Mog: { met: true, level: 5 } } }));
+    const { loadParty } = await import("./js/party.js");
+    const p = loadParty();
+    localStorage.setItem("ff6g:party", keep);
+    return p.chars.Mog.esperFor;
+  });
+  check(migrated === "bonus", "[espers] an older party-wide Espers for setting carries over to each character");
   await page.screenshot({ path: path.join(SHOTS, "27-espers.png"), fullPage: true });
   await page.reload();
   await page.waitForSelector(".party");

@@ -249,14 +249,15 @@ export function esperValue(char, goal, esper, learned, mode) {
   return mode === "bonus" ? bonus + spells / 100 : spells / 20 + bonus * 0.3;
 }
 
-// members: [{ char, goal, learned: Set, esper, locked }]; espers: available esper objects.
+// members: [{ char, goal, learned: Set, esper, mode ("spells" or "bonus"), locked }]; espers:
+// available esper objects.
 // Returns the best esper name (or "") for each member, each esper used once.
-export function assignEspers(members, espers, mode) {
+export function assignEspers(members, espers) {
   const taken = new Set(members.filter((m) => m.locked && m.esper).map((m) => m.esper));
   const free = espers.filter((e) => !taken.has(e.name));
   const choices = members.map((m) => {
     if (m.locked || !canEquipEsper(m.char)) return [{ name: m.locked ? m.esper || "" : "", v: 0 }];
-    const ranked = free.map((e) => ({ name: e.name, v: esperValue(m.char, m.goal, e, m.learned, mode) })).sort((a, b) => b.v - a.v).slice(0, 8);
+    const ranked = free.map((e) => ({ name: e.name, v: esperValue(m.char, m.goal, e, m.learned, m.mode) })).sort((a, b) => b.v - a.v).slice(0, 8);
     return [...ranked, { name: "", v: 0 }];
   });
   let best = null, bestV = -Infinity;

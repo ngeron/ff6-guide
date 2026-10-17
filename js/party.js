@@ -1,6 +1,7 @@
 // Party page: the characters you've met, their levels and equipment, and the load-out optimizer.
-// Stored in the "party" setting: { party: [name, ...], espers: [name, ...] (acquired), esperMode,
-//   chars: { name: { met, level, goal, eq, lock, esper, spells: [learned spell names] } } }.
+// Stored in the "party" setting: { party: [name, ...], espers: [name, ...] (acquired),
+//   chars: { name: { met, level, goal, eq, lock, esper, esperFor ("spells" or "bonus"),
+//   spells: [learned spell names] } } }. Before 0.26 esperFor was one "esperMode" for everyone.
 // Equipping here moves items out of the Inventory bag (the "gear" setting), as the game does.
 
 import { CHARS, EQUIP } from "./party-data.js";
@@ -12,7 +13,7 @@ import { getPref, setPref } from "./store.js";
 import { esc } from "./render.js";
 
 const MAX_PARTY = 4;
-const blank = () => ({ met: false, level: 1, goal: "balanced", eq: {}, lock: {}, esper: "", spells: [] });
+const blank = () => ({ met: false, level: 1, goal: "balanced", eq: {}, lock: {}, esper: "", esperFor: "spells", spells: [] });
 const ESPER = new Map(ESPERS.map((e) => [e.name, e]));
 const TAUGHT_BY = new Map();
 for (const e of ESPERS) for (const [sp] of e.spells) TAUGHT_BY.set(sp, [...(TAUGHT_BY.get(sp) || []), e.name]);
@@ -22,12 +23,12 @@ const bonusText = (b) => (b ? `${STAT_NAME[b.stat]} +${b.amt}${b.pct ? "%" : ""}
 
 export function loadParty() {
   const p = getPref("party", null);
-  const out = { party: [], chars: {}, espers: [], esperMode: "spells" };
+  const out = { party: [], chars: {}, espers: [] };
   if (p && typeof p === "object") {
     out.espers = Array.isArray(p.espers) ? p.espers.filter((n) => ESPER.has(n)) : [];
-    if (p.esperMode === "bonus") out.esperMode = "bonus";
     out.party = Array.isArray(p.party) ? p.party.filter((n) => CHARS.some((c) => c.name === n)).slice(0, MAX_PARTY) : [];
-    for (const c of CHARS) if (p.chars && p.chars[c.name]) out.chars[c.name] = { ...blank(), ...p.chars[c.name] };
+    const esperFor = p.esperMode === "bonus" ? "bonus" : "spells"; // the old party-wide setting
+    for (const c of CHARS) if (p.chars && p.chars[c.name]) out.chars[c.name] = { ...blank(), esperFor, ...p.chars[c.name] };
   }
   return out;
 }
@@ -35,7 +36,7 @@ export function saveParty(p) {
   const chars = {};
   for (const [n, c] of Object.entries(p.chars)) if (c.met || Object.values(c.eq || {}).some(Boolean) || c.esper || (c.spells || []).length) chars[n] = c;
   const any = p.party.length || Object.keys(chars).length || p.espers.length;
-  setPref("party", any ? { party: p.party, chars, espers: p.espers, esperMode: p.esperMode } : null);
+  setPref("party", any ? { party: p.party, chars, espers: p.espers } : null);
 }
 export function partyCount() {
   const p = loadParty();
@@ -133,6 +134,7 @@ export function renderParty(outer, ctx) {
           </span>
         </span>
         <label class="pc-goal">Optimize for <select class="pc-goalsel">${goalsFor(c).map(([v, t]) => `<option value="${v}"${v === r.goal ? " selected" : ""}>${t}</option>`).join("")}</select></label>
+        ${canEquipEsper(c) ? `<label class="pc-goal">Espers for <select class="pc-esperfor"><option value="spells"${r.esperFor !== "bonus" ? " selected" : ""}>learning spells</option><option value="bonus"${r.esperFor === "bonus" ? " selected" : ""}>level-up bonuses</option></select></label>` : ""}
       </div>
       <table class="gr-tbl pc-eq"><tbody>${SLOTS.map((slot) => `<tr data-slot="${slot}">
         <th scope="row">${SLOT_LABEL[slot]}</th>
@@ -164,7 +166,6 @@ export function renderParty(outer, ctx) {
       <h1>Party</h1>
       <p class="hint">Tick the characters you've met and put up to four in your party. Set their levels and what they're wearing: equipping here takes the item out of your Inventory, as the game does. <strong>Optimize</strong> picks the best weapons, armor and relics you own for each party member at their level. Lock a slot to keep it. Some characters can also optimize for their command (Rage, Blitz, Steal…), which favors the stats that command uses instead of weapon power. <strong>Clear all gear</strong> puts everyone's unlocked equipment back in your bag, so Optimize can hand it out again.</p>
       <div class="pt-actions"><button type="button" class="btn solid" id="ptOpt"${party.length ? "" : " disabled"}>Optimize party</button>
-        <label class="pc-goal">Espers for <select id="ptEsperMode"><option value="spells"${st.esperMode === "spells" ? " selected" : ""}>learning spells</option><option value="bonus"${st.esperMode === "bonus" ? " selected" : ""}>level-up bonuses</option></select></label>
         <button type="button" class="btn" id="ptClear"${unlockedGear() ? "" : " disabled"}>Clear all gear</button>
         <span class="hint" id="ptNote">${party.length ? "" : "Put someone in your party first."}</span></div>
       <div id="ptResult"></div>
@@ -223,7 +224,7 @@ export function renderParty(outer, ctx) {
   view.addEventListener("change", (e) => {
     const t = e.target;
     const name = nameOf(t);
-    if (t.id === "ptEsperMode") { st.esperMode = t.value; return save(); }
+    if (t.classList.contains("pc-esperfor")) { rec(name).esperFor = t.value; return save(); }
     if (t.classList.contains("pt-esper")) {
       const n = t.dataset.e;
       return keepScroll(() => {
@@ -275,8 +276,8 @@ export function renderParty(outer, ctx) {
     setTimeout(() => {
       const members = st.party.map((n) => ({ char: CHARS.find((c) => c.name === n), level: rec(n).level, goal: rec(n).goal, eq: { ...rec(n).eq }, locked: { ...rec(n).lock } }));
       const res = optimizeParty(members, loadGear());
-      const esperPicks = assignEspers(st.party.map((n) => ({ char: CHARS.find((c) => c.name === n), goal: rec(n).goal, learned: new Set(rec(n).spells), esper: rec(n).esper, locked: !!rec(n).lock.esper })),
-        st.espers.map((n) => ESPER.get(n)), st.esperMode);
+      const esperPicks = assignEspers(st.party.map((n) => ({ char: CHARS.find((c) => c.name === n), goal: rec(n).goal, learned: new Set(rec(n).spells), esper: rec(n).esper, mode: rec(n).esperFor, locked: !!rec(n).lock.esper })),
+        st.espers.map((n) => ESPER.get(n)));
       pending = { members, res, esperPicks };
       const rows = members.map((m, i) => {
         const after = res.loadouts[i];
