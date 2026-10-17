@@ -4,7 +4,7 @@
 // Equipping here moves items out of the Inventory bag (the "gear" setting), as the game does.
 
 import { CHARS, EQUIP } from "./party-data.js";
-import { SLOTS, SLOT_LABEL, GOALS, evaluate, canEquip, slotFits, optimizeParty, canEquipEsper, assignEspers } from "./optimizer.js";
+import { SLOTS, SLOT_LABEL, CMD_GOALS, goalsFor, evaluate, canEquip, slotFits, optimizeParty, canEquipEsper, assignEspers } from "./optimizer.js";
 import { ESPERS, SPELL_GROUPS } from "./espers-data.js";
 import { loadGear, saveGear } from "./gear.js";
 import { loadNames } from "./names.js";
@@ -132,7 +132,7 @@ export function renderParty(outer, ctx) {
             <button type="button" class="gr-inc pc-lvup" aria-label="Raise ${esc(c.name)}'s level"${r.level >= 99 ? " disabled" : ""}>+</button>
           </span>
         </span>
-        <label class="pc-goal">Optimize for <select class="pc-goalsel">${GOALS.map(([v, t]) => `<option value="${v}"${v === r.goal ? " selected" : ""}>${t}</option>`).join("")}</select></label>
+        <label class="pc-goal">Optimize for <select class="pc-goalsel">${goalsFor(c).map(([v, t]) => `<option value="${v}"${v === r.goal ? " selected" : ""}>${t}</option>`).join("")}</select></label>
       </div>
       <table class="gr-tbl pc-eq"><tbody>${SLOTS.map((slot) => `<tr data-slot="${slot}">
         <th scope="row">${SLOT_LABEL[slot]}</th>
@@ -142,7 +142,7 @@ export function renderParty(outer, ctx) {
       ${esperSpells(c, r)}
       ${magicList(c, r)}
       <dl class="mn-stats pc-stats">${stat("HP", s.hp)}${stat("MP", s.mp)}${stat("Strength", s.vig)}${stat("Agility", s.spd)}${stat("Stamina", s.sta)}${stat("Magic", s.mag)}${stat("Attack", s.attack)}${stat("Defense", s.def)}${stat("Evasion", s.ev)}${stat("Magic Def.", s.mdef)}${stat("Magic Eva.", s.mb)}</dl>
-      <p class="pc-est">Estimates at level ${r.level}: Fight ≈ <strong>${ev.fight}</strong> · Magic ≈ <strong>${ev.magic}</strong> · Toughness <strong>${ev.tough}</strong></p>`;
+      <p class="pc-est">Estimates at level ${r.level}: Fight ≈ <strong>${ev.fight}</strong> · Magic ≈ <strong>${ev.magic}</strong>${CMD_GOALS[c.name]?.k ? ` · Skills ≈ <strong>${ev.skill}</strong>` : ""} · Toughness <strong>${ev.tough}</strong></p>`;
     if (inParty) {
       return `<article class="pc" data-c="${esc(c.name)}">
         <header class="pc-head"><h3>${nameHtml}</h3><label class="pc-in"><input type="checkbox" class="pc-party" checked> In party</label></header>${body}</article>`;
@@ -162,7 +162,7 @@ export function renderParty(outer, ctx) {
     <section class="rages party">
       <p class="eyebrow">Characters</p>
       <h1>Party</h1>
-      <p class="hint">Tick the characters you've met and put up to four in your party. Set their levels and what they're wearing: equipping here takes the item out of your Inventory, as the game does. <strong>Optimize</strong> picks the best weapons, armor and relics you own for each party member at their level. Lock a slot to keep it. <strong>Clear all gear</strong> puts everyone's unlocked equipment back in your bag, so Optimize can hand it out again.</p>
+      <p class="hint">Tick the characters you've met and put up to four in your party. Set their levels and what they're wearing: equipping here takes the item out of your Inventory, as the game does. <strong>Optimize</strong> picks the best weapons, armor and relics you own for each party member at their level. Lock a slot to keep it. Some characters can also optimize for their command (Rage, Blitz, Steal…), which favors the stats that command uses instead of weapon power. <strong>Clear all gear</strong> puts everyone's unlocked equipment back in your bag, so Optimize can hand it out again.</p>
       <div class="pt-actions"><button type="button" class="btn solid" id="ptOpt"${party.length ? "" : " disabled"}>Optimize party</button>
         <label class="pc-goal">Espers for <select id="ptEsperMode"><option value="spells"${st.esperMode === "spells" ? " selected" : ""}>learning spells</option><option value="bonus"${st.esperMode === "bonus" ? " selected" : ""}>level-up bonuses</option></select></label>
         <button type="button" class="btn" id="ptClear"${unlockedGear() ? "" : " disabled"}>Clear all gear</button>
@@ -289,7 +289,7 @@ export function renderParty(outer, ctx) {
         return `<div class="pt-res">
           <h3>${esc(shown(m.char))}</h3>
           ${changes.length || eRow ? `<table class="gr-tbl"><tbody>${changes.map((s) => `<tr><th scope="row">${SLOT_LABEL[s]}</th><td>${esc(m.eq[s] || "Empty")} → <strong>${esc(after[s] || "Empty")}</strong></td></tr>`).join("")}${eRow}</tbody></table>` : `<p class="hint">Already the best of what you own.</p>`}
-          <p class="pc-est">Fight ${delta(a.fight, b.fight)} · Magic ${delta(a.magic, b.magic)} · Toughness ${delta(a.tough, b.tough)}</p>
+          <p class="pc-est">Fight ${delta(a.fight, b.fight)} · Magic ${delta(a.magic, b.magic)}${CMD_GOALS[m.char.name]?.k ? ` · Skills ${delta(a.skill, b.skill)}` : ""} · Toughness ${delta(a.tough, b.tough)}</p>
         </div>`;
       });
       view.querySelector("#ptResult").innerHTML = `<div class="pt-panel"><p><strong>Suggested load-outs.</strong> Make these changes in the game, then tap Apply so the app matches.</p>${rows.join("")}

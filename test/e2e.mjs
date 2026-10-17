@@ -414,6 +414,17 @@ for (const vp of [{ tag: "ipad", w: 1180, h: 820 }, { tag: "phone", w: 390, h: 8
   check(ms < 5000, `[party] optimizer runs quickly (${ms} ms)`);
   const CODE = { Terra: "Te", Locke: "Lo", Sabin: "Sa", Gau: "Ga" };
   check(Object.entries(after.p.chars).every(([n, c]) => Object.values(c.eq).every((it) => EQ[it].who === "all" || EQ[it].who.split(" ").includes(CODE[n]))), "[party] only items each character can equip");
+  check(await page.locator('article[data-c="Gau"] .pc-goalsel option[value="cmd"]').textContent() === "Rage" && await page.locator('article[data-c="Terra"] .pc-goalsel option[value="cmd"]').count() === 0, "[party] Gau can optimize for Rage; Terra has no command goal");
+  const cmdPicks = await page.evaluate(async () => {
+    const { optimizeOne, charByName } = await import("./js/optimizer.js");
+    const pool = {};
+    for (const n of ["Thief's Bracer", "Brigand's Glove", "Earring", "Gigas Glove", "Genji Glove", "Master's Scroll", "Kotetsu", "Thief's Knife", "Mythril Shield"]) pool[n] = 2;
+    const relics = (c, g) => { const r = optimizeOne(charByName.get(c), 30, g, pool); return [r.r1, r.r2, r.rh]; };
+    return { gau: relics("Gau", "cmd"), locke: relics("Locke", "cmd"), cyan: relics("Cyan", "cmd") };
+  });
+  check(cmdPicks.gau.includes("Earring") && !cmdPicks.gau.includes("Master's Scroll"), `[party] Rage goal favors Magic and Vigor relics over Fight ones (${cmdPicks.gau})`);
+  check(cmdPicks.locke.includes("Thief's Bracer") && cmdPicks.locke.includes("Brigand's Glove"), `[party] Steal goal picks the Thief's Bracer and Brigand's Glove (${cmdPicks.locke})`);
+  check(cmdPicks.cyan[2] === "Kotetsu", `[party] Bushido goal still holds a katana (${cmdPicks.cyan})`);
   await page.click("#ptClear");
   const cleared0 = await page.evaluate(() => Object.values(JSON.parse(localStorage.getItem("ff6g:party")).chars).reduce((k, c) => k + Object.keys(c.eq).length, 0));
   await page.click("#ptClear");

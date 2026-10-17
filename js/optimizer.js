@@ -12,7 +12,13 @@
 //           Defense, Magic Defense, Evade and Magic Evade (Evade works in the Pixel Remaster),
 //           Protect and Shell, with small bonuses for status protection, Regen and elements.
 //   Speed: turns come at (Speed + 20), × 1.5 with Haste.
-// A goal sets how much each part counts. Scores add logarithms, so a 10 % gain counts the same
+//   Skills: physical command abilities (Rage attacks, Raging Fist, Bushido, Tools, Throw) use the
+//           Fight formula with the ability's own power in place of the weapon's, so Level, Vigor
+//           and Gigas Glove or Hero's Ring count and the weapon doesn't. Estimated for power 120.
+//   Steal:  success doubles with the Thief's Bracer; the Brigand's Glove turns Steal into Mug
+//           (steal and attack in one turn).
+// A goal sets how much each part counts; a character's command goal (CMD_GOALS) weighs the parts
+// their command uses. Scores add logarithms, so a 10 % gain counts the same
 // wherever it comes from.
 
 import { CHARS, EQUIP, HP_UP, MP_UP } from "./party-data.js";
@@ -20,6 +26,24 @@ import { CHARS, EQUIP, HP_UP, MP_UP } from "./party-data.js";
 export const SLOTS = ["rh", "lh", "head", "body", "r1", "r2"];
 export const SLOT_LABEL = { rh: "Right hand", lh: "Left hand", head: "Head", body: "Body", r1: "Relic", r2: "Relic" };
 export const GOALS = [["balanced", "Balanced"], ["attack", "Attack"], ["defense", "Defense"], ["magic", "Magic"]];
+// Commands whose damage or success depends on gear differently from Fight. Weights for fight (f),
+// skills (k), magic (m) and steal (st). Sources: Final Fantasy Wiki command pages, citing the
+// FF6 Algorithms FAQ. Rage: physical specials and regular attacks use Gau's Vigor (he has no
+// weapons), Rage spells his Magic. Blitz: Raging Fist and Meteor Strike are physical skills, the
+// other four use Magic. Bushido and Tools: mostly physical skills, a few magic; a weapon is still
+// needed for Bushido, so Fight keeps a little weight. Throw: the thrown item's power with Vigor.
+// Dance and Lore: Magic.
+export const CMD_GOALS = {
+  Gau: { label: "Rage", k: 0.8, m: 0.8 },
+  Sabin: { label: "Blitz", k: 0.6, m: 1.1 },
+  Cyan: { label: "Bushido", f: 0.15, k: 1.3, m: 0.4 },
+  Edgar: { label: "Tools", f: 0.15, k: 1.3, m: 0.2 },
+  Shadow: { label: "Throw", f: 0.15, k: 1.3, m: 0.2 },
+  Locke: { label: "Steal", f: 0.8, st: 1.5 },
+  Mog: { label: "Dance", m: 1.6 },
+  Strago: { label: "Lore", m: 1.6 },
+};
+export const goalsFor = (char) => (CMD_GOALS[char.name] ? [...GOALS, ["cmd", CMD_GOALS[char.name].label]] : GOALS);
 
 export const charByName = new Map(CHARS.map((c) => [c.name, c]));
 const MAXLV = 99;
@@ -74,6 +98,8 @@ export function evaluate(char, level, eq) {
   if (fx.has("counter")) fight *= 1.15;
   if (fx.has("sure")) fight *= 1.03;
   s.attack = weapons.reduce((a, n) => a + EQUIP[n].bp, 0) || char.bp;
+  const skill = hit(120) * (fx.has("phys25") ? 1.25 : 1);
+  const steal = (items.includes(EQUIP["Thief's Bracer"]) ? 2 : 1) * (items.includes(EQUIP["Brigand's Glove"]) ? 1.5 : 1);
 
   // Magic
   let magic = 240 + (L * s.mag * 60) / 32;
@@ -94,22 +120,24 @@ export function evaluate(char, level, eq) {
   if (fx.has("undead")) tough *= 0.7;
 
   const speed = (s.spd + 20) * (auto.has("Haste") ? 1.5 : 1);
-  return { stats: s, fight: Math.round(fight), magic: Math.round(magic), tough: Math.round(tough), speed, fx, prevent, auto };
+  return { stats: s, fight: Math.round(fight), magic: Math.round(magic), tough: Math.round(tough), skill: Math.round(skill), steal, speed, fx, prevent, auto };
 }
 
 function weights(char, goal) {
+  const c = goal === "cmd" && CMD_GOALS[char.name];
+  if (c) return { p: c.f || 0, m: c.m || 0, k: c.k || 0, st: c.st || 0, d: 0.6, sp: 0.5 };
   const base = { phys: [1, 0], mixed: [0.6, 0.6], magic: [0.1, 1] }[char.role] || [1, 0];
   let [p, m] = base, d = 1, sp = 0.5;
   if (goal === "attack") { p *= 1.6; m *= 1.6; d = 0.5; }
   else if (goal === "defense") { p *= 0.5; m *= 0.5; d = 1.8; }
   else if (goal === "magic") { p = 0.1; m = 1.6; }
-  return { p, m, d, sp };
+  return { p, m, k: 0, st: 0, d, sp };
 }
 
 export function score(char, level, eq, goal) {
   const r = evaluate(char, level, eq);
   const w = weights(char, goal);
-  return w.p * Math.log(r.fight + 1) + w.m * Math.log(r.magic + 1) + w.d * Math.log(r.tough + 1) + w.sp * Math.log(r.speed);
+  return w.p * Math.log(r.fight + 1) + w.m * Math.log(r.magic + 1) + w.d * Math.log(r.tough + 1) + w.sp * Math.log(r.speed) + w.k * Math.log(r.skill + 1) + w.st * Math.log(r.steal);
 }
 
 // Best load-out for one character. pool: { name: count } of items they may use (including what
@@ -207,6 +235,9 @@ export function bonusValue(char, goal, b) {
   if (goal === "attack" && (b.stat === "str" || b.stat === "mag")) v *= 1.5;
   if (goal === "defense" && (b.stat === "hp" || b.stat === "sta")) v *= 1.5;
   if (goal === "magic" && (b.stat === "mag" || b.stat === "mp")) v *= 1.5;
+  const c = goal === "cmd" && CMD_GOALS[char.name];
+  if (c && b.stat === "str" && (c.k || 0) + (c.f || 0) >= (c.m || 0)) v *= 1.5;
+  if (c && b.stat === "mag" && (c.m || 0) > (c.k || 0) + (c.f || 0)) v *= 1.5;
   return v;
 }
 
