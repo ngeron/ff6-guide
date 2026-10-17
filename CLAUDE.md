@@ -31,7 +31,7 @@ js/rages.js, rages-data.js  Gau's Rages tracker (#/rages) and its data (credited
 js/gear.js, gear-data.js    inventory tracker (#/gear): counts, prices, sources (data CC BY-SA, credited)
 js/party.js, optimizer.js, party-data.js, espers-data.js  Party page (#/party): met characters, levels, load-outs, espers (acquired, equipped, spells learned) (equipping moves items out of the gear bag), and the load-out optimizer (FF6 damage formulas; see optimizer.js header)
 js/monsters.js, monsters-data.js  monster intel (#/monsters/<name>): search, 3-column picture grid, stats (CC BY-SA). Pictures are hotlinked from the wiki with no referrer and cached by sw.js; never commit them
-js/cloud.js              Google Drive sync of the backup .zip (OAuth token redirect, drive.file scope; client ID entered in Settings per browser, never committed)
+js/cloud.js              Google Drive sync of the backup .zip (OAuth token redirect, drive.file scope; client ID entered in Settings per browser, never committed); auto-save timing lives in app.js
 js/backup.js             backup .zip: progress, names, tags, party, gear, Rages; save and restore (older backups' guide and maps are ignored)
 sw.js                    offline cache
 test/                    e2e smoke test

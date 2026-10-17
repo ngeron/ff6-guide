@@ -948,6 +948,47 @@ for (const vp of [{ tag: "ipad", w: 1180, h: 820 }, { tag: "phone", w: 390, h: 8
   check(drive.file.appProperties.device === "Safari on iPad", "[drive] Cancel leaves the Drive copy alone");
   await A.ctx.close();
   await B.ctx.close();
+
+  // Auto-save, with a fake clock so the 30-second wait doesn't slow the test.
+  drive.file = null;
+  const C = await setup("Firefox on Mac");
+  await C.page.clock.install();
+  await C.page.goto(base);
+  await C.page.evaluate(() => localStorage.setItem("ff6g:gdriveClient", JSON.stringify("test-client.apps.googleusercontent.com")));
+  await C.page.reload();
+  await C.page.waitForSelector(".walk");
+  await C.page.click("#settingsBtn");
+  await C.page.click("#gdAuto");
+  check(/Paused until you sign in/.test(await C.page.textContent("#gdAutoStatus")) && await C.page.locator("#settingsBtn.has-dot").count() === 1, "[autosave] turned on before signing in, it asks you to sign in and marks the menu");
+  await Promise.all([C.page.waitForURL(/#\/|\/$/), C.page.click("#gdSave")]);
+  await C.page.waitForFunction(() => /Saved to Google Drive/.test(document.getElementById("toast").textContent), null, { timeout: 15000 });
+  const n0 = drive.n;
+  const edit = (to) => C.page.evaluate(async (to) => (await import("./js/names.js")).saveNames([{ from: "Terra", to }]), to);
+  const uploaded = async (n) => { for (let t = Date.now(); Date.now() - t < 5000;) { if (drive.n >= n) return true; await new Promise((r) => setTimeout(r, 100)); } return false; };
+  await edit("Quick One");
+  await C.page.clock.fastForward(10000);
+  await edit("Quick Two");
+  await C.page.clock.fastForward(25000);
+  await new Promise((r) => setTimeout(r, 500));
+  check(drive.n === n0 && /Waiting/.test(await C.page.textContent("#gdAutoStatus")), "[autosave] edits close together wait for a pause");
+  await C.page.clock.fastForward(6000);
+  check(await uploaded(n0 + 1) && drive.n === n0 + 1 && drive.bytes.includes("Quick Two"), "[autosave] one upload 30 seconds after the last edit");
+  await C.page.waitForFunction(() => /On\./.test(document.getElementById("gdAutoStatus").textContent));
+  for (let i = 0; i < 12; i++) { await edit("Busy " + i); await C.page.clock.fastForward(25000); }
+  check(await uploaded(n0 + 2) && drive.n === n0 + 2, "[autosave] steady edits still save within 5 minutes");
+  await C.page.waitForFunction(() => !/Waiting/.test(document.getElementById("gdAutoStatus").textContent));
+  await edit("Hidden");
+  await C.page.evaluate(() => { Object.defineProperty(document, "visibilityState", { value: "hidden", configurable: true }); document.dispatchEvent(new Event("visibilitychange")); });
+  check(await uploaded(n0 + 3) && drive.bytes.includes("Hidden"), "[autosave] saves right away when the app goes to the background");
+  await C.page.evaluate(() => { Object.defineProperty(document, "visibilityState", { value: "visible", configurable: true }); });
+  await C.page.waitForFunction(() => /On\./.test(document.getElementById("gdAutoStatus").textContent));
+  drive.file = { ...drive.file, modifiedTime: new Date(Date.now() + 99000).toISOString(), appProperties: { device: "Safari on iPad" } };
+  await edit("Conflict");
+  await C.page.clock.fastForward(31000);
+  await C.page.waitForFunction(() => /Stopped/.test(document.getElementById("gdAutoStatus").textContent), null, { timeout: 5000 }).catch(() => {});
+  check(/Stopped/.test(await C.page.textContent("#gdAutoStatus")) && drive.n === n0 + 3 && await C.page.locator("#settingsBtn.has-dot").count() === 1, "[autosave] stops instead of overwriting a newer copy from another browser");
+  await C.page.screenshot({ path: path.join(SHOTS, "30-autosave.png") });
+  await C.ctx.close();
 }
 
 await browser.close();

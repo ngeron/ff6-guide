@@ -131,6 +131,11 @@
       <button type="button" class="btn" id="gdSave">Save to Google Drive</button>
       <button type="button" class="btn" id="gdRestore">Restore from Google Drive</button>
     </div>
+    <div class="setting">
+      <label class="setting-k" for="gdAuto">Save to Google Drive automatically</label>
+      <input type="checkbox" id="gdAuto" class="switch">
+    </div>
+    <p class="hint" id="gdAutoStatus"></p>
     <details class="gd-setup" id="gdSetup">
       <summary>Google Drive setup</summary>
       <p class="hint">Syncing needs an OAuth client ID from your Google Cloud project. Add this address as an authorized JavaScript origin and as a redirect URI: <code id="gdRedirect"></code></p>

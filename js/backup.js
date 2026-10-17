@@ -34,6 +34,9 @@ import { zip, unzip } from "./zip.js";
 const FORMAT = "ff6-guide-backup";
 const VERSION = 1;
 const PROGRESS = ["walkDone", "walkLast"];
+// Settings that hold your data. A change to any of them (except the last chapter read, which
+// changes as you browse) is what Drive auto-save waits for.
+export const DATA_KEYS = ["names", "tags", "rages", "gear", "party", "walkDone"];
 
 export async function makeBackup(appVersion) {
   const progress = {};

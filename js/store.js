@@ -59,9 +59,13 @@ export function getPref(key, fallback) {
     return fallback;
   }
 }
+const listeners = [];
+// fn(key) runs after every setPref, e.g. to auto-save to Google Drive.
+export const onPrefChange = (fn) => listeners.push(fn);
 export function setPref(key, value) {
   try {
     if (value === null || value === undefined) localStorage.removeItem(PREFIX + key);
     else localStorage.setItem(PREFIX + key, JSON.stringify(value));
   } catch { /* storage unavailable */ }
+  for (const fn of listeners) fn(key);
 }

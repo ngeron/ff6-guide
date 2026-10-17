@@ -1,6 +1,6 @@
 import { esc } from "./render.js";
-import { removeGuide, removeMaps, getPref, setPref } from "./store.js";
-import { makeBackup, readBackup, describeBackup, restoreBackup } from "./backup.js";
+import { removeGuide, removeMaps, getPref, setPref, onPrefChange } from "./store.js";
+import { makeBackup, readBackup, describeBackup, restoreBackup, DATA_KEYS } from "./backup.js";
 import { renderRages, rageCounts } from "./rages.js";
 import { renderGear, gearCounts } from "./gear.js";
 import { renderMonsters, findMonster } from "./monsters.js";
@@ -13,7 +13,7 @@ import { loadWalkthrough, renderWalkIndex, renderWalkChapter, chapterText, loadD
 import { renderWiki, wikiTerms, linkFor, bindPeek, searchWiki, getEntry } from "./wiki.js";
 import { renderWorldMap, worldsOf, pinName, pinHref } from "./worldmap.js";
 
-const VERSION = "0.26.1";
+const VERSION = "0.27.0";
 const $ = (id) => document.getElementById(id);
 const root = document.documentElement;
 
@@ -815,7 +815,7 @@ $("cloudYes").onclick = () => cloudDialog.close("yes");
 cloudDialog.addEventListener("click", (e) => { if (e.target === cloudDialog) cloudDialog.close("no"); });
 $("gdRedirect").textContent = cloud.redirectUri();
 $("gdClient").value = cloud.clientId();
-$("gdClient").addEventListener("change", (e) => { cloud.setClientId(e.target.value); updateCloudStatus(); });
+$("gdClient").addEventListener("change", (e) => { cloud.setClientId(e.target.value); updateCloudStatus(); updateAutoStatus(); });
 
 function updateCloudStatus(text) {
   const last = cloud.lastSync();
@@ -824,7 +824,100 @@ function updateCloudStatus(text) {
     : last ? `This browser last synced with Google Drive on ${when(last.modifiedTime)}.` : "Keep one backup in your Google Drive and sync it between browsers.");
   $("gdSetup").open = !cloud.clientId();
 }
+
+/* Auto-save: after an edit, wait for 30 seconds without edits, then upload, but never let changes
+   wait more than 5 minutes, and save right away when the app goes to the background. Sign-in
+   lasts about an hour and can't be renewed without leaving the page, so when it runs out
+   auto-save pauses until you tap Save to Google Drive. It also stops rather than overwrite a
+   copy saved from another browser. "gdriveDirty" remembers unsaved changes across restarts. */
+const AUTO_IDLE = 30000, AUTO_MAX = 300000;
+const auto = { timer: 0, since: 0, edits: 0, busy: false, state: "" }; // state: "", "paused", "blocked", "error"
+const autoOn = () => getPref("gdriveAuto", false) && !!cloud.clientId();
+const isDirty = () => getPref("gdriveDirty", false);
+
+function updateAutoStatus(text) {
+  const on = autoOn();
+  $("gdAuto").checked = getPref("gdriveAuto", false);
+  $("gdAuto").disabled = !cloud.clientId();
+  const last = cloud.lastSync();
+  const msg = text || (!cloud.clientId() ? "Set up Google Drive below to use auto-save."
+    : !on ? "Off. Changes are saved on this device; tap Save to Google Drive to copy them there."
+    : auto.state === "blocked" ? "Stopped: Google Drive has a newer copy saved from another browser. Use Save or Restore above to choose which to keep."
+    : auto.state === "paused" || (isDirty() && !cloud.signedIn()) ? "Paused until you sign in: tap Save to Google Drive to save your changes and resume. (Google sign-in lasts about an hour.)"
+    : auto.state === "error" ? "Couldn't reach Google Drive. Trying again in a minute."
+    : isDirty() ? "Waiting to save your latest changes…"
+    : cloud.signedIn() ? `On.${last ? ` Last saved ${when(last.modifiedTime)}.` : ""}`
+    : "On. Tap Save to Google Drive once to sign in and start.");
+  $("gdAutoStatus").textContent = msg;
+  // A dot on the menu button when changes are waiting and auto-save can't send them.
+  $("settingsBtn").classList.toggle("has-dot", on && isDirty() && (auto.state === "blocked" || !cloud.signedIn()));
+}
+
+function scheduleAuto(delay) {
+  clearTimeout(auto.timer);
+  if (!autoOn() || !isDirty()) return;
+  if (!auto.since) auto.since = Date.now();
+  const wait = delay ?? Math.min(AUTO_IDLE, auto.since + AUTO_MAX - Date.now());
+  auto.timer = setTimeout(autoSave, Math.max(0, wait));
+}
+
+async function autoSave() {
+  clearTimeout(auto.timer);
+  if (!autoOn() || !isDirty() || auto.busy || auto.state === "blocked") return updateAutoStatus();
+  if (!cloud.signedIn()) { auto.state = "paused"; return updateAutoStatus(); }
+  auto.busy = true;
+  const edits = auto.edits;
+  try {
+    const existing = await cloud.findFile();
+    const last = cloud.lastSync();
+    if (existing && (!last || existing.modifiedTime !== last.modifiedTime)) {
+      auto.state = "blocked";
+      toast("Auto-save stopped: Google Drive has a newer copy. See Settings.");
+      return;
+    }
+    cloud.markSynced(await cloud.upload(await makeBackup(VERSION), existing && existing.id));
+    auto.state = "";
+    if (auto.edits === edits) { setPref("gdriveDirty", null); auto.since = 0; }
+  } catch (ex) {
+    console.error(ex);
+    auto.state = String(ex && ex.message) === "signin" ? "paused" : "error";
+    if (auto.state === "error") scheduleAuto(60000);
+  } finally {
+    auto.busy = false;
+    updateAutoStatus();
+    if (isDirty() && !auto.state) scheduleAuto();
+  }
+}
+
+// A manual save or a restore from Drive leaves nothing to auto-save.
+function autoSynced() {
+  clearTimeout(auto.timer);
+  setPref("gdriveDirty", null);
+  auto.since = 0;
+  auto.state = "";
+  updateAutoStatus();
+}
+
+onPrefChange((key) => {
+  if (!DATA_KEYS.includes(key)) return;
+  auto.edits++;
+  if (!isDirty()) setPref("gdriveDirty", true);
+  if (auto.state === "paused" && cloud.signedIn()) auto.state = "";
+  scheduleAuto();
+  updateAutoStatus();
+});
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden" && isDirty()) autoSave(); });
+$("gdAuto").addEventListener("change", (e) => {
+  setPref("gdriveAuto", e.target.checked || null);
+  auto.state = "";
+  if (e.target.checked) setPref("gdriveDirty", true); // save what's here now
+  scheduleAuto(0);
+  updateAutoStatus();
+});
+
 updateCloudStatus();
+updateAutoStatus();
+scheduleAuto(); // changes left unsaved last time
 
 function cloudError(ex) {
   console.error(ex);
@@ -851,6 +944,7 @@ async function cloudSave() {
       updateCloudStatus("Saving to Google Drive…");
       const meta = await cloud.upload(await makeBackup(VERSION), existing && existing.id);
       cloud.markSynced(meta);
+      autoSynced();
       updateCloudStatus();
       toast("Saved to Google Drive");
     });
@@ -866,7 +960,7 @@ async function cloudRestore() {
       updateCloudStatus("Downloading from Google Drive…");
       const file = await cloud.download(f.id);
       updateCloudStatus();
-      await startRestore(file, toast, () => cloud.markSynced(f));
+      await startRestore(file, toast, () => { cloud.markSynced(f); autoSynced(); });
     });
   } catch (ex) { cloudError(ex); }
 }

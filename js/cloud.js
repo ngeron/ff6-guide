@@ -29,6 +29,8 @@ function token() {
   } catch { return null; }
 }
 
+export const signedIn = () => !!token();
+
 // Sends you to Google to sign in; `action` ("save" or "restore") runs when you come back.
 function signIn(action) {
   const id = clientId();
