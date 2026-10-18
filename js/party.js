@@ -97,7 +97,8 @@ export function renderParty(outer, ctx) {
   const holder = (esper) => CHARS.find((c) => rec(c.name).esper === esper);
   const esperRow = (c, r) => {
     if (!canEquipEsper(c)) return `<tr><th scope="row">Esper</th><td colspan="2"><span class="hint">${esc(c.name)} can't equip magicite.</span></td></tr>`;
-    const opts = st.espers.map((n) => { const h = holder(n); const e = ESPER.get(n); return `<option value="${esc(n)}"${n === r.esper ? " selected" : ""}>${esc(n)} · ${esc(bonusText(e.bonus))}${h && h.name !== c.name ? ` · now on ${esc(shown(h))}` : ""}</option>`; }).join("");
+    const known = learned(c.name);
+    const opts = st.espers.map((n) => { const h = holder(n); const e = ESPER.get(n); const left = e.spells.filter(([sp]) => !known.has(sp)).length; return `<option value="${esc(n)}"${n === r.esper ? " selected" : ""}>${esc(n)} · ${left ? `${left} to learn` : "all learned"} · ${esc(bonusText(e.bonus))}${h && h.name !== c.name ? ` · now on ${esc(shown(h))}` : ""}</option>`; }).join("");
     return `<tr data-slot="esper"><th scope="row">Esper</th>
       <td><select class="pc-esper" aria-label="${esc(c.name)}: Esper"><option value="">— None —</option>${opts}</select>${st.espers.length ? "" : `<span class="pc-fx">Tick the espers you have under Espers below.</span>`}</td>
       <td><button type="button" class="pc-lock" aria-pressed="${!!r.lock.esper}" aria-label="Keep the esper when optimizing" title="Keep when optimizing">${r.lock.esper ? "🔒" : "🔓"}</button></td></tr>`;
