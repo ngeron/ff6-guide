@@ -971,7 +971,11 @@ for (const vp of [{ tag: "ipad", w: 1180, h: 820 }, { tag: "phone", w: 390, h: 8
   await C.page.clock.fastForward(25000);
   await new Promise((r) => setTimeout(r, 500));
   check(drive.n === n0 && /Waiting/.test(await C.page.textContent("#gdAutoStatus")), "[autosave] edits close together wait for a pause");
-  await C.page.clock.fastForward(6000);
+  await C.page.click("#settingsBtn");
+  await C.page.clock.runFor(1000);
+  const next = await C.page.textContent("#gdAutoNext");
+  check(/Next auto-save in [1-5] s/.test(next), `[autosave] Settings counts down to the next save (${next})`);
+  await C.page.clock.fastForward(5000);
   check(await uploaded(n0 + 1) && drive.n === n0 + 1 && drive.bytes.includes("Quick Two"), "[autosave] one upload 30 seconds after the last edit");
   await C.page.waitForFunction(() => /On\./.test(document.getElementById("gdAutoStatus").textContent));
   const synced = await C.page.evaluate(() => { const t = new Date(JSON.parse(localStorage.getItem("ff6g:gdriveSync")).modifiedTime).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }); return [t, document.getElementById("gdStatus").textContent, document.getElementById("gdAutoStatus").textContent]; });
@@ -991,6 +995,12 @@ for (const vp of [{ tag: "ipad", w: 1180, h: 820 }, { tag: "phone", w: 390, h: 8
   await C.page.waitForFunction(() => /Stopped/.test(document.getElementById("gdAutoStatus").textContent), null, { timeout: 5000 }).catch(() => {});
   check(/Stopped/.test(await C.page.textContent("#gdAutoStatus")) && drive.n === n0 + 3 && await C.page.locator("#settingsBtn.has-dot").count() === 1, "[autosave] stops instead of overwriting a newer copy from another browser");
   await C.page.screenshot({ path: path.join(SHOTS, "30-autosave.png") });
+  check(/stopped/.test(await C.page.textContent("#gdAutoNext")), "[autosave] the countdown says auto-save is stopped");
+  await C.page.keyboard.press("Escape");
+  await C.page.click("#syncBtn");
+  await C.page.waitForSelector("#cloudDialog[open]");
+  await C.page.click("#cloudYes");
+  check(await uploaded(n0 + 4) && drive.bytes.includes("Conflict"), "[sync] the top bar button saves to Drive, after warning about a newer copy");
   await C.ctx.close();
 }
 

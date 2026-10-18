@@ -13,7 +13,7 @@ import { loadWalkthrough, renderWalkIndex, renderWalkChapter, chapterText, loadD
 import { renderWiki, wikiTerms, linkFor, bindPeek, searchWiki, getEntry } from "./wiki.js";
 import { renderWorldMap, worldsOf, pinName, pinHref } from "./worldmap.js";
 
-const VERSION = "0.27.1";
+const VERSION = "0.28.0";
 const $ = (id) => document.getElementById(id);
 const root = document.documentElement;
 
@@ -831,7 +831,7 @@ function updateCloudStatus(text) {
    auto-save pauses until you tap Save to Google Drive. It also stops rather than overwrite a
    copy saved from another browser. "gdriveDirty" remembers unsaved changes across restarts. */
 const AUTO_IDLE = 30000, AUTO_MAX = 300000;
-const auto = { timer: 0, since: 0, edits: 0, busy: false, state: "" }; // state: "", "paused", "blocked", "error"
+const auto = { timer: 0, due: 0, since: 0, edits: 0, busy: false, state: "" }; // state: "", "paused", "blocked", "error"
 const autoOn = () => getPref("gdriveAuto", false) && !!cloud.clientId();
 const isDirty = () => getPref("gdriveDirty", false);
 
@@ -849,23 +849,46 @@ function updateAutoStatus(text) {
     : cloud.signedIn() ? `On.${last ? ` Last saved ${when(last.modifiedTime)}.` : ""}`
     : "On. Tap Save to Google Drive once to sign in and start.");
   $("gdAutoStatus").textContent = msg;
+  $("syncBtn").hidden = !cloud.clientId();
+  updateAutoNext();
   // A dot on the menu button when changes are waiting and auto-save can't send them.
   $("settingsBtn").classList.toggle("has-dot", on && isDirty() && (auto.state === "blocked" || !cloud.signedIn()));
 }
 
+// Countdown to the next auto-save, for troubleshooting: "was due … ago" or "none scheduled" while
+// changes are waiting means the timer didn't do its job.
+function updateAutoNext() {
+  const el = $("gdAutoNext");
+  el.hidden = !autoOn();
+  if (el.hidden) return;
+  const s = Math.ceil((auto.due - Date.now()) / 1000);
+  el.textContent = !isDirty() ? "Next auto-save: nothing waiting to save."
+    : auto.busy ? "Next auto-save: saving now…"
+    : auto.state === "paused" || !cloud.signedIn() ? "Next auto-save: after you sign in."
+    : auto.state === "blocked" ? "Next auto-save: stopped."
+    : !auto.due ? "Next auto-save: none scheduled."
+    : s > 0 ? `Next auto-save in ${s} s.`
+    : `Next auto-save was due ${-s} s ago and hasn't run.`;
+}
+setInterval(() => { if (!$("settingsSheet").hidden) updateAutoNext(); }, 1000);
+
 function scheduleAuto(delay) {
   clearTimeout(auto.timer);
+  auto.due = 0;
   if (!autoOn() || !isDirty()) return;
   if (!auto.since) auto.since = Date.now();
-  const wait = delay ?? Math.min(AUTO_IDLE, auto.since + AUTO_MAX - Date.now());
-  auto.timer = setTimeout(autoSave, Math.max(0, wait));
+  const wait = Math.max(0, delay ?? Math.min(AUTO_IDLE, auto.since + AUTO_MAX - Date.now()));
+  auto.due = Date.now() + wait;
+  auto.timer = setTimeout(autoSave, wait);
 }
 
 async function autoSave() {
   clearTimeout(auto.timer);
+  auto.due = 0;
   if (!autoOn() || !isDirty() || auto.busy || auto.state === "blocked") return updateAutoStatus();
   if (!cloud.signedIn()) { auto.state = "paused"; return updateAutoStatus(); }
   auto.busy = true;
+  updateAutoNext();
   const edits = auto.edits;
   try {
     const existing = await cloud.findFile();
@@ -893,6 +916,7 @@ async function autoSave() {
 // A manual save or a restore from Drive leaves nothing to auto-save.
 function autoSynced() {
   clearTimeout(auto.timer);
+  auto.due = 0;
   setPref("gdriveDirty", null);
   auto.since = 0;
   auto.state = "";
@@ -966,6 +990,12 @@ async function cloudRestore() {
   } catch (ex) { cloudError(ex); }
 }
 $("gdSave").onclick = () => cloudSave();
+$("syncBtn").onclick = async () => {
+  const b = $("syncBtn");
+  if (b.getAttribute("aria-busy") === "true") return;
+  b.setAttribute("aria-busy", "true");
+  try { await cloudSave(); } finally { b.removeAttribute("aria-busy"); }
+};
 $("gdRestore").onclick = () => cloudRestore();
 
 /* ---------------- start ---------------- */
