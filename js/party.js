@@ -1,12 +1,12 @@
 // Party page: the characters you've met, their levels and equipment, and the load-out optimizer.
 // Stored in the "party" setting: { party: [name, ...], espers: [name, ...] (acquired),
 //   chars: { name: { met, level, goal, eq, lock, esper, esperFor ("spells" or "bonus"),
-//   spells: [learned spell names] } } }. Before 0.26 esperFor was one "esperMode" for everyone.
+//   spells: [learned spell names] } } }. Natural magic (Terra, Celes) comes from the level, not spells. Before 0.26 esperFor was one "esperMode" for everyone.
 // Equipping here moves items out of the Inventory bag (the "gear" setting), as the game does.
 
 import { CHARS, EQUIP } from "./party-data.js";
 import { SLOTS, SLOT_LABEL, CMD_GOALS, goalsFor, evaluate, canEquip, slotFits, optimizeParty, canEquipEsper, assignEspers } from "./optimizer.js";
-import { ESPERS, SPELL_GROUPS } from "./espers-data.js";
+import { ESPERS, SPELL_GROUPS, NATURAL } from "./espers-data.js";
 import { loadGear, saveGear } from "./gear.js";
 import { loadNames } from "./names.js";
 import { getPref, setPref } from "./store.js";
@@ -72,6 +72,10 @@ export function renderParty(outer, ctx) {
   const view = outer.firstElementChild; // listeners live on this, so they go when the page does
   const st = loadParty();
   const rec = (name) => (st.chars[name] ||= blank());
+  // The level each spell is learned at naturally, up to the character's level.
+  const natural = (name) => new Map((NATURAL[name] || []).filter(([lv]) => lv <= rec(name).level).map(([lv, sp]) => [sp, lv]));
+  const learned = (name) => new Set([...rec(name).spells, ...natural(name).keys()]);
+  const spellBox = (sp, known, nat) => `<input type="checkbox" class="pc-spell" data-s="${esc(sp)}"${known.has(sp) ? " checked" : ""}${nat.has(sp) ? ` disabled title="Learned at level ${nat.get(sp)}"` : ""}>`;
   const names = loadNames();
   const shown = (c) => {
     const n = names.find((x) => x.from.trim().toLowerCase() === c.name.toLowerCase() && x.to.trim());
@@ -101,19 +105,19 @@ export function renderParty(outer, ctx) {
   const esperSpells = (c, r) => {
     const e = r.esper && ESPER.get(r.esper);
     if (!e || !canEquipEsper(c)) return "";
-    const known = new Set(r.spells);
+    const known = learned(c.name), nat = natural(c.name);
     const left = e.spells.filter(([sp]) => !known.has(sp)).length;
     return `<div class="pc-spells"><p class="pc-fx">${esc(e.name)} teaches ${left ? `${left} spell${left === 1 ? "" : "s"} ${esc(shown(c))} doesn't know yet` : "nothing new"} · level-up bonus: ${esc(bonusText(e.bonus))}</p>
-      <ul>${e.spells.map(([sp, rate]) => `<li><label><input type="checkbox" class="pc-spell" data-s="${esc(sp)}"${known.has(sp) ? " checked" : ""}> ${esc(sp)} <span class="mn-odds">×${rate}</span></label></li>`).join("")}</ul></div>`;
+      <ul>${e.spells.map(([sp, rate]) => `<li><label>${spellBox(sp, known, nat)} ${esc(sp)} <span class="mn-odds">×${rate}</span></label></li>`).join("")}</ul></div>`;
   };
 
   // Every spell, ticked when this character knows it, whichever esper taught it.
   const magicList = (c, r) => {
     if (!canEquipEsper(c)) return "";
-    const known = new Set(r.spells);
+    const known = learned(c.name), nat = natural(c.name);
     return `<details class="pc-magic"${magicOpen.has(c.name) ? " open" : ""}><summary>Magic <span class="mn-odds">${known.size} of ${SPELL_COUNT} known</span></summary>
-      <p class="pc-fx">Everything ${esc(shown(c))} has learned, from any esper${c.name === "Terra" || c.name === "Celes" ? " or by leveling up" : ""}. Tick spells as they're learned.</p>
-      ${SPELL_GROUPS.map(([g, list]) => `<div class="pc-spells"><p class="pc-fx"><strong>${g}</strong></p><ul>${list.map((sp) => `<li><label title="Taught by ${esc(TAUGHT_BY.get(sp).join(", "))}"><input type="checkbox" class="pc-spell" data-s="${esc(sp)}"${known.has(sp) ? " checked" : ""}> ${esc(sp)}</label></li>`).join("")}</ul></div>`).join("")}
+      <p class="pc-fx">Everything ${esc(shown(c))} has learned, from any esper${NATURAL[c.name] ? " or by leveling up" : ""}. Tick spells as they're learned${NATURAL[c.name] ? "; the ones learned by leveling up are ticked from the level" : ""}.</p>
+      ${SPELL_GROUPS.map(([g, list]) => `<div class="pc-spells"><p class="pc-fx"><strong>${g}</strong></p><ul>${list.map((sp) => `<li><label title="${nat.has(sp) ? `Learned at level ${nat.get(sp)}` : `Taught by ${esc(TAUGHT_BY.get(sp).join(", "))}`}">${spellBox(sp, known, nat)} ${esc(sp)}</label></li>`).join("")}</ul></div>`).join("")}
     </details>`;
   };
 
@@ -276,7 +280,7 @@ export function renderParty(outer, ctx) {
     setTimeout(() => {
       const members = st.party.map((n) => ({ char: CHARS.find((c) => c.name === n), level: rec(n).level, goal: rec(n).goal, eq: { ...rec(n).eq }, locked: { ...rec(n).lock } }));
       const res = optimizeParty(members, loadGear());
-      const esperPicks = assignEspers(st.party.map((n) => ({ char: CHARS.find((c) => c.name === n), goal: rec(n).goal, learned: new Set(rec(n).spells), esper: rec(n).esper, mode: rec(n).esperFor, locked: !!rec(n).lock.esper })),
+      const esperPicks = assignEspers(st.party.map((n) => ({ char: CHARS.find((c) => c.name === n), goal: rec(n).goal, learned: learned(n), esper: rec(n).esper, mode: rec(n).esperFor, locked: !!rec(n).lock.esper })),
         st.espers.map((n) => ESPER.get(n)));
       pending = { members, res, esperPicks };
       const rows = members.map((m, i) => {
@@ -284,7 +288,7 @@ export function renderParty(outer, ctx) {
         const changes = SLOTS.filter((s) => (m.eq[s] || "") !== (after[s] || ""));
         const oldE = rec(m.char.name).esper || "", newE = esperPicks[i] || "";
         const taken = newE && holder(newE) && holder(newE).name !== m.char.name ? ` (from ${esc(shown(holder(newE)))})` : "";
-        const eRow = canEquipEsper(m.char) && oldE !== newE ? `<tr><th scope="row">Esper</th><td>${esc(oldE || "None")} → <strong>${esc(newE || "None")}</strong>${taken}<span class="pc-fx">${newE ? esc(bonusText(ESPER.get(newE).bonus)) + ` · ${ESPER.get(newE).spells.filter(([sp]) => !rec(m.char.name).spells.includes(sp)).length} spells to learn` : ""}</span></td></tr>` : "";
+        const eRow = canEquipEsper(m.char) && oldE !== newE ? `<tr><th scope="row">Esper</th><td>${esc(oldE || "None")} → <strong>${esc(newE || "None")}</strong>${taken}<span class="pc-fx">${newE ? esc(bonusText(ESPER.get(newE).bonus)) + ` · ${ESPER.get(newE).spells.filter(([sp]) => !learned(m.char.name).has(sp)).length} spells to learn` : ""}</span></td></tr>` : "";
         const a = evaluate(m.char, m.level, m.eq), b = evaluate(m.char, m.level, after);
         const delta = (x, y) => (y === x ? `${y}` : `${x} → <strong>${y}</strong>`);
         return `<div class="pt-res">

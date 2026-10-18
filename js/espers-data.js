@@ -39,6 +39,14 @@ export const ESPERS = [
 ];
 
 // Every spell espers teach, grouped as the game's Magic menu groups them.
+// Natural magic: spells Terra and Celes learn on reaching a level, as [[level, spell]]. Source:
+// Final Fantasy Wiki, "Terra (Final Fantasy VI party member)" and "Celes (Final Fantasy VI party
+// member)" (CC BY-SA 3.0), checked against arrpeegeez.com and cavesofnarshe.com.
+export const NATURAL = {
+  Terra: [[1, "Cure"], [3, "Fire"], [6, "Poisona"], [12, "Drain"], [18, "Raise"], [22, "Fira"], [26, "Teleport"], [33, "Cura"], [37, "Dispel"], [43, "Firaga"], [49, "Arise"], [57, "Holy"], [68, "Break"], [75, "Graviga"], [86, "Meltdown"], [99, "Ultima"]],
+  Celes: [[1, "Blizzard"], [4, "Cure"], [8, "Poisona"], [13, "Imp"], [18, "Libra"], [22, "Protect"], [26, "Blizzara"], [32, "Haste"], [32, "Confuse"], [40, "Berserk"], [42, "Blizzaga"], [48, "Vanish"], [52, "Hastega"], [72, "Holy"], [81, "Flare"], [98, "Meteor"]],
+};
+
 export const SPELL_GROUPS = [
   ["Attack", ["Fire", "Blizzard", "Thunder", "Poison", "Drain", "Fira", "Blizzara", "Thundara", "Bio", "Firaga", "Blizzaga", "Thundaga", "Break", "Death", "Holy", "Flare", "Gravity", "Graviga", "Banish", "Meteor", "Ultima", "Quake", "Tornado", "Meltdown"]],
   ["Healing", ["Cure", "Cura", "Curaga", "Raise", "Arise", "Poisona", "Esuna", "Regen", "Reraise"]],

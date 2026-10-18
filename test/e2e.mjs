@@ -380,6 +380,8 @@ for (const vp of [{ tag: "ipad", w: 1180, h: 820 }, { tag: "phone", w: 390, h: 8
   await page.press('article[data-c="Terra"] .pc-lvn', "Tab");
   const hp30 = await page.textContent('article[data-c="Terra"] .pc-stats div:first-child dd');
   check(+hp30 > +hp1 && (await page.inputValue('article[data-c="Terra"] .pc-lvn')) === "30", `[party] level changes HP (${hp1} → ${hp30})`);
+  const nat = await page.locator('article[data-c="Terra"] .pc-magic .pc-spell').evaluateAll((l) => l.filter((x) => x.checked).map((x) => x.dataset.s + (x.disabled ? "" : "?")));
+  check(nat.sort().join() === "Cure,Drain,Fira,Fire,Poisona,Raise,Teleport", `[party] Terra at level 30 knows her level-learned spells, locked (${nat.join(", ")})`);
   for (const n of ["Locke", "Sabin", "Gau"]) { await page.fill(`article[data-c="${n}"] .pc-lvn`, "28"); await page.press(`article[data-c="${n}"] .pc-lvn`, "Tab"); }
   await page.selectOption('article[data-c="Locke"] tr[data-slot="rh"] .pc-sel', "Mythril Knife");
   check(await page.evaluate(() => JSON.parse(localStorage.getItem("ff6g:gear"))["Mythril Knife"]) === 1, "[party] equipping takes the item out of the bag");
@@ -445,10 +447,10 @@ for (const vp of [{ tag: "ipad", w: 1180, h: 820 }, { tag: "phone", w: 390, h: 8
   check(await page.locator('article[data-c="Terra"] > .pc-spells .pc-spell:checked').count() === 1 && /teaches 2 spells/.test(await page.textContent('article[data-c="Terra"] > .pc-spells')), "[espers] equipped esper shows its spells; learned ones tick off");
   await page.selectOption('article[data-c="Locke"] .pc-esper', "Ramuh");
   check(await page.inputValue('article[data-c="Terra"] .pc-esper') === "" && await page.inputValue('article[data-c="Locke"] .pc-esper') === "Ramuh", "[espers] an esper moves from one character to another");
-  check(await page.locator('article[data-c="Terra"] .pc-magic .pc-spell[data-s="Thunder"]:checked').count() === 1 && /1 of 54 known/.test(await page.textContent('article[data-c="Terra"] .pc-magic summary')), "[magic] a spell stays in the character's Magic list after the esper moves on");
+  check(await page.locator('article[data-c="Terra"] .pc-magic .pc-spell[data-s="Thunder"]:checked').count() === 1 && /8 of 54 known/.test(await page.textContent('article[data-c="Terra"] .pc-magic summary')), "[magic] a spell stays in the character's Magic list after the esper moves on");
   await page.click('article[data-c="Terra"] .pc-magic summary');
-  await page.click('article[data-c="Terra"] .pc-magic .pc-spell[data-s="Cure"]');
-  check(await page.evaluate(() => JSON.parse(localStorage.getItem("ff6g:party")).chars.Terra.spells.includes("Cure")) && await page.locator('article[data-c="Terra"] .pc-magic[open]').count() === 1, "[magic] ticking a spell in the Magic list saves it; the list stays open");
+  await page.click('article[data-c="Terra"] .pc-magic .pc-spell[data-s="Cura"]');
+  check(await page.evaluate(() => JSON.parse(localStorage.getItem("ff6g:party")).chars.Terra.spells.includes("Cura")) && await page.locator('article[data-c="Terra"] .pc-magic[open]').count() === 1, "[magic] ticking a spell in the Magic list saves it; the list stays open");
   await page.screenshot({ path: path.join(SHOTS, "27b-party-magic.png") });
   await page.click('article[data-c="Terra"] .pc-magic summary');
   check(await page.locator('article[data-c="Gau"] .pc-esper').count() === 1, "[espers] Gau can hold an esper");
