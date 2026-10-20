@@ -5,7 +5,7 @@
 // Equipping here moves items out of the Inventory bag (the "gear" setting), as the game does.
 
 import { CHARS, EQUIP } from "./party-data.js";
-import { SLOTS, SLOT_LABEL, CMD_GOALS, goalsFor, evaluate, canEquip, slotFits, optimizeParty, canEquipEsper, assignEspers } from "./optimizer.js";
+import { SLOTS, SLOT_LABEL, CMD_GOALS, goalsFor, evaluate, canEquip, slotFits, optimizeParty, canEquipEsper, assignEspers, relicNote } from "./optimizer.js";
 import { ESPERS, SPELL_GROUPS, NATURAL } from "./espers-data.js";
 import { loadGear, saveGear } from "./gear.js";
 import { loadNames } from "./names.js";
@@ -48,22 +48,6 @@ function hint(name) {
   if (e.slot === "weapon") return `Attack ${e.bp}`;
   if (e.slot === "relic") return "";
   return `Defense ${e.def || 0}${e.mdef ? `, M.Def ${e.mdef}` : ""}`;
-}
-
-const RELIC_NOTE = {
-  phys25: "+25% Fight damage", mag25: "+25% magic damage", vig50: "Strength +50%", hp50: "HP +50%", mp50: "MP +50%",
-  genji: "two weapons", gauntlet: "two-handed grip", scroll: "four hits at half power", beads: "dodges half of physical attacks",
-  counter: "counterattacks", lowprotect: "Protect when HP is low", lowshell: "Shell when HP is low", cover: "covers allies low on HP",
-  sure: "attacks always hit", cursed: "Doom", undead: "makes the wearer undead",
-};
-function relicNote(name) {
-  const e = name && EQUIP[name];
-  if (!e || e.slot !== "relic") return "";
-  const parts = [...(e.fx || []).map((f) => RELIC_NOTE[f]).filter(Boolean)];
-  if (name === "Earring") parts.push("stacks");
-  if (e.auto) parts.push(e.auto.join(", "));
-  if (e.prevent) parts.push("blocks " + e.prevent.join(", "));
-  return parts.join(" · ");
 }
 
 // ctx: { toast(msg), onChange() }

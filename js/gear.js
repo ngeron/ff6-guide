@@ -7,6 +7,8 @@ import { GEAR as ALL } from "./gear-data.js";
 import { getPref, setPref } from "./store.js";
 import { esc } from "./render.js";
 import { loadNames } from "./names.js";
+import { CHARS, EQUIP } from "./party-data.js";
+import { relicNote } from "./optimizer.js";
 
 // GBA-only gear (from the GBA bonus dungeons) isn't in the Pixel Remaster, so it's left out.
 const GEAR = ALL.filter((x) => !x.gba);
@@ -54,8 +56,56 @@ export function gearCounts() {
 const gil = (n) => n.toLocaleString() + " gil";
 const findIcon = `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg>`;
 
-function details(x) {
+// Equipment stats (from the Party page's data). Thrown weapons and Edgar's tools have none.
+const BONUS = [["vig", "Strength"], ["spd", "Agility"], ["sta", "Stamina"], ["mag", "Magic"]];
+const signed = (n) => (n > 0 ? "+" : "−") + Math.abs(n);
+function brief(x) {
+  const e = EQUIP[x.name];
+  if (!e) return "";
+  if (e.slot === "weapon") return e.bp ? `Attack ${e.bp}` : "";
+  if (e.slot === "relic") return "";
+  return [e.def && `Def ${e.def}`, e.mdef && `M.Def ${e.mdef}`].filter(Boolean).join(", ");
+}
+function who(e, shown) {
+  if (!e.who) return "";
+  const codes = e.who === "all" ? CHARS.map((c) => c.code) : e.who.split(" ");
+  const can = CHARS.filter((c) => codes.includes(c.code)).map((c) => shown(c.name));
+  const cant = CHARS.filter((c) => !codes.includes(c.code)).map((c) => shown(c.name));
+  if (!cant.length) return "Everyone";
+  if (cant.length <= 2) return `Everyone but ${cant.join(" and ")}`;
+  return can.join(", ");
+}
+function stats(x, shown) {
+  const e = EQUIP[x.name];
+  if (!e) return [];
+  const rows = [];
+  if (e.slot === "weapon") {
+    if (e.bp) rows.push(["Attack", e.bp]);
+    if (e.hit) rows.push(["Hit rate", e.hit]);
+  }
+  if (e.def) rows.push(["Defense", e.def]);
+  if (e.mdef) rows.push(["Magic Def.", e.mdef]);
+  if (e.ev) rows.push(["Evasion", signed(e.ev)]);
+  if (e.mb) rows.push(["Magic Eva.", signed(e.mb)]);
+  const bonus = BONUS.filter(([k]) => e[k]).map(([k, t]) => `${t} ${signed(e[k])}`);
+  if (bonus.length) rows.push(["Stats", bonus.join(", ")]);
+  if (e.special) rows.push(["Special", e.special]);
+  if (e.slot === "weapon" && e.twoHand) rows.push(["Gauntlet", "Can be held in both hands"]);
+  if (e.slot === "relic") { const n = relicNote(x.name); if (n) rows.push(["Effect", n]); }
+  else {
+    if (e.auto) rows.push(["Grants", e.auto.join(", ")]);
+    if (e.prevent) rows.push(["Blocks", e.prevent.join(", ")]);
+  }
+  if (e.elem > 0) rows.push(["Elements", `Guards against ${e.elem === 1 ? "one element" : `${e.elem} elements`}`]);
+  if (e.elem < 0) rows.push(["Elements", "Leaves you weak to an element"]);
+  const w = who(e, shown);
+  if (w) rows.push(["Equip", w]);
+  return rows;
+}
+
+function details(x, shown) {
   const rows = [
+    ...stats(x, shown),
     ["Buy", x.buy ? gil(x.buy) : "Not sold in shops"],
     ["Sell", x.sell != null ? gil(x.sell) + " each" : "Not known"],
     ...(x.get || []).map(([how, where]) => [how === "Buy" ? "Sold at" : how, where]),
@@ -82,7 +132,7 @@ export function renderGear(view, ctx) {
     <p class="eyebrow">Tracker</p>
     <h1>Inventory</h1>
     <p class="rg-stat"><strong id="grKinds"></strong> of ${GEAR.length} kinds · <span id="grValue"></span></p>
-    <p class="hint">Count everything you own, including what your characters are wearing (set on the Party page). The game's Items screen leaves out equipped items, so add those in. Check what you have and set how many. Tap a name for its prices and where to get it. In FF6 every shop charges the same for an item and pays the same for it, so you can sell anywhere.</p>
+    <p class="hint">Count everything you own, including what your characters are wearing (set on the Party page). The game's Items screen leaves out equipped items, so add those in. Check what you have and set how many. Tap a name for its stats, prices and where to get it. In FF6 every shop charges the same for an item and pays the same for it, so you can sell anywhere.</p>
     <div class="rg-tools">
       <input type="search" id="grQ" placeholder="Find an item" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Find an item">
       <select id="grCat" aria-label="Kind">${CATS.map(([v, t]) => `<option value="${v}"${v === cat ? " selected" : ""}>${t}</option>`).join("")}</select>
@@ -95,7 +145,7 @@ export function renderGear(view, ctx) {
           <input type="checkbox" aria-label="Have ${esc(x.name)}">
           <button type="button" class="gr-open" aria-expanded="false" aria-controls="gr${i}">
             <span class="rg-name">${esc(x.name)}${x.alt ? ` <span class="rg-alt">${esc(x.alt)}</span>` : ""}</span>
-            <span class="rg-ab">${esc(x.type)}${x.sell ? ` · sells for ${gil(x.sell)}` : ""}<span class="gr-worn"></span></span>
+            <span class="rg-ab">${esc(x.type)}${brief(x) ? ` · ${brief(x)}` : ""}${x.sell ? ` · sells for ${gil(x.sell)}` : ""}<span class="gr-worn"></span></span>
           </button>
           <span class="gr-step">
             <button type="button" class="gr-dec" aria-label="One fewer ${esc(x.name)}">−</button>
@@ -104,7 +154,7 @@ export function renderGear(view, ctx) {
           </span>
         </div>
         <div class="gr-more" id="gr${i}" hidden>
-          ${details(x)}
+          ${details(x, shown)}
           <button type="button" class="txt-btn gr-find">${findIcon}Find ${esc(x.name)} in the guide</button>
         </div>
       </li>`).join("")}

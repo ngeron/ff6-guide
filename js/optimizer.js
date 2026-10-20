@@ -52,6 +52,23 @@ export function canEquip(char, name) {
   const e = EQUIP[name];
   return !!e && !!e.who && (e.who === "all" || e.who.split(" ").includes(char.code));
 }
+const RELIC_NOTE = {
+  phys25: "+25% Fight damage", mag25: "+25% magic damage", vig50: "Strength +50%", hp50: "HP +50%", mp50: "MP +50%",
+  genji: "two weapons", gauntlet: "two-handed grip", scroll: "four hits at half power", beads: "dodges half of physical attacks",
+  counter: "counterattacks", lowprotect: "Protect when HP is low", lowshell: "Shell when HP is low", cover: "covers allies low on HP",
+  sure: "attacks always hit", cursed: "Doom", undead: "makes the wearer undead",
+};
+// What a relic does, in a few words (for the Party and Inventory pages).
+export function relicNote(name) {
+  const e = name && EQUIP[name];
+  if (!e || e.slot !== "relic") return "";
+  const parts = [...(e.fx || []).map((f) => RELIC_NOTE[f]).filter(Boolean)];
+  if (name === "Earring") parts.push("stacks");
+  if (e.auto) parts.push(e.auto.join(", "));
+  if (e.prevent) parts.push("blocks " + e.prevent.join(", "));
+  return parts.join(" · ");
+}
+
 export function slotFits(slot, name) {
   const e = EQUIP[name];
   if (!e) return false;
