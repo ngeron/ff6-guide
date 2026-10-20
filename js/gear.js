@@ -15,6 +15,8 @@ const GEAR = ALL.filter((x) => !x.gba);
 const MAX = 99; // FF6 stacks stop at 99
 const CATS = [["all", "All kinds"], ["weapon", "Weapons"], ["shield", "Shields"], ["helmet", "Helmets"], ["armor", "Armor"], ["relic", "Relics"], ["item", "Items"]];
 const SHOW = [["all", "All"], ["owned", "Have"], ["missing", "Don't have"]];
+const SORTS = [["list", "List order"], ["value", "Value"], ["rare", "Rarity"], ["quality", "Quality"]];
+const QUALS = [["phys", "Physical"], ["mag", "Magical"]];
 
 export function loadGear() {
   const g = getPref("gear", {});
@@ -62,10 +64,32 @@ const signed = (n) => (n > 0 ? "+" : "−") + Math.abs(n);
 function brief(x) {
   const e = EQUIP[x.name];
   if (!e) return "";
-  if (e.slot === "weapon") return e.bp ? `Attack ${e.bp}` : "";
+  if (e.slot === "weapon") return [e.bp && `Attack ${e.bp}`, e.mag && `Magic ${signed(e.mag)}`].filter(Boolean).join(", ");
   if (e.slot === "relic") return "";
   return [e.def && `Def ${e.def}`, e.mdef && `M.Def ${e.mdef}`].filter(Boolean).join(", ");
 }
+// Sort keys, highest first. Value: what one sells for. Rarity: how hard it is to get, from its
+// sources: shops sell without limit, monsters can be stolen from or beaten again and again, and a
+// treasure or starting item is there once (items with no sources listed go last). Quality: Attack or Defense (physical), or the Magic
+// bonus on weapons and Magic Defense on armor (magical); relics and items have none.
+const SOURCE_WEIGHT = { Buy: 100, Steal: 3, Drop: 3, Metamorphose: 3, Coliseum: 2 };
+function rarity(x) {
+  if (!x.get) return x.buy ? -SOURCE_WEIGHT.Buy : -Infinity; // most items list no sources
+  let ways = 0;
+  for (const [how, where] of x.get || []) {
+    const n = where.split(",").length;
+    ways += /only one/i.test(where) ? 1 : (SOURCE_WEIGHT[how] || 1) * n;
+  }
+  return -ways;
+}
+function quality(x, q) {
+  const e = EQUIP[x.name];
+  if (!e || e.slot === "relic") return -Infinity;
+  if (e.slot === "weapon") return q === "mag" ? (e.mag || 0) * 1000 + (e.bp || 0) : e.bp || 0;
+  return q === "mag" ? e.mdef || 0 : e.def || 0;
+}
+const CAT_ORDER = CATS.map(([v]) => v);
+
 function who(e, shown) {
   if (!e.who) return "";
   const codes = e.who === "all" ? CHARS.map((c) => c.code) : e.who.split(" ");
@@ -126,17 +150,25 @@ export function renderGear(view, ctx) {
   let show = getPref("gearShow", "all");
   if (!CATS.some(([v]) => v === cat)) cat = "all";
   if (!SHOW.some(([v]) => v === show)) show = "all";
+  let sort = getPref("gearSort", "list");
+  let qual = getPref("gearQual", "phys");
+  if (!SORTS.some(([v]) => v === sort)) sort = "list";
+  if (!QUALS.some(([v]) => v === qual)) qual = "phys";
 
   view.innerHTML = `
   <section class="rages gear">
     <p class="eyebrow">Tracker</p>
     <h1>Inventory</h1>
     <p class="rg-stat"><strong id="grKinds"></strong> of ${GEAR.length} kinds · <span id="grValue"></span></p>
-    <p class="hint">Count everything you own, including what your characters are wearing (set on the Party page). The game's Items screen leaves out equipped items, so add those in. Check what you have and set how many. Tap a name for its stats, prices and where to get it. In FF6 every shop charges the same for an item and pays the same for it, so you can sell anywhere.</p>
+    <p class="hint">Count everything you own, including what your characters are wearing (set on the Party page). The game's Items screen leaves out equipped items, so add those in. Check what you have and set how many. Tap a name for its stats, prices and where to get it. Sort by value (sell price), rarity (not sold in shops and found in few places first) or quality (Attack and Defense, or Magic and Magic Defense; kinds stay together). In FF6 every shop charges the same for an item and pays the same for it, so you can sell anywhere.</p>
     <div class="rg-tools">
       <input type="search" id="grQ" placeholder="Find an item" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Find an item">
       <select id="grCat" aria-label="Kind">${CATS.map(([v, t]) => `<option value="${v}"${v === cat ? " selected" : ""}>${t}</option>`).join("")}</select>
       <div class="seg" role="radiogroup" aria-label="Show" id="grSeg">${SHOW.map(([v, t]) => `<button type="button" role="radio" data-v="${v}">${t}</button>`).join("")}</div>
+    </div>
+    <div class="rg-tools gr-sort">
+      <div class="seg" role="radiogroup" aria-label="Sort" id="grSort">${SORTS.map(([v, t]) => `<button type="button" role="radio" data-v="${v}">${t}</button>`).join("")}</div>
+      <div class="seg" role="radiogroup" aria-label="Quality" id="grQual">${QUALS.map(([v, t]) => `<button type="button" role="radio" data-v="${v}">${t}</button>`).join("")}</div>
     </div>
     <p class="hint" id="grCount"></p>
     <ol class="rg-list gr-list" id="grList">${GEAR.map((x, i) => `
@@ -198,6 +230,18 @@ export function renderGear(view, ctx) {
     view.querySelector("#grCount").textContent = shown === GEAR.length ? "" : `Showing ${shown} of ${GEAR.length}.`;
     for (const b of view.querySelectorAll("#grSeg button")) b.setAttribute("aria-checked", String(b.dataset.v === show));
   };
+  const order = () => {
+    const key = sort === "value" ? (x) => x.sell || 0 : sort === "rare" ? rarity : sort === "quality" ? (x) => quality(x, qual) : () => 0;
+    const cat = (x) => (sort === "quality" ? CAT_ORDER.indexOf(x.cat) : 0);
+    const sorted = rows.slice().sort((a, b) => {
+      const x = GEAR[+a.dataset.i], y = GEAR[+b.dataset.i];
+      return cat(x) - cat(y) || key(y) - key(x) || 0; // stable, so ties keep list order
+    });
+    list.append(...sorted);
+    for (const b of view.querySelectorAll("#grSort button")) b.setAttribute("aria-checked", String(b.dataset.v === sort));
+    for (const b of view.querySelectorAll("#grQual button")) b.setAttribute("aria-checked", String(b.dataset.v === qual));
+    view.querySelector("#grQual").hidden = sort !== "quality";
+  };
   const set = (li, n) => {
     const x = GEAR[+li.dataset.i];
     n = Math.max(0, Math.min(MAX, n | 0));
@@ -243,6 +287,22 @@ export function renderGear(view, ctx) {
     filter();
   });
 
+  view.querySelector("#grSort").addEventListener("click", (e) => {
+    const b = e.target.closest("button");
+    if (!b) return;
+    sort = b.dataset.v;
+    setPref("gearSort", sort);
+    order();
+  });
+  view.querySelector("#grQual").addEventListener("click", (e) => {
+    const b = e.target.closest("button");
+    if (!b) return;
+    qual = b.dataset.v;
+    setPref("gearQual", qual);
+    order();
+  });
+
+  order();
   rows.forEach(paintRow);
   totals();
   filter();
