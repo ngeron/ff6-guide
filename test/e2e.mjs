@@ -374,6 +374,14 @@ for (const vp of [{ tag: "ipad", w: 1180, h: 820 }, { tag: "phone", w: 390, h: 8
   await page.click('.pc-met[data-c="Celes"]');
   await page.click('[data-c="Celes"] .pc-party');
   check(await page.locator("article.pc").count() === 4, "[party] a fifth member is refused");
+  const cardOrder = () => page.evaluate(() => [...document.querySelectorAll("article.pc")].map((a) => a.dataset.c).join(" "));
+  await page.selectOption('article[data-c="Gau"] .pc-order', "0");
+  const swapped = await cardOrder();
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("ff6g:party")).party.join(" "));
+  check(swapped === "Gau Locke Sabin Terra" && saved === swapped && (await page.inputValue('article[data-c="Terra"] .pc-order')) === "3", `[party] setting Order swaps places and re-arranges the cards (${swapped})`);
+  await page.screenshot({ path: path.join(SHOTS, "23-party-order.png") });
+  await page.selectOption('article[data-c="Terra"] .pc-order', "0");
+  check(await cardOrder() === "Terra Locke Sabin Gau", "[party] swapping back restores the order");
   const hp1 = await page.textContent('article[data-c="Terra"] .pc-stats div:first-child dd');
   await page.click('article[data-c="Terra"] .pc-lvup');
   await page.fill('article[data-c="Terra"] .pc-lvn', "30");

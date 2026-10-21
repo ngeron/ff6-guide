@@ -329,6 +329,7 @@ mark { background: var(--hit); color: inherit; border-radius: 2px; padding: 0 1p
 .pc-other > summary { cursor: pointer; list-style: none; }
 .pc-other > summary::-webkit-details-marker { display: none; }
 .pc-in { display: flex; align-items: center; gap: 6px; font-size: 14px; white-space: nowrap; }
+.pc-tags { display: flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: 6px 14px; }
 .pc-in input, .pt-unmet input { width: 20px; height: 20px; margin: 0; accent-color: var(--ok); }
 .pc-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin: 10px 0 8px; }
 .pc-lv { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--mute); font-weight: 600; }

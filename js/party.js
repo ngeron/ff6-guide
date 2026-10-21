@@ -106,7 +106,7 @@ export function renderParty(outer, ctx) {
     </details>`;
   };
 
-  const card = (c, inParty) => {
+  const card = (c, inParty, pos) => {
     const r = rec(c.name);
     const bag = loadGear();
     const ev = evaluate(c, r.level, r.eq);
@@ -136,7 +136,9 @@ export function renderParty(outer, ctx) {
       <p class="pc-est">Estimates at level ${r.level}: Fight ≈ <strong>${ev.fight}</strong> · Magic ≈ <strong>${ev.magic}</strong>${CMD_GOALS[c.name]?.k ? ` · Skills ≈ <strong>${ev.skill}</strong>` : ""} · Toughness <strong>${ev.tough}</strong></p>`;
     if (inParty) {
       return `<article class="pc" data-c="${esc(c.name)}">
-        <header class="pc-head"><h3>${nameHtml}</h3><label class="pc-in"><input type="checkbox" class="pc-party" checked> In party</label></header>${body}</article>`;
+        <header class="pc-head"><h3>${nameHtml}</h3><span class="pc-tags">
+          <label class="pc-in pc-goal">Order <select class="pc-order" aria-label="${esc(shown(c))}'s place in the party order">${st.party.map((_, i) => `<option value="${i}"${i === pos ? " selected" : ""}>${i + 1}</option>`).join("")}</select></label>
+          <label class="pc-in"><input type="checkbox" class="pc-party" checked> In party</label></span></header>${body}</article>`;
     }
     return `<details class="pc pc-other" data-c="${esc(c.name)}"><summary class="pc-head"><h3>${nameHtml} <span class="mn-odds">Level ${r.level}</span></h3>
         <label class="pc-in"><input type="checkbox" class="pc-party"> In party</label></summary>${body}
@@ -153,12 +155,12 @@ export function renderParty(outer, ctx) {
     <section class="rages party">
       <p class="eyebrow">Characters</p>
       <h1>Party</h1>
-      <p class="hint">Tick the characters you've met and put up to four in your party. Set their levels and what they're wearing: equipping here takes the item out of your Inventory, as the game does. <strong>Optimize</strong> picks the best weapons, armor and relics you own for each party member at their level. Lock a slot to keep it. Some characters can also optimize for their command (Rage, Blitz, Steal…), which favors the stats that command uses instead of weapon power. <strong>Clear all gear</strong> puts everyone's unlocked equipment back in your bag, so Optimize can hand it out again.</p>
+      <p class="hint">Tick the characters you've met and put up to four in your party. Set each one's <strong>Order</strong> to match the game; picking a number swaps places with whoever had it. Set their levels and what they're wearing: equipping here takes the item out of your Inventory, as the game does. <strong>Optimize</strong> picks the best weapons, armor and relics you own for each party member at their level. Lock a slot to keep it. Some characters can also optimize for their command (Rage, Blitz, Steal…), which favors the stats that command uses instead of weapon power. <strong>Clear all gear</strong> puts everyone's unlocked equipment back in your bag, so Optimize can hand it out again.</p>
       <div class="pt-actions"><button type="button" class="btn solid" id="ptOpt"${party.length ? "" : " disabled"}>Optimize party</button>
         <button type="button" class="btn" id="ptClear"${unlockedGear() ? "" : " disabled"}>Clear all gear</button>
         <span class="hint" id="ptNote">${party.length ? "" : "Put someone in your party first."}</span></div>
       <div id="ptResult"></div>
-      ${party.length ? `<h2 class="sheet-sub">In your party</h2>${party.map((c) => card(c, true)).join("")}` : ""}
+      ${party.length ? `<h2 class="sheet-sub">In your party</h2>${party.map((c, i) => card(c, true, i)).join("")}` : ""}
       ${others.length ? `<h2 class="sheet-sub">Others you've met</h2>${others.map((c) => card(c, false)).join("")}` : ""}
       <h2 class="sheet-sub">Espers</h2>
       <details class="pt-howto"><summary>How espers work</summary>
@@ -237,6 +239,15 @@ export function renderParty(outer, ctx) {
     if (t.classList.contains("pc-party")) {
       if (t.checked && st.party.length >= MAX_PARTY) { t.checked = false; ctx.toast("A party has four members. Take someone out first."); return; }
       return keepScroll(() => { st.party = t.checked ? [...st.party, name] : st.party.filter((n) => n !== name); save(); });
+    }
+    if (t.classList.contains("pc-order")) {
+      // Swap places with whoever held that spot, so the order stays 1 to 4 with no gaps.
+      const from = st.party.indexOf(name), to = +t.value;
+      [st.party[from], st.party[to]] = [st.party[to], st.party[from]];
+      save();
+      keepScroll(() => {});
+      view.querySelector(`.pc[data-c="${CSS.escape(name)}"]`)?.scrollIntoView({ block: "nearest" });
+      return;
     }
     if (t.classList.contains("pc-lvn")) return setLevel(name, parseInt(t.value, 10));
     if (t.classList.contains("pc-goalsel")) return keepScroll(() => { rec(name).goal = t.value; save(); });
