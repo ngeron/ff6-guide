@@ -380,6 +380,8 @@ for (const vp of [{ tag: "ipad", w: 1180, h: 820 }, { tag: "phone", w: 390, h: 8
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("ff6g:party")).party.join(" "));
   check(swapped === "Gau Locke Sabin Terra" && saved === swapped && (await page.inputValue('article[data-c="Terra"] .pc-order')) === "3", `[party] setting Order swaps places and re-arranges the cards (${swapped})`);
   await page.screenshot({ path: path.join(SHOTS, "23-party-order.png") });
+  const stripes = await page.evaluate(() => [...document.querySelectorAll("article.pc")].map((a) => getComputedStyle(a).borderLeftColor));
+  check(new Set(stripes).size === 4, "[party] each character's card has its own color");
   await page.selectOption('article[data-c="Terra"] .pc-order', "0");
   check(await cardOrder() === "Terra Locke Sabin Gau", "[party] swapping back restores the order");
   const hp1 = await page.textContent('article[data-c="Terra"] .pc-stats div:first-child dd');

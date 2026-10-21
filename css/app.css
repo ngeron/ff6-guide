@@ -18,6 +18,9 @@
   --party: #6A3D9A; --enemy: #995200; --boss: #B3261E; --place: #1D5FA6; --npc: #A3306F; --item: #1E7348;
   --m-sea: #AFC8D4; --m-shore: #7F9FAF; --m-land: #BCD29A; --m-plain: #D3E2A6; --m-forest: #7EA46A; --m-mountain: #B49B78; --m-desert: #E9D8A7;
   --m-sea-r: #CDB3A8; --m-land-r: #C6B38C; --m-grass-r: #A4B47C; --m-forest-r: #728C5C; --m-mountain-r: #9E8669; --m-desert-r: #E6D095;
+  /* one color per character (party cards), from their look in the game */
+  --c-terra: #267A4C; --c-locke: #2B64B5; --c-cyan: #4B4BA6; --c-shadow: #4D5866; --c-edgar: #876500; --c-sabin: #A84D0E; --c-celes: #11717F;
+  --c-strago: #86643A; --c-relm: #B8338F; --c-setzer: #7445B0; --c-mog: #BE3B34; --c-gau: #62730F; --c-gogo: #8E4E6E; --c-umaro: #456C8C;
   --mono: ui-monospace, Menlo, "SF Mono", Consolas, monospace;
   --bar-h: 52px;
   --side-w: 330px;
@@ -28,6 +31,8 @@
     --bg: #1C1B19; --fg: #E6E1D6; --mute: #9A9284; --rule: #34312C; --panel: #262420; --side: #201F1C;
     --acc: #86B9B4; --acc-ink: #10201F; --hit: #6B5A22; --ok: #8DC497; --bad: #E58A80; color-scheme: dark;
     --party: #C7A6F0; --enemy: #E3A857; --boss: #F28B82; --place: #8DB8F2; --npc: #EE9CC9; --item: #7FCF9E;
+    --c-terra: #96D9B4; --c-locke: #90B1DF; --c-cyan: #9F9FD0; --c-shadow: #AFB7C1; --c-edgar: #F8D777; --c-sabin: #EEAE81; --c-celes: #87DCE9;
+    --c-strago: #D1BA9E; --c-relm: #DC93C6; --c-setzer: #B49CD4; --c-mog: #DC9793; --c-gau: #D8E986; --c-gogo: #CAA5B8; --c-umaro: #A2BACD;
     --m-sea: #1D3340; --m-shore: #3F5D6D; --m-land: #3D5132; --m-plain: #4C6239; --m-forest: #2B4027; --m-mountain: #5C4B37; --m-desert: #706340;
     --m-sea-r: #3A2523; --m-shore-r: #6A4740; --m-land-r: #4E4431; --m-grass-r: #475431; --m-forest-r: #2E3A24; --m-mountain-r: #5D4C38; --m-desert-r: #75663B;
   }
@@ -36,6 +41,8 @@
   --bg: #1C1B19; --fg: #E6E1D6; --mute: #9A9284; --rule: #34312C; --panel: #262420; --side: #201F1C;
   --acc: #86B9B4; --acc-ink: #10201F; --hit: #6B5A22; --ok: #8DC497; --bad: #E58A80; color-scheme: dark;
   --party: #C7A6F0; --enemy: #E3A857; --boss: #F28B82; --place: #8DB8F2; --npc: #EE9CC9; --item: #7FCF9E;
+  --c-terra: #96D9B4; --c-locke: #90B1DF; --c-cyan: #9F9FD0; --c-shadow: #AFB7C1; --c-edgar: #F8D777; --c-sabin: #EEAE81; --c-celes: #87DCE9;
+  --c-strago: #D1BA9E; --c-relm: #DC93C6; --c-setzer: #B49CD4; --c-mog: #DC9793; --c-gau: #D8E986; --c-gogo: #CAA5B8; --c-umaro: #A2BACD;
     --m-sea: #1D3340; --m-shore: #3F5D6D; --m-land: #3D5132; --m-plain: #4C6239; --m-forest: #2B4027; --m-mountain: #5C4B37; --m-desert: #706340;
     --m-sea-r: #3A2523; --m-shore-r: #6A4740; --m-land-r: #4E4431; --m-grass-r: #475431; --m-forest-r: #2E3A24; --m-mountain-r: #5D4C38; --m-desert-r: #75663B;
 }
@@ -325,6 +332,19 @@ mark { background: var(--hit); color: inherit; border-radius: 2px; padding: 0 1p
 .pt-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: .6em 0 1em; }
 .pc { border: 1px solid var(--rule); border-radius: 14px; padding: 12px 14px; margin: 0 0 12px; font-family: var(--ui); }
 .pc-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+/* Character colors: a stripe, a tinted header and name, tinted stat tiles. */
+.pc { --pc: var(--acc); border-left: 5px solid var(--pc); }
+.pc[data-c="Terra"] { --pc: var(--c-terra); } .pc[data-c="Locke"] { --pc: var(--c-locke); } .pc[data-c="Cyan"] { --pc: var(--c-cyan); }
+.pc[data-c="Shadow"] { --pc: var(--c-shadow); } .pc[data-c="Edgar"] { --pc: var(--c-edgar); } .pc[data-c="Sabin"] { --pc: var(--c-sabin); }
+.pc[data-c="Celes"] { --pc: var(--c-celes); } .pc[data-c="Strago"] { --pc: var(--c-strago); } .pc[data-c="Relm"] { --pc: var(--c-relm); }
+.pc[data-c="Setzer"] { --pc: var(--c-setzer); } .pc[data-c="Mog"] { --pc: var(--c-mog); } .pc[data-c="Gau"] { --pc: var(--c-gau); }
+.pc[data-c="Gogo"] { --pc: var(--c-gogo); } .pc[data-c="Umaro"] { --pc: var(--c-umaro); }
+.pc > .pc-head { margin: -12px -14px 0 -14px; padding: 10px 14px; border-radius: 0 13px 0 0; background: color-mix(in srgb, var(--pc) 13%, transparent); }
+.pc-other:not([open]) { padding-bottom: 0; }
+.pc-other:not([open]) > .pc-head { border-radius: 0 13px 13px 0; }
+.pc-head .pc-n { color: var(--pc); }
+.pc input[type="checkbox"] { accent-color: var(--pc); }
+.pc .mn-stats > div { background: color-mix(in srgb, var(--pc) 10%, var(--panel)); }
 .pc-head h3 { margin: 0; font-size: 1.15rem; }
 .pc-other > summary { cursor: pointer; list-style: none; }
 .pc-other > summary::-webkit-details-marker { display: none; }
