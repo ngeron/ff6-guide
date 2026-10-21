@@ -172,12 +172,12 @@ export function renderGear(view, ctx) {
     </div>
     <p class="hint" id="grCount"></p>
     <ol class="rg-list gr-list" id="grList">${GEAR.map((x, i) => `
-      <li class="rg gr" data-i="${i}">
+      <li class="rg gr" data-i="${i}" data-cat="${x.cat}">
         <div class="gr-row">
           <input type="checkbox" aria-label="Have ${esc(x.name)}">
           <button type="button" class="gr-open" aria-expanded="false" aria-controls="gr${i}">
             <span class="rg-name">${esc(x.name)}${x.alt ? ` <span class="rg-alt">${esc(x.alt)}</span>` : ""}</span>
-            <span class="rg-ab">${esc(x.type)}${brief(x) ? ` · ${brief(x)}` : ""}${x.sell ? ` · sells for ${gil(x.sell)}` : ""}<span class="gr-worn"></span></span>
+            <span class="rg-ab"><span class="gr-kind">${esc(x.type)}</span>${brief(x) ? ` · ${brief(x)}` : ""}${x.sell ? ` · sells for ${gil(x.sell)}` : ""}<span class="gr-worn"></span></span>
           </button>
           <span class="gr-step">
             <button type="button" class="gr-dec" aria-label="One fewer ${esc(x.name)}">−</button>

@@ -638,6 +638,8 @@ for (const vp of [{ tag: "ipad", w: 1180, h: 820 }, { tag: "phone", w: 390, h: 8
   check(/Buy\s*150 gil/.test(more) && /Sell\s*75 gil/.test(more) && /Sold at\s*South Figaro/.test(more) && /150 gil for 2/.test(more), "[gear] details show buy, sell, shops and the total for your count");
   check(/Attack 26/.test(await dagger.locator(".rg-ab").textContent()) && /Attack\s*26/.test(more) && /Hit rate\s*180/.test(more) && /Equip\s*(Terra|Prns Donut), Locke/.test(more), "[gear] rows show a short stat line; details show stats and who can equip");
   await page.screenshot({ path: path.join(SHOTS, "21-gear.png") });
+  const kinds = await page.evaluate(() => ["weapon", "shield", "relic"].map((k) => getComputedStyle(document.querySelector(`.gr[data-cat="${k}"] .gr-kind`)).color));
+  check(new Set(kinds).size === 3, "[gear] each kind has its own color");
   const ribbon = page.locator(".gr", { has: page.locator(".rg-name", { hasText: /^Ribbon/ }) }).first();
   await ribbon.locator(".gr-open").click();
   check(/Effect\s*blocks Dark/.test(await ribbon.locator(".gr-more").textContent()) && /Equip\s*Everyone/.test(await ribbon.locator(".gr-more").textContent()), "[gear] relic details show the effect");

@@ -21,6 +21,8 @@
   /* one color per character (party cards), from their look in the game */
   --c-terra: #267A4C; --c-locke: #2B64B5; --c-cyan: #4B4BA6; --c-shadow: #4D5866; --c-edgar: #876500; --c-sabin: #A84D0E; --c-celes: #11717F;
   --c-strago: #86643A; --c-relm: #B8338F; --c-setzer: #7445B0; --c-mog: #BE3B34; --c-gau: #62730F; --c-gogo: #8E4E6E; --c-umaro: #456C8C;
+  /* one color per kind of gear (Inventory) */
+  --k-weapon: #A8382F; --k-shield: #2B64B5; --k-helmet: #11717F; --k-armor: #3D7536; --k-relic: #7445B0; --k-item: #876500;
   --mono: ui-monospace, Menlo, "SF Mono", Consolas, monospace;
   --bar-h: 52px;
   --side-w: 330px;
@@ -33,6 +35,7 @@
     --party: #C7A6F0; --enemy: #E3A857; --boss: #F28B82; --place: #8DB8F2; --npc: #EE9CC9; --item: #7FCF9E;
     --c-terra: #96D9B4; --c-locke: #90B1DF; --c-cyan: #9F9FD0; --c-shadow: #AFB7C1; --c-edgar: #F8D777; --c-sabin: #EEAE81; --c-celes: #87DCE9;
     --c-strago: #D1BA9E; --c-relm: #DC93C6; --c-setzer: #B49CD4; --c-mog: #DC9793; --c-gau: #D8E986; --c-gogo: #CAA5B8; --c-umaro: #A2BACD;
+    --k-weapon: #DC9993; --k-shield: #90B1DF; --k-helmet: #87DCE9; --k-armor: #A5CFA0; --k-relic: #B49CD4; --k-item: #F8D777;
     --m-sea: #1D3340; --m-shore: #3F5D6D; --m-land: #3D5132; --m-plain: #4C6239; --m-forest: #2B4027; --m-mountain: #5C4B37; --m-desert: #706340;
     --m-sea-r: #3A2523; --m-shore-r: #6A4740; --m-land-r: #4E4431; --m-grass-r: #475431; --m-forest-r: #2E3A24; --m-mountain-r: #5D4C38; --m-desert-r: #75663B;
   }
@@ -43,6 +46,7 @@
   --party: #C7A6F0; --enemy: #E3A857; --boss: #F28B82; --place: #8DB8F2; --npc: #EE9CC9; --item: #7FCF9E;
   --c-terra: #96D9B4; --c-locke: #90B1DF; --c-cyan: #9F9FD0; --c-shadow: #AFB7C1; --c-edgar: #F8D777; --c-sabin: #EEAE81; --c-celes: #87DCE9;
   --c-strago: #D1BA9E; --c-relm: #DC93C6; --c-setzer: #B49CD4; --c-mog: #DC9793; --c-gau: #D8E986; --c-gogo: #CAA5B8; --c-umaro: #A2BACD;
+  --k-weapon: #DC9993; --k-shield: #90B1DF; --k-helmet: #87DCE9; --k-armor: #A5CFA0; --k-relic: #B49CD4; --k-item: #F8D777;
     --m-sea: #1D3340; --m-shore: #3F5D6D; --m-land: #3D5132; --m-plain: #4C6239; --m-forest: #2B4027; --m-mountain: #5C4B37; --m-desert: #706340;
     --m-sea-r: #3A2523; --m-shore-r: #6A4740; --m-land-r: #4E4431; --m-grass-r: #475431; --m-forest-r: #2E3A24; --m-mountain-r: #5D4C38; --m-desert-r: #75663B;
 }
@@ -260,9 +264,13 @@ mark { background: var(--hit); color: inherit; border-radius: 2px; padding: 0 1p
 
 /* ---------- inventory ---------- */
 .rg-tools select { font: 15px var(--ui); padding: 9px 8px; border-radius: 10px; border: 1.5px solid var(--rule); background: var(--panel); color: var(--fg); }
-.gr { display: block; }
+.gr { display: block; --k: var(--rule); border-left: 4px solid var(--k); padding-left: 10px; }
+.gr[data-cat="weapon"] { --k: var(--k-weapon); } .gr[data-cat="shield"] { --k: var(--k-shield); } .gr[data-cat="helmet"] { --k: var(--k-helmet); }
+.gr[data-cat="armor"] { --k: var(--k-armor); } .gr[data-cat="relic"] { --k: var(--k-relic); } .gr[data-cat="item"] { --k: var(--k-item); }
+.gr-kind { color: var(--k); font-weight: 600; }
+.gr .gr-more { background: color-mix(in srgb, var(--k) 8%, var(--panel)); }
 .gr-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
-.gr-row > input[type="checkbox"] { width: 22px; height: 22px; margin: 0; flex: none; accent-color: var(--ok); }
+.gr-row > input[type="checkbox"] { width: 22px; height: 22px; margin: 0; flex: none; accent-color: var(--k); }
 .gr-open { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; padding: 6px 2px; border: 0; background: none; color: var(--fg); text-align: left; font: inherit; cursor: pointer; border-radius: 8px; }
 .gr-open:active { background: var(--panel); }
 .gr-open[aria-expanded="true"] .rg-name::after { content: " ▴"; color: var(--mute); }
