@@ -319,6 +319,7 @@ mark { background: var(--hit); color: inherit; border-radius: 2px; padding: 0 1p
 .el-immune { color: var(--mute); }
 .el-resist { color: var(--place); }
 .mn-odds { color: var(--mute); font-size: 12.5px; }
+.mn-sus { white-space: nowrap; }
 .mn-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; border-top: 1px solid var(--rule); padding-top: 8px; }
 .mn-rage { display: flex; align-items: center; gap: 8px; font-size: 14.5px; }
 .mn-rage input { width: 20px; height: 20px; accent-color: var(--ok); margin: 0; }

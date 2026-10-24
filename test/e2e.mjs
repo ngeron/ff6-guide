@@ -579,6 +579,7 @@ for (const vp of [{ tag: "ipad", w: 1180, h: 820 }, { tag: "phone", w: 390, h: 8
   await page.waitForSelector(".mn-card");
   const leaf = await page.textContent(".mn-card");
   check(/Weak to\s*Fire\s*Water/.test(leaf) && /Absorbs\s*Ice/.test(leaf) && /HP\s*33/.test(leaf), "[monsters] exact name opens its card with weaknesses and stats");
+  check(/Susceptible to\s*Death, Banish Death · Break Petrify · Stop · Sleep/.test(leaf), "[monsters] card lists the statuses it's open to, with the spells");
   check(/#\/monsters\/Leaf%20Bunny$/.test(page.url()), "[monsters] selected monster kept in the URL");
   await page.fill("#mnQ", "vomammoth");
   await page.waitForFunction(() => /Megalodoth/.test(document.getElementById("mnName")?.textContent || ""));

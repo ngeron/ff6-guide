@@ -15,6 +15,14 @@ export const findMonster = (name) => byName.get(String(name).toLowerCase()) || n
 
 const ELEM_LABEL = { weak: "Weak to", absorb: "Absorbs", immune: "Unaffected by", resist: "Resists" };
 
+// Statuses the party can inflict and how (Pixel Remaster spell names). The card lists the ways in
+// for each status the monster isn't immune to.
+const INFLICT = [
+  ["Death", "Death, Banish"], ["Petrify", "Break"], ["Stop", "Stop"], ["Sleep", "Sleep"],
+  ["Confuse", "Confuse"], ["Berserk", "Berserk"], ["Silence", "Silence"], ["Slow", "Slow, Slowga"],
+  ["Imp", "Imp"], ["Poison", "Poison"], ["Control", "Relm's Control"],
+];
+
 function pic(m, cls) {
   return m.img
     ? `<img class="${cls}" src="${esc(imgUrl(m))}" alt="" loading="lazy" referrerpolicy="no-referrer" decoding="async">`
@@ -31,6 +39,8 @@ function formHtml(f) {
     if (f.el && f.el[k]) row(ELEM_LABEL[k], f.el[k].map((e) => `<span class="chip-el el-${k}">${esc(e)}</span>`).join(" "));
   }
   if (f.imm) row("Immune to", esc(f.imm.join(", ")));
+  const open = INFLICT.filter(([st]) => !(f.imm || []).includes(st));
+  row("Susceptible to", open.map(([st, how]) => `<span class="mn-sus">${esc(how)}${how === st ? "" : ` <span class="mn-odds">${esc(st)}</span>`}</span>`).join(" · "));
   if (f.traits) row("Notes", esc(f.traits.join(" · ")));
   if (f.steal) row("Steal", drops(f.steal));
   if (f.drop) row("Drops", drops(f.drop));
