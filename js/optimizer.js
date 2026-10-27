@@ -20,6 +20,13 @@
 // A goal sets how much each part counts; a character's command goal (CMD_GOALS) weighs the parts
 // their command uses. Scores add logarithms, so a 10 % gain counts the same
 // wherever it comes from.
+//
+// Against one monster (a "foe", built by foe.js), Fight counts each hand's element against the
+// monster (weak ×2, resisted ×½, immune 0, absorbed heals it), and Toughness becomes HP over the
+// damage expected from one of its turns: each of its moves weighted by how often it's likely to
+// come, reduced by Defense and Evade (physical) or Magic Defense and Magic Evade (magic), and by
+// the gear's elements (absorb, nullify, halve, or a weakness ×2); a status the gear doesn't
+// block counts against it by how bad that status is (STATUS_HARM).
 
 import { CHARS, EQUIP, HP_UP, MP_UP } from "./party-data.js";
 
@@ -69,6 +76,31 @@ export function relicNote(name) {
   return parts.join(" · ");
 }
 
+// Statuses as the monster data names them, for the names equipment uses (SNES names).
+export const STATUS_AS = { Dark: "Blind", Mute: "Silence", Muddled: "Confuse", Psyche: "Sleep", Wound: "Death" };
+// How much a status the gear doesn't block hurts a grinding party, roughly: 1 takes a character
+// out of the fight.
+export const STATUS_HARM = { Death: 1, Petrify: 1, Zombie: 1, Stop: 0.6, Freeze: 0.5, Doom: 0.5, Confuse: 0.5, Imp: 0.4, Sleep: 0.35, Berserk: 0.3,
+  Silence: 0.2, Slow: 0.2, Blind: 0.15, Seizure: 0.15, Poison: 0.1, Sap: 0.1 };
+// What an element does to the wearer of `el` ({ absorb, null, half, weak } lists): -1 heals.
+export function takenFactor(element, el, float) {
+  if (!element) return 1;
+  if (element === "Earth" && float) return 0;
+  if (el.absorb.has(element)) return -1;
+  if (el.null.has(element)) return 0;
+  const f = el.half.has(element) ? 0.5 : 1;
+  return el.weak.has(element) ? f * 2 : f;
+}
+// What a weapon's elements do to the monster: weak ×2, resisted ×½, immune 0, absorbed -1.
+export function hitFactor(els, foe) {
+  if (!foe || !els || !els.length) return 1;
+  if (els.some((e) => foe.absorb.has(e))) return -1;
+  if (els.some((e) => foe.immune.has(e))) return 0;
+  if (els.some((e) => foe.weak.has(e))) return 2;
+  if (els.some((e) => foe.resist.has(e))) return 0.5;
+  return 1;
+}
+
 export function slotFits(slot, name) {
   const e = EQUIP[name];
   if (!e) return false;
@@ -77,19 +109,24 @@ export function slotFits(slot, name) {
   return e.slot === slot;
 }
 
-// Everything about a character with a load-out: displayed stats plus the estimates.
-export function evaluate(char, level, eq) {
+// Everything about a character with a load-out: displayed stats plus the estimates; with a foe,
+// also the damage they'd take from one of its turns ("taken") and what still gets through
+// ("risks": [[move, status]] not blocked).
+export function evaluate(char, level, eq, foe = null) {
   const L = Math.max(1, Math.min(MAXLV, level | 0));
   const items = SLOTS.map((s) => eq[s]).filter((n) => n && EQUIP[n]).map((n) => EQUIP[n]);
   const fx = new Set(), prevent = new Set(), auto = new Set();
   let earrings = 0, elem = 0;
+  const el = { absorb: new Set(), null: new Set(), half: new Set(), weak: new Set() };
   const s = { vig: char.vig, spd: char.spd, sta: char.sta, mag: char.mag, def: char.def, mdef: char.mdef, ev: char.ev, mb: char.mb };
   for (const e of items) {
     for (const k of ["vig", "spd", "sta", "mag", "def", "mdef", "ev", "mb"]) s[k] += e[k] || 0;
     for (const f of e.fx || []) fx.add(f);
     for (const p of e.prevent || []) prevent.add(p);
-    for (const a of e.auto || []) auto.add(a);
+    // The Mythril Glove, Barrier Ring and Princess Ring cast Protect or Shell only at low HP.
+    for (const a of e.auto || []) if (!(a === "Safe" && e.fx?.includes("lowprotect")) && !(a === "Shell" && e.fx?.includes("lowshell"))) auto.add(a);
     elem += e.elem || 0;
+    for (const k of ["absorb", "null", "half", "weak"]) for (const x of e.el?.[k] || []) el[k].add(x);
   }
   earrings = [eq.r1, eq.r2].filter((n) => n === "Earring").length;
   if (fx.has("vig50")) s.vig = Math.floor(s.vig * 1.5);
@@ -101,15 +138,17 @@ export function evaluate(char, level, eq) {
   const weapons = ["rh", "lh"].map((h) => eq[h]).filter((n) => n && EQUIP[n] && EQUIP[n].slot === "weapon");
   const shields = ["rh", "lh"].map((h) => eq[h]).filter((n) => n && EQUIP[n] && EQUIP[n].slot === "shield");
   const hit = (bp) => bp + Math.floor((L * L * (bp + Math.min(255, s.vig * 2))) / 256) * 1.5;
+  const vs = (n) => hitFactor(EQUIP[n].el?.atk, foe);
   let fight;
   if (!weapons.length) fight = hit(char.bp);
-  else if (weapons.length === 2) fight = hit(EQUIP[weapons[0]].bp) + hit(EQUIP[weapons[1]].bp);
+  else if (weapons.length === 2) fight = hit(EQUIP[weapons[0]].bp) * vs(weapons[0]) + hit(EQUIP[weapons[1]].bp) * vs(weapons[1]);
   else {
     const w = EQUIP[weapons[0]];
     const twoHanded = fx.has("gauntlet") && w.twoHand && !shields.length;
-    fight = hit(twoHanded ? Math.floor(w.bp * 1.75) : w.bp);
+    fight = hit(twoHanded ? Math.floor(w.bp * 1.75) : w.bp) * vs(weapons[0]);
     if (fx.has("genji") && !twoHanded) fight *= 0.75; // the Genji Glove with one weapon lowers damage
   }
+  fight = Math.max(0, fight);
   if (fx.has("phys25")) fight *= 1.25;
   if (fx.has("scroll")) fight *= 2;
   if (fx.has("counter")) fight *= 1.15;
@@ -129,15 +168,33 @@ export function evaluate(char, level, eq) {
   let mag = ((255 - Math.min(254, s.mdef)) / 256) * (1 - 0.5 * mblock);
   if (auto.has("Safe") || auto.has("Protect")) phys *= 170 / 256; else if (fx.has("lowprotect")) phys *= 0.9;
   if (auto.has("Shell")) mag *= 170 / 256; else if (fx.has("lowshell")) mag *= 0.9;
-  let tough = s.hp / (0.6 * phys + 0.4 * mag);
-  tough *= 1 + 0.015 * prevent.size + 0.01 * elem;
+  let tough, taken = 0;
+  const risks = [];
+  if (foe) {
+    // Damage from one of the monster's turns (its moves weighted), and the share of turns a
+    // status that gets through costs.
+    const blocked = new Set([...prevent].map((p) => STATUS_AS[p] || p));
+    let harm = 0;
+    for (const m of foe.moves) {
+      const share = m.w * (m.all ? 1 : 0.4); // a single-target move hits this character about 2 turns in 5
+      const cut = m.k === "phys" ? phys : m.k === "mag" || m.k === "drain" ? mag : 1;
+      const dmg = m.k === "frac" ? s.hp * (m.frac || 0.5) : m.hp || 0;
+      taken += share * dmg * cut * (m.k === "frac" ? 1 : takenFactor(m.el, el, auto.has("Float")));
+      for (const st of m.st || []) if (!blocked.has(st) && !(st === "Slow" && auto.has("Haste"))) { harm += share * (STATUS_HARM[st] ?? 0.2); risks.push([m.name, st]); }
+    }
+    taken = Math.max(s.hp * 0.01, taken);
+    tough = (100 * s.hp / taken) * Math.max(0.2, 1 - 1.5 * harm);
+  } else {
+    tough = s.hp / (0.6 * phys + 0.4 * mag);
+    tough *= 1 + 0.015 * prevent.size + 0.01 * elem;
+  }
   if (auto.has("Regen")) tough *= 1.05;
   if (auto.has("Float")) tough *= 1.02;
   if (fx.has("cursed")) tough *= 0.3;
   if (fx.has("undead")) tough *= 0.7;
 
   const speed = (s.spd + 20) * (auto.has("Haste") ? 1.5 : 1);
-  return { stats: s, fight: Math.round(fight), magic: Math.round(magic), tough: Math.round(tough), skill: Math.round(skill), steal, speed, fx, prevent, auto };
+  return { stats: s, fight: Math.round(fight), magic: Math.round(magic), tough: Math.round(tough), skill: Math.round(skill), steal, speed, fx, prevent, auto, taken: Math.round(taken), risks };
 }
 
 function weights(char, goal) {
@@ -151,15 +208,23 @@ function weights(char, goal) {
   return { p, m, k: 0, st: 0, d, sp };
 }
 
-export function score(char, level, eq, goal) {
-  const r = evaluate(char, level, eq);
+export function score(char, level, eq, goal, foe = null) {
+  const r = evaluate(char, level, eq, foe);
   const w = weights(char, goal);
   return w.p * Math.log(r.fight + 1) + w.m * Math.log(r.magic + 1) + w.d * Math.log(r.tough + 1) + w.sp * Math.log(r.speed) + w.k * Math.log(r.skill + 1) + w.st * Math.log(r.steal);
 }
 
+// Two weapons need the Genji Glove, and there's only one shield at a time.
+export function handsOk(eq) {
+  const a = EQUIP[eq.rh]?.slot, b = EQUIP[eq.lh]?.slot;
+  if (a === "weapon" && b === "weapon") return [eq.r1, eq.r2].some((n) => (EQUIP[n]?.fx || []).includes("genji"));
+  return !(a === "shield" && b === "shield");
+}
+
 // Best load-out for one character. pool: { name: count } of items they may use (including what
-// they wear now); locked: { slot: true } slots to keep as they are in `current`.
-export function optimizeOne(char, level, goal, pool, current = {}, locked = {}) {
+// they wear now); locked: { slot: true } slots to keep as they are in `current`; foe: a monster
+// to optimize against (foe.js), or null.
+export function optimizeOne(char, level, goal, pool, current = {}, locked = {}, foe = null) {
   const have = (n) => (pool[n] || 0) > 0;
   const options = (slot) => {
     if (locked[slot]) return [current[slot] || ""];
@@ -186,18 +251,15 @@ export function optimizeOne(char, level, goal, pool, current = {}, locked = {}) 
           let pick = eq[s], top = -Infinity;
           for (const n of opt[s]) {
             const trial = { ...eq, [s]: n };
-            if (!fits(trial)) continue;
-            if (n && EQUIP[n].slot === "weapon" && s === "lh" && trial.rh && EQUIP[trial.rh].slot === "weapon" && !(EQUIP[trial.r1]?.fx || []).concat(EQUIP[trial.r2]?.fx || []).includes("genji")) continue;
-            if (n && EQUIP[n].slot === "weapon" && s === "rh" && trial.lh && EQUIP[trial.lh].slot === "weapon" && !(EQUIP[trial.r1]?.fx || []).concat(EQUIP[trial.r2]?.fx || []).includes("genji")) continue;
-            if (n && EQUIP[n].slot === "shield" && (s === "lh" ? trial.rh : trial.lh) && EQUIP[s === "lh" ? trial.rh : trial.lh].slot === "shield") continue;
-            const v = score(char, level, trial, goal);
+            if (!fits(trial) || (n && !handsOk(trial))) continue;
+            const v = score(char, level, trial, goal, foe);
             if (v > top + 1e-9) { top = v; pick = n; }
           }
           if (pick !== eq[s]) { eq[s] = pick; changed = true; }
         }
         if (!changed) break;
       }
-      const v = score(char, level, eq, goal);
+      const v = score(char, level, eq, goal, foe);
       if (v > bestScore) { bestScore = v; best = eq; }
     }
   }
@@ -213,8 +275,8 @@ export function optimizeOne(char, level, goal, pool, current = {}, locked = {}) 
 }
 
 // Optimizes the whole party, sharing items. members: [{ char, level, goal, eq, locked }].
-// bag: { name: count } of unequipped items. Returns { loadouts: [eq], bag }.
-export function optimizeParty(members, bag) {
+// bag: { name: count } of unequipped items; foe as for optimizeOne. Returns { loadouts: [eq], bag }.
+export function optimizeParty(members, bag, foe = null) {
   const pool = { ...bag };
   for (const m of members) for (const s of SLOTS) if (m.eq[s] && !m.locked[s]) pool[m.eq[s]] = (pool[m.eq[s]] || 0) + 1;
   const take = (eq, locked, sign) => { for (const s of SLOTS) if (eq[s] && !locked[s]) pool[eq[s]] = (pool[eq[s]] || 0) + sign; };
@@ -222,7 +284,7 @@ export function optimizeParty(members, bag) {
   for (let round = 0; round < 3; round++) {
     members.forEach((m, i) => {
       if (result[i]) take(result[i], m.locked, +1);
-      result[i] = optimizeOne(m.char, m.level, m.goal, pool, m.eq, m.locked);
+      result[i] = optimizeOne(m.char, m.level, m.goal, pool, m.eq, m.locked, foe);
       take(result[i], m.locked, -1);
     });
   }

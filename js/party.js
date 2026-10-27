@@ -1,12 +1,15 @@
 // Party page: the characters you've met, their levels and equipment, and the load-out optimizer.
 // Stored in the "party" setting: { party: [name, ...], espers: [name, ...] (acquired),
 //   chars: { name: { met, level, goal, eq, lock, esper, esperFor ("spells" or "bonus"),
-//   spells: [learned spell names] } } }. Natural magic (Terra, Celes) comes from the level, not spells. Before 0.26 esperFor was one "esperMode" for everyone.
+//   spells: [learned spell names] } }, foe: monster name to optimize against ("" for any) }. Natural magic (Terra, Celes) comes from the level, not spells. Before 0.26 esperFor was one "esperMode" for everyone.
 // Equipping here moves items out of the Inventory bag (the "gear" setting), as the game does.
 
 import { CHARS, EQUIP } from "./party-data.js";
 import { SLOTS, SLOT_LABEL, CMD_GOALS, goalsFor, evaluate, canEquip, slotFits, optimizeParty, canEquipEsper, assignEspers, relicNote } from "./optimizer.js";
 import { ESPERS, SPELL_GROUPS, NATURAL } from "./espers-data.js";
+import { FOE_NAMES, findFoe, makeFoe, moveText, shoppingList } from "./foe.js";
+import { WORLDS } from "./worldmap.js";
+import { ARTICLES } from "./wiki-data.js";
 import { loadGear, saveGear } from "./gear.js";
 import { loadNames } from "./names.js";
 import { getPref, setPref } from "./store.js";
@@ -23,8 +26,9 @@ const bonusText = (b) => (b ? `${STAT_NAME[b.stat]} +${b.amt}${b.pct ? "%" : ""}
 
 export function loadParty() {
   const p = getPref("party", null);
-  const out = { party: [], chars: {}, espers: [] };
+  const out = { party: [], chars: {}, espers: [], foe: "" };
   if (p && typeof p === "object") {
+    out.foe = findFoe(p.foe)?.name || "";
     out.espers = Array.isArray(p.espers) ? p.espers.filter((n) => ESPER.has(n)) : [];
     out.party = Array.isArray(p.party) ? p.party.filter((n) => CHARS.some((c) => c.name === n)).slice(0, MAX_PARTY) : [];
     const esperFor = p.esperMode === "bonus" ? "bonus" : "spells"; // the old party-wide setting
@@ -35,13 +39,16 @@ export function loadParty() {
 export function saveParty(p) {
   const chars = {};
   for (const [n, c] of Object.entries(p.chars)) if (c.met || Object.values(c.eq || {}).some(Boolean) || c.esper || (c.spells || []).length) chars[n] = c;
-  const any = p.party.length || Object.keys(chars).length || p.espers.length;
-  setPref("party", any ? { party: p.party, chars, espers: p.espers } : null);
+  const any = p.party.length || Object.keys(chars).length || p.espers.length || p.foe;
+  setPref("party", any ? { party: p.party, chars, espers: p.espers, ...(p.foe ? { foe: p.foe } : {}) } : null);
 }
 export function partyCount() {
   const p = loadParty();
   return { met: Object.values(p.chars).filter((c) => c.met).length, party: p.party.length };
 }
+
+const placeName = new Map(ARTICLES.filter((a) => a.kind === "place").map((a) => [a.id, a.name]));
+const gil = (n) => n.toLocaleString() + " gil";
 
 function hint(name) {
   const e = EQUIP[name];
@@ -66,6 +73,9 @@ export function renderParty(outer, ctx) {
     return n ? n.to.trim() : c.name;
   };
   let pending = null; // optimizer result waiting for Apply
+  const foe = () => makeFoe(findFoe(st.foe));
+  // How many of an item you have: in the bag and worn by anyone.
+  const owned = (item) => (loadGear()[item] || 0) + CHARS.reduce((k, c) => k + SLOTS.filter((s) => rec(c.name).eq[s] === item).length, 0);
   const magicOpen = new Set(); // characters whose Magic list is open, kept across re-renders
   let clearArmed = false; // Clear all gear asks for a second tap
   const unlockedGear = () => CHARS.some((c) => { const r = rec(c.name); return SLOTS.some((s) => r.eq[s] && !r.lock[s]); });
@@ -109,7 +119,8 @@ export function renderParty(outer, ctx) {
   const card = (c, inParty, pos) => {
     const r = rec(c.name);
     const bag = loadGear();
-    const ev = evaluate(c, r.level, r.eq);
+    const f = foe();
+    const ev = evaluate(c, r.level, r.eq, f);
     const s = ev.stats;
     const stat = (label, v) => `<div><dt>${label}</dt><dd>${v}</dd></div>`;
     const nameHtml = `<span class="pc-n">${esc(shown(c))}</span>${shown(c) !== c.name ? ` <span class="rg-alt">${esc(c.name)}</span>` : ""}`;
@@ -133,7 +144,7 @@ export function renderParty(outer, ctx) {
       ${esperSpells(c, r)}
       ${magicList(c, r)}
       <dl class="mn-stats pc-stats">${stat("HP", s.hp)}${stat("MP", s.mp)}${stat("Strength", s.vig)}${stat("Agility", s.spd)}${stat("Stamina", s.sta)}${stat("Magic", s.mag)}${stat("Attack", s.attack)}${stat("Defense", s.def)}${stat("Evasion", s.ev)}${stat("Magic Def.", s.mdef)}${stat("Magic Eva.", s.mb)}</dl>
-      <p class="pc-est">Estimates at level ${r.level}: Fight ≈ <strong>${ev.fight}</strong> · Magic ≈ <strong>${ev.magic}</strong>${CMD_GOALS[c.name]?.k ? ` · Skills ≈ <strong>${ev.skill}</strong>` : ""} · Toughness <strong>${ev.tough}</strong></p>`;
+      <p class="pc-est">Estimates at level ${r.level}: Fight ≈ <strong>${ev.fight}</strong> · Magic ≈ <strong>${ev.magic}</strong>${CMD_GOALS[c.name]?.k ? ` · Skills ≈ <strong>${ev.skill}</strong>` : ""} · Toughness <strong>${ev.tough}</strong>${f ? `<br>Against ${esc(f.name)}: takes ≈ <strong>${ev.taken}</strong> a turn${openTo(ev)}` : ""}</p>`;
     if (inParty) {
       return `<article class="pc" data-c="${esc(c.name)}">
         <header class="pc-head"><h3>${nameHtml}</h3><span class="pc-tags">
@@ -143,6 +154,22 @@ export function renderParty(outer, ctx) {
     return `<details class="pc pc-other" data-c="${esc(c.name)}"><summary class="pc-head"><h3>${nameHtml} <span class="mn-odds">Level ${r.level}</span></h3>
         <label class="pc-in"><input type="checkbox" class="pc-party"> In party</label></summary>${body}
         <button type="button" class="txt-btn pc-unmet">Mark ${esc(shown(c))} as not met</button></details>`;
+  };
+
+  // Statuses that still get through: " · open to Slow (Slow)".
+  const openTo = (ev) => {
+    const by = new Map();
+    for (const [move, st] of ev.risks) by.set(st, [...new Set([...(by.get(st) || []), move])]);
+    return by.size ? ` · open to ${[...by].map(([st, moves]) => moves.length === 1 && moves[0] === st ? esc(st) : `${esc(st)} (${esc(moves.join(", "))})`).join(", ")}` : "";
+  };
+  const foeInfo = () => {
+    const f = foe();
+    if (!f) return `<p class="hint">Pick a monster you're grinding against, and Optimize favors weapons that hit its weakness and armor that stands up to its moves. It also suggests things to buy.</p>`;
+    const el = (k, label) => (f[k].size ? `${label} ${[...f[k]].join(", ")}` : "");
+    const where = [f.place && placeName.get(f.place), f.world && WORLDS[f.world]].filter(Boolean).join(", ");
+    return `<p class="pc-fx"><a href="#/monsters/${encodeURIComponent(f.name)}">${esc(f.name)}</a>, level ${f.level}${where ? ` · ${esc(where)}` : ""}${[el("weak", "weak to"), el("absorb", "absorbs"), el("immune", "unaffected by"), el("resist", "resists")].filter(Boolean).map((x) => " · " + esc(x)).join("")}</p>
+      <p class="pc-fx">Its moves: ${f.moves.map((m) => esc(moveText(m))).join(" · ")}${f.unknown.length ? ` · not known: ${esc(f.unknown.join(", "))}` : ""}</p>
+      <p class="pc-fx">How often it uses each move is a guess (Attack and its special most), so damage taken is a rough number for comparing load-outs.</p>`;
   };
 
   const render = () => {
@@ -155,7 +182,11 @@ export function renderParty(outer, ctx) {
     <section class="rages party">
       <p class="eyebrow">Characters</p>
       <h1>Party</h1>
-      <p class="hint">Tick the characters you've met and put up to four in your party. Set each one's <strong>Order</strong> to match the game; picking a number swaps places with whoever had it. Set their levels and what they're wearing: equipping here takes the item out of your Inventory, as the game does. <strong>Optimize</strong> picks the best weapons, armor and relics you own for each party member at their level. Lock a slot to keep it. Some characters can also optimize for their command (Rage, Blitz, Steal…), which favors the stats that command uses instead of weapon power. <strong>Clear all gear</strong> puts everyone's unlocked equipment back in your bag, so Optimize can hand it out again.</p>
+      <p class="hint">Tick the characters you've met and put up to four in your party. Set each one's <strong>Order</strong> to match the game; picking a number swaps places with whoever had it. Set their levels and what they're wearing: equipping here takes the item out of your Inventory, as the game does. <strong>Optimize</strong> picks the best weapons, armor and relics you own for each party member at their level. Lock a slot to keep it. Some characters can also optimize for their command (Rage, Blitz, Steal…), which favors the stats that command uses instead of weapon power. <strong>Clear all gear</strong> puts everyone's unlocked equipment back in your bag, so Optimize can hand it out again. Grinding? Set <strong>Against</strong> to the monster, and Optimize plays to its weaknesses and guards against its moves, then lists anything a nearby shop sells that would help.</p>
+      <div class="pt-foe"><label class="pc-goal">Against <input type="search" id="ptFoe" list="ptFoeList" value="${esc(st.foe)}" placeholder="Any monster" autocomplete="off" enterkeyhint="done" aria-label="Monster to optimize against"></label>
+        <datalist id="ptFoeList">${FOE_NAMES.map((n) => `<option value="${esc(n)}">`).join("")}</datalist>
+        ${st.foe ? `<button type="button" class="txt-btn" id="ptFoeClear">Any monster</button>` : ""}</div>
+      <div id="ptFoeInfo">${foeInfo()}</div>
       <div class="pt-actions"><button type="button" class="btn solid" id="ptOpt"${party.length ? "" : " disabled"}>Optimize party</button>
         <button type="button" class="btn" id="ptClear"${unlockedGear() ? "" : " disabled"}>Clear all gear</button>
         <span class="hint" id="ptNote">${party.length ? "" : "Put someone in your party first."}</span></div>
@@ -203,6 +234,7 @@ export function renderParty(outer, ctx) {
       return clearGear();
     }
     if (e.target.closest("#ptApply")) return applyResult();
+    if (e.target.closest("#ptFoeClear")) return keepScroll(() => { st.foe = ""; pending = null; save(); });
     if (e.target.closest("#ptDiscard")) { pending = null; view.querySelector("#ptResult").innerHTML = ""; }
   });
 
@@ -215,6 +247,11 @@ export function renderParty(outer, ctx) {
   view.addEventListener("change", (e) => {
     const t = e.target;
     const name = nameOf(t);
+    if (t.id === "ptFoe") {
+      const m = findFoe(t.value);
+      if (t.value.trim() && !m) { ctx.toast(`No monster called “${t.value.trim()}”`); t.value = st.foe; return; }
+      return keepScroll(() => { st.foe = m ? m.name : ""; pending = null; save(); });
+    }
     if (t.classList.contains("pc-esperfor")) { rec(name).esperFor = t.value; return save(); }
     if (t.classList.contains("pt-esper")) {
       const n = t.dataset.e;
@@ -275,7 +312,8 @@ export function renderParty(outer, ctx) {
     btn.textContent = "Optimizing…";
     setTimeout(() => {
       const members = st.party.map((n) => ({ char: CHARS.find((c) => c.name === n), level: rec(n).level, goal: rec(n).goal, eq: { ...rec(n).eq }, locked: { ...rec(n).lock } }));
-      const res = optimizeParty(members, loadGear());
+      const f = foe(), bag = loadGear();
+      const res = optimizeParty(members, bag, f);
       const esperPicks = assignEspers(st.party.map((n) => ({ char: CHARS.find((c) => c.name === n), goal: rec(n).goal, learned: learned(n), esper: rec(n).esper, mode: rec(n).esperFor, locked: !!rec(n).lock.esper })),
         st.espers.map((n) => ESPER.get(n)));
       pending = { members, res, esperPicks };
@@ -285,15 +323,23 @@ export function renderParty(outer, ctx) {
         const oldE = rec(m.char.name).esper || "", newE = esperPicks[i] || "";
         const taken = newE && holder(newE) && holder(newE).name !== m.char.name ? ` (from ${esc(shown(holder(newE)))})` : "";
         const eRow = canEquipEsper(m.char) && oldE !== newE ? `<tr><th scope="row">Esper</th><td>${esc(oldE || "None")} → <strong>${esc(newE || "None")}</strong>${taken}<span class="pc-fx">${newE ? esc(bonusText(ESPER.get(newE).bonus)) + ` · ${ESPER.get(newE).spells.filter(([sp]) => !learned(m.char.name).has(sp)).length} spells to learn` : ""}</span></td></tr>` : "";
-        const a = evaluate(m.char, m.level, m.eq), b = evaluate(m.char, m.level, after);
+        const a = evaluate(m.char, m.level, m.eq, f), b = evaluate(m.char, m.level, after, f);
         const delta = (x, y) => (y === x ? `${y}` : `${x} → <strong>${y}</strong>`);
         return `<div class="pt-res">
           <h3>${esc(shown(m.char))}</h3>
           ${changes.length || eRow ? `<table class="gr-tbl"><tbody>${changes.map((s) => `<tr><th scope="row">${SLOT_LABEL[s]}</th><td>${esc(m.eq[s] || "Empty")} → <strong>${esc(after[s] || "Empty")}</strong></td></tr>`).join("")}${eRow}</tbody></table>` : `<p class="hint">Already the best of what you own.</p>`}
-          <p class="pc-est">Fight ${delta(a.fight, b.fight)} · Magic ${delta(a.magic, b.magic)}${CMD_GOALS[m.char.name]?.k ? ` · Skills ${delta(a.skill, b.skill)}` : ""} · Toughness ${delta(a.tough, b.tough)}</p>
+          <p class="pc-est">Fight ${delta(a.fight, b.fight)} · Magic ${delta(a.magic, b.magic)}${CMD_GOALS[m.char.name]?.k ? ` · Skills ${delta(a.skill, b.skill)}` : ""} · Toughness ${delta(a.tough, b.tough)}${f ? `<br>Against ${esc(f.name)}: takes ≈ ${delta(a.taken, b.taken)} a turn${openTo(b)}` : ""}</p>
         </div>`;
       });
-      view.querySelector("#ptResult").innerHTML = `<div class="pt-panel"><p><strong>Suggested load-outs.</strong> Make these changes in the game, then tap Apply so the app matches.</p>${rows.join("")}
+      const shop = f ? shoppingList(members, bag, f, res, owned) : [];
+      const shopHtml = !f ? "" : `<div class="pt-res pt-shop"><h3>Quick shopping</h3>${shop.length ? `<p class="hint">Sold ${f.world ? `in the ${WORLDS[f.world]}` : "in shops"}, nearest first${f.place ? ` from ${esc(placeName.get(f.place) || "")}` : ""}. Buy, put them in your Inventory, then optimize again.</p><ul>${shop.map((x) => {
+        const n = x.shops[0], more = x.shops.slice(1).map((s) => s.town);
+        const gains = x.who.map((w) => `${esc(shown(w.char))}: ${w.before.fight !== w.after.fight ? `Fight ${w.before.fight} → ${w.after.fight}` : ""}${w.before.fight !== w.after.fight && w.before.taken !== w.after.taken ? ", " : ""}${w.before.taken !== w.after.taken ? `takes ${w.before.taken} → ${w.after.taken}` : ""}`).filter((g) => !g.endsWith(": "));
+        return `<li><strong>Buy ${x.buy} ${esc(x.item)}</strong>${x.have ? ` (you have ${x.have})` : ""} · ${gil(x.price)} each${x.buy > 1 ? `, ${gil(x.price * x.buy)} in all` : ""}
+          <span class="pc-fx">${f.place ? "Nearest" : "At"}: <strong>${esc(n.town)}</strong>${more.length ? `; also ${esc(more.join(", "))}` : ""}</span>
+          ${x.why.length ? `<span class="pc-fx">${esc(x.why.join(" · "))}</span>` : ""}${gains.length ? `<span class="pc-fx">${gains.join(" · ")}</span>` : ""}</li>`;
+      }).join("")}</ul>` : `<p class="hint">Nothing sold ${f.world ? `in the ${WORLDS[f.world]}` : "in shops"} would do better than what you have.</p>`}</div>`;
+      view.querySelector("#ptResult").innerHTML = `<div class="pt-panel"><p><strong>Suggested load-outs${f ? ` against ${esc(f.name)}` : ""}.</strong> Make these changes in the game, then tap Apply so the app matches.</p>${rows.join("")}${shopHtml}
         <div class="row2"><button type="button" class="btn" id="ptDiscard">Discard</button><button type="button" class="btn solid" id="ptApply">Apply</button></div></div>`;
       btn.disabled = false;
       btn.textContent = "Optimize party";

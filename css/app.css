@@ -339,6 +339,12 @@ mark { background: var(--hit); color: inherit; border-radius: 2px; padding: 0 1p
 
 /* ---------- party ---------- */
 .pt-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: .6em 0 1em; }
+.pt-foe { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: .6em 0 .2em; font-family: var(--ui); }
+.pt-foe input { font: 15px var(--ui); padding: 7px 10px; border-radius: 8px; border: 1.5px solid var(--rule); background: var(--panel); color: var(--fg); width: 15em; max-width: 60vw; }
+#ptFoeInfo { font-family: var(--ui); }
+#ptFoeInfo .pc-fx a { color: var(--acc); font-weight: 600; }
+.pt-shop ul { margin: 4px 0 0; padding-left: 1.2em; }
+.pt-shop li { margin: 0 0 8px; }
 .pc { border: 1px solid var(--rule); border-radius: 14px; padding: 12px 14px; margin: 0 0 12px; font-family: var(--ui); }
 .pc-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 /* Character colors: a stripe, a tinted header and name, tinted stat tiles. */

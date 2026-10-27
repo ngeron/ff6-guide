@@ -10,7 +10,8 @@
 //     "rages":    ["Stray Cat", "Leaf Bunny"],                     Gau's Rages learned
 //     "gear":     { "Dagger": 2, "Potion": 14 },                   inventory counts (the bag)
 //     "party":    { "party": ["Terra"], "chars": { "Terra": { "met": true, "level": 12,
-//                   "goal": "balanced", "eq": { "rh": "Icebrand" }, "lock": {} } } }
+//                   "goal": "balanced", "eq": { "rh": "Icebrand" }, "lock": {} } },
+//                   "foe": "Tyrannosaur" }                          monster to optimize against
 //     "progress": { "walkDone": ["the-raid-on-narshe"], "walkLast": "figaro-castle" }
 //   }
 //

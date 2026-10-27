@@ -489,6 +489,44 @@ for (const vp of [{ tag: "ipad", w: 1180, h: 820 }, { tag: "phone", w: 390, h: 8
   await page.reload();
   await page.waitForSelector(".party");
   check(await page.locator("article.pc").count() === 4 && (await page.inputValue('article[data-c="Terra"] .pc-lvn')) === "30", "[party] kept after reload");
+
+  // Optimizing against one monster.
+  const vsFoe = await page.evaluate(async () => {
+    const { optimizeOne, charByName, evaluate } = await import("./js/optimizer.js");
+    const { makeFoe, findFoe } = await import("./js/foe.js");
+    const rex = makeFoe(findFoe("Tyrannosaur"));
+    const pool = { "Icebrand": 2, "Flametongue": 2, "Genji Glove": 1, "Ribbon": 1, "Mythril Vest": 1 };
+    const terra = optimizeOne(charByName.get("Terra"), 40, "balanced", pool, {}, {}, rex);
+    // A monster that absorbs Ice: the Icebrand would heal it.
+    const iceFoe = { ...rex, weak: new Set(["Fire"]), absorb: new Set(["Ice"]) };
+    const vsIce = optimizeOne(charByName.get("Terra"), 40, "balanced", pool, {}, {}, iceFoe);
+    const fire = makeFoe(findFoe("Bomb"));
+    const shield = (n) => evaluate(charByName.get("Terra"), 40, { lh: n }, fire).taken;
+    return { rex: { place: rex.place, world: rex.world, moves: rex.moves.map((m) => m.name) }, terra: [terra.rh, terra.lh, terra.r1, terra.r2], vsIce: [vsIce.rh, vsIce.lh], flame: shield("Flame Shield"), none: shield("") };
+  });
+  check(vsFoe.rex.place === "dinosaur-forest" && vsFoe.rex.world === "wor" && ["Attack", "Bite", "Meteor"].every((m) => vsFoe.rex.moves.includes(m)), `[foe] Tyrannosaur lives in the Dinosaur Forest (WoR) and bites (${vsFoe.rex.moves.join(", ")})`);
+  check(vsFoe.terra.filter((n) => n === "Icebrand").length === 2 && vsFoe.terra.includes("Genji Glove"), `[foe] against an Ice-weak monster, two Icebrands with the Genji Glove (${vsFoe.terra.join(", ")})`);
+  check(!vsFoe.vsIce.includes("Icebrand") && vsFoe.vsIce.includes("Flametongue"), `[foe] against an Ice-absorbing monster, no Icebrand (${vsFoe.vsIce.join(", ")})`);
+  check(vsFoe.flame < vsFoe.none, `[foe] the Flame Shield cuts a fire monster's damage (${vsFoe.none} → ${vsFoe.flame})`);
+  await page.fill("#ptFoe", "Nobody");
+  await page.dispatchEvent("#ptFoe", "change");
+  check(await page.inputValue("#ptFoe") === "", "[foe] an unknown monster name is refused");
+  await page.fill("#ptFoe", "tyrannosaur");
+  await page.dispatchEvent("#ptFoe", "change");
+  await page.waitForSelector("#ptFoeClear");
+  check((await page.textContent("#ptFoeInfo")).includes("weak to Ice") && await page.evaluate(() => JSON.parse(localStorage.getItem("ff6g:party")).foe) === "Tyrannosaur", "[foe] picking Tyrannosaur shows its weakness and saves it");
+  check((await page.textContent('article[data-c="Terra"] .pc-est')).includes("Against Tyrannosaur: takes"), "[foe] cards show the damage taken from it");
+  const tf = Date.now();
+  await page.click("#ptOpt");
+  await page.waitForSelector("#ptApply");
+  const shopMs = Date.now() - tf;
+  const shopText = await page.textContent(".pt-shop");
+  check(shopText.includes("Quick shopping") && /Buy \d+ /.test(shopText) && /Nearest: /.test(shopText), `[foe] the result lists things to buy at the nearest shops (${shopText.replace(/\s+/g, " ").slice(0, 160)})`);
+  check(shopMs < 8000, `[foe] optimizing with shopping stays quick (${shopMs} ms)`);
+  await page.screenshot({ path: path.join(SHOTS, "25b-party-foe.png"), fullPage: true });
+  await page.click("#ptDiscard");
+  await page.click("#ptFoeClear");
+  check(await page.evaluate(() => JSON.parse(localStorage.getItem("ff6g:party")).foe) === undefined, "[foe] Any monster clears it");
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ colorScheme: "dark" });
   await page.screenshot({ path: path.join(SHOTS, "26-party-phone-dark.png"), fullPage: false });
@@ -847,7 +885,7 @@ for (const vp of [{ tag: "ipad", w: 1180, h: 820 }, { tag: "phone", w: 390, h: 8
   await page.press("#tagList li:last-child .tg-text", "Tab");
   await page.evaluate(() => localStorage.setItem("ff6g:rages", JSON.stringify(["Stray Cat", "Leaf Bunny"])));
   await page.evaluate(() => localStorage.setItem("ff6g:gear", JSON.stringify({ Dagger: 3, Potion: 14 })));
-  await page.evaluate(() => localStorage.setItem("ff6g:party", JSON.stringify({ party: ["Terra"], chars: { Terra: { met: true, level: 12, goal: "magic", eq: { rh: "Mythril Knife" }, lock: {} } } })));
+  await page.evaluate(() => localStorage.setItem("ff6g:party", JSON.stringify({ party: ["Terra"], chars: { Terra: { met: true, level: 12, goal: "magic", eq: { rh: "Mythril Knife" }, lock: {} } }, foe: "Tyrannosaur" })));
   await page.screenshot({ path: path.join(SHOTS, "12-backup-settings.png") });
   const [dl] = await Promise.all([page.waitForEvent("download"), page.click("#backupBtn")]);
   const backup = path.join(SHOTS, "backup.zip");
@@ -871,7 +909,7 @@ for (const vp of [{ tag: "ipad", w: 1180, h: 820 }, { tag: "phone", w: 390, h: 8
   check(/Heal Force/.test(await p2.evaluate(() => localStorage.getItem("ff6g:tags"))), "[backup] restored color-coding fixes");
   check(JSON.stringify(await p2.evaluate(() => JSON.parse(localStorage.getItem("ff6g:rages")))) === '["Stray Cat","Leaf Bunny"]', "[backup] restored Gau's Rages");
   check(JSON.stringify(await p2.evaluate(() => JSON.parse(localStorage.getItem("ff6g:gear")))) === '{"Dagger":3,"Potion":14}', "[backup] restored inventory counts");
-  check(await p2.evaluate(() => { const p = JSON.parse(localStorage.getItem("ff6g:party")); return p.party[0] === "Terra" && p.chars.Terra.level === 12 && p.chars.Terra.eq.rh === "Mythril Knife"; }), "[backup] restored party, levels and load-outs");
+  check(await p2.evaluate(() => { const p = JSON.parse(localStorage.getItem("ff6g:party")); return p.party[0] === "Terra" && p.chars.Terra.level === 12 && p.chars.Terra.eq.rh === "Mythril Knife" && p.foe === "Tyrannosaur"; }), "[backup] restored party, levels, load-outs and the monster to optimize against");
 
   // Restore over existing data asks first; Cancel keeps things, Replace restores.
   await p2.click("#settingsBtn");
