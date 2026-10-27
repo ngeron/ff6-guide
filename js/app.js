@@ -13,7 +13,7 @@ import { loadWalkthrough, renderWalkIndex, renderWalkChapter, chapterText, loadD
 import { renderWiki, wikiTerms, linkFor, bindPeek, searchWiki, getEntry } from "./wiki.js";
 import { renderWorldMap, worldsOf, pinName, pinHref } from "./worldmap.js";
 
-const VERSION = "0.36.0";
+const VERSION = "0.36.1";
 const $ = (id) => document.getElementById(id);
 const root = document.documentElement;
 
